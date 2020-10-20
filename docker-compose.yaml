@@ -1,0 +1,137 @@
+version: "3.8"
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE}
+    container_name: ${POSTGRES_NAME}
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: ${POSTGRES_CPU}
+          memory: ${POSTGRES_MEM}
+    volumes:
+      - ./postgres/stacks-node-api.sql:/docker-entrypoint-initdb.d/stacks-node-api.sql
+    ports:
+      - ${POSTGRES_PORT_LOCAL}:${POSTGRES_PORT}
+    expose:
+      - ${POSTGRES_PORT}
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - mocknet
+  miner:
+    image: ${STACKS_IMAGE}
+    container_name: ${STACKS_MINER_NAME}
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: ${STACKS_MINER_CPU}
+          memory: ${STACKS_MINER_MEM}
+    volumes:
+      - ./stacks-node-miner/Config.toml:/src/stacks-node/Config.toml
+    ports:
+      - ${STACKS_RPC_PORT_LOCAL}:${STACKS_RPC_PORT}
+      - ${STACKS_P2P_PORT_LOCAL}:${STACKS_P2P_PORT}
+    expose:
+      - ${STACKS_RPC_PORT}
+      - ${STACKS_P2P_PORT}
+    networks:
+      - mocknet
+    command: /bin/stacks-node start --config /src/stacks-node/Config.toml
+  follower:
+    image: ${STACKS_IMAGE}
+    container_name: ${STACKS_FOLLOWER_NAME}
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: ${STACKS_FOLLOWER_CPU}
+          memory: ${STACKS_FOLLOWER_MEM}
+    volumes:
+      - ./stacks-node-follower/Config.toml:/src/stacks-node/Config.toml
+    expose:
+      - ${STACKS_RPC_PORT}
+      - ${STACKS_P2P_PORT}
+    networks:
+      - mocknet
+    depends_on:
+      - miner
+      - api
+    command: /bin/stacks-node start --config /src/stacks-node/Config.toml
+  api:
+    image: ${API_IMAGE}
+    container_name: ${API_NAME}
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: ${API_CPU}
+          memory: ${API_MEM}
+    ports:
+      - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
+      - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
+    expose:
+      - ${API_STACKS_CORE_EVENT_PORT}
+      - ${API_STACKS_BLOCKCHAIN_API_PORT}
+    environment:
+      - NODE_ENV=${API_NODE_ENV}
+      - GIT_TAG=${API_GIT_TAG}
+      - PG_HOST=${POSTGRES_NAME}.mocknet
+      - PG_PORT=${POSTGRES_PORT_LOCAL}
+      - PG_USER=${API_PG_USER}
+      - PG_PASSWORD=${POSTGRES_PASSWORD}
+      - PG_DATABASE=${API_PG_DATABASE}
+      - PG_SCHEMA=${API_PG_SCHEMA}
+      - STACKS_CORE_EVENT_PORT=${API_STACKS_CORE_EVENT_PORT}
+      - STACKS_CORE_EVENT_HOST=${API_STACKS_CORE_EVENT_HOST}
+      - STACKS_BLOCKCHAIN_API_PORT=${API_STACKS_BLOCKCHAIN_API_PORT}
+      - STACKS_BLOCKCHAIN_API_HOST=${API_STACKS_BLOCKCHAIN_API_HOST}
+      - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
+      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mocknet
+      - STACKS_CORE_RPC_PORT=${STACKS_RPC_PORT}
+      - STACKS_FAUCET_NODE_HOST=${STACKS_MINER_NAME}.mocknet
+      - STACKS_FAUCET_NODE_PORT=${STACKS_RPC_PORT}
+      - BTC_FAUCET_PK=${BTC_FAUCET_PK}
+      - BTC_RPC_PORT=${BTC_RPC_PORT}
+      - BTC_RPC_HOST=http://${BTC_HOST}
+      - BTC_RPC_PW=${BTC_PW}
+      - BTC_RPC_USER=${BTC_USER}
+    networks:
+      - mocknet
+    depends_on:
+      - postgres
+  explorer:
+    image: ${EXPLORER_IMAGE}
+    container_name: ${EXPLORER_NAME}
+    deploy:
+      restart_policy:
+        condition: on-failure
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: ${EXPLORER_CPU}
+          memory: ${EXPLORER_MEM}
+    ports:
+      - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
+    environment:
+      - MOCKNET_API_SERVER=${EXPLORER_MOCKNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
+      - TESTNET_API_SERVER=${EXPLORER_TESTNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
+      - API_SERVER=${EXPLORER_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
+      - NODE_ENV=${EXPLORER_NODE_ENV}
+    networks:
+      - mocknet
+    depends_on:
+      - api
+networks:
+  mocknet:
+    driver: bridge
+    name: mocknet
