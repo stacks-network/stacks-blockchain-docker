@@ -26,3 +26,4 @@ Session.vim
 *.secret
 *.save
 node_modules/
+.stx_keychain
