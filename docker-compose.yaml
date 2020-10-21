@@ -1,5 +1,12 @@
 version: "3.8"
 services:
+  bootstrap:
+    image: bhgedigital/envsubst
+    container_name: mocknet_bootstrap
+    working_dir: /srv
+    volumes:
+      - ./:/srv
+    command: sh -c "./setup.sh"
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
@@ -21,6 +28,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
       - mocknet
+    depends_on:
+      - bootstrap
   miner:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_MINER_NAME}
@@ -42,6 +51,8 @@ services:
       - ${STACKS_P2P_PORT}
     networks:
       - mocknet
+    depends_on:
+      - bootstrap
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}
