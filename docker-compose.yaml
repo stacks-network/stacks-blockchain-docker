@@ -68,7 +68,7 @@ services:
     container_name: ${API_NAME}
     restart: on-failure
     cpus: ${API_CPU}
-    mem_reservation:  ${API_MEM}
+    mem_reservation: ${API_MEM}
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
@@ -107,7 +107,7 @@ services:
     container_name: ${EXPLORER_NAME}
     restart: unless-stopped
     cpus: ${EXPLORER_CPU}
-    mem_reservation:  ${EXPLORER_MEM}
+    mem_reservation: ${EXPLORER_MEM}
     ports:
       - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
     environment:

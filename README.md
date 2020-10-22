@@ -1,13 +1,34 @@
-# .github
-Repository to hold defaults such as CONTRIBUTING and CODE_OF_CONDUCT
+# docker-compose
+## quickstart
+1. start: `docker-compose up -d`
+2. stop: `docker-compose down`
 
-# Github Actions
-To enable Github Actions for building/publishing a Docker image, automatic semantic versioning, notifications, and more, visit [gh-actions-example](https://github.com/blockstackpbc/gh-actions-example) for in-depth examples.
+## Env vars
+### miner
+
+### follower
+
+### api
+
+### postgres
+
+### explorer
 
 
-## init docs
-1. run setup.sh: `sh setup.sh`
-2. start: `docker-compose up`
-3. stop: `docker-compose down`
+## docker-compose
+- highlight how to disable the explorer if so desired
+  - ideally, a command to remove it would be sweet
+- how to run the compose file
+- how to stop the containers
 
-Once everything is started, the explorer is available at http://localhost:3000
+## logging
+- how to retrieve the logs
+
+## accessing the services
+- how to access the various services locally
+
+
+## workarounds to potential issues
+- port already in use locally
+  - netstat etc, then link to changing the local port we open
+- issue from friedger -> restart docker
