@@ -26,4 +26,5 @@ Session.vim
 *.secret
 *.save
 node_modules/
-.stx_keychain
+stacks-node-miner/Config.toml
+stacks-node-follower/Config.toml

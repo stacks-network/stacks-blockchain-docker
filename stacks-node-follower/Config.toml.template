@@ -1,7 +1,7 @@
 [node]
-rpc_bind = "0.0.0.0:${STACKS_RPC_PORT}"
-p2p_bind = "0.0.0.0:${STACKS_P2P_PORT}"
-bootstrap_node = "${PUBLIC_KEY}@${STACKS_MINER_NAME}.mocknet:${STACKS_P2P_PORT}"
+rpc_bind = "0.0.0.0:${STACKS_FOLLOWER_RPC_PORT}"
+p2p_bind = "0.0.0.0:${STACKS_FOLLOWER_P2P_PORT}"
+bootstrap_node = "${STACKS_FOLLOWER_PUBLIC_KEY}@${STACKS_MINER_NAME}.mocknet:${STACKS_MINER_P2P_PORT}"
 
 [[events_observer]]
 endpoint = "${API_NAME}.mocknet:${API_STACKS_CORE_EVENT_PORT_LOCAL}"
@@ -10,7 +10,7 @@ events_keys = ["*"]
 
 [burnchain]
 chain = "bitcoin"
-mode = "mocknet"
+mode = "${BTC_MODE}"
 peer_host = "${BTC_HOST}"
 rpc_port = ${BTC_RPC_PORT}
 peer_port = ${BTC_P2P_PORT}
