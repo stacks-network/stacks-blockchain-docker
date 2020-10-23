@@ -26,8 +26,12 @@ sudo chmod 755 $DESTINATION
 
 
 ## Env Vars
+All variables used in the `.env` file can be modified, but generally most of them should be left as-is.
+
+
 ### Locally opened ports
 In this section, the values can be modified to change the ports opened locally by docker.
+
 Currently, default port values are used - but if you have a running service on any of the defined ports in `.env` file, they can be adjusted to any locally available port.
 
 ex:
@@ -42,6 +46,7 @@ EXPLORER_PORT_LOCAL=3001
 ```
 
 Docker will still use the default ports *internally* - this modification will only affect how the **host** OS accesses the services.
+
 For example, to access postgres (using the **new** port `5433`) after running `docker-compose up -d`:
 ```bash
 $ export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d stacks_node_api
@@ -50,7 +55,9 @@ $ export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d s
 
 ### System Resources
 All sections in the `.env` file have specific CPU/MEM values, and can be adjusted as you see fit.
-The variables take the form of `xxxx_CPU` and `xxxx_MEM`:
+The variables take the form of `xxxx_CPU` and `xxxx_MEM`.
+
+ex:
 ```bash
 STACKS_MINER_CPU=0.3
 STACKS_MINER_MEM=128M
@@ -58,53 +65,37 @@ STACKS_FOLLOWER_CPU=0.3
 STACKS_FOLLOWER_MEM=128M
 ```
 
-### Mocknet Miner/Follower
-The only recommended changes here would be the docker image to run, and potentially the `Config.toml` to use.
-While it's fine to adjust the other variables, it may have unintended side-effects on dependent services:
-```bash
-STACKS_IMAGE=blockstack/stacks-blockchain:v23.0.0.8-krypton
-STACKS_MINER_CONFIG=./stacks-node-miner/Config.toml
-STACKS_FOLLOWER_CONFIG=./stacks-node-follower/Config.toml
-```
-
-
-### Stacks API
-```bash
-API_PG_USER=sidecar_rw
-API_PG_DATABASE=stacks_node_api
-API_PG_SCHEMA=sidecar
-API_STACKS_BLOCKCHAIN_API_DB=pg
-BTC_FAUCET_PK=8b5c692c6583d5dca70102bb4365b23b40aba9b5a3f32404a1d31bc09d855d9b
-```
-
 ### Bitcoin
+By default, we're using the bitcoin node operated by PBC (hiro or blockstack at this point?).
+
+You're welcome to to use any bitcoin testnet/regtest node you'd prefer by changing the following variables:
+
 ```bash
 BTC_RPC_PORT=18443
 BTC_P2P_PORT=18443
 BTC_HOST=bitcoind.blockstack.org
 BTC_PW=blockstacksystem
 BTC_USER=blockstack
-BTC_MODE=mocknet
+```
+**Note**: There is an important env var related here `BTC_FAUCET_PK` that will have to be updated if you use a different btc node. For the server defined above, this already setup - using a different node would require you to set this up yourself.
+```bash
+BTC_FAUCET_PK=8b5c692c6583d5dca70102bb4365b23b40aba9b5a3f32404a1d31bc09d855d9b
 ```
 
 ### Postgres
+Default password is easy to guess, and we do open a port to postgres locally.
+
+This is defined in the file https://github.com/blockstack/stacks-local-dev/blob/master/postgres/stacks-node-api.sql#L1
+
+If you update this value to something other than `postgres`, you'll have to adjust the value in the `.env` file as well, as the mocknet API uses this:
 ```bash
-POSTGRES_IMAGE=postgres:alpine
-POSTGRES_PORT=5432
 POSTGRES_PASSWORD=postgres
-POSTGRES_SETUP=./postgres/stacks-node-api.sql
 ```
-
-### Mocknet Explorer
-```bash
-EXPLORER_MOCKNET_API_SERVER=http://localhost
-EXPLORER_TESTNET_API_SERVER=http://localhost
-EXPLORER_API_SERVER=http://localhost
-EXPLORER_NODE_ENV=development
-```
-
 
 ## docker-compose
+
+
+
 - highlight how to disable the explorer if so desired
   - ideally, a command to remove it would be sweet
 - how to run the compose file
