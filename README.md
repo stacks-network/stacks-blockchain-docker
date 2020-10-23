@@ -93,13 +93,19 @@ POSTGRES_PASSWORD=postgres
 ```
 
 ## docker-compose
-
-
-
+### Disable mocknet explorer
 - highlight how to disable the explorer if so desired
   - ideally, a command to remove it would be sweet
+
+### Starting Mocknet Services
 - how to run the compose file
-- how to stop the containers
+- how to restart individual services
+
+### Stopping Mocknet Services
+- how to stop the compose file
+- how  to stop services
+
+### Services in the mocknet
 - components of the compose file
   - miner
   - follower
@@ -107,8 +113,10 @@ POSTGRES_PASSWORD=postgres
   - postgres
   - explorer
 
-## logging
+### logging
 - how to retrieve the logs
+- through compose
+- through  docker natively
 
 ## accessing the services
 - how to access the various services locally
