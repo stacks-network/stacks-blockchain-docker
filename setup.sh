@@ -32,9 +32,9 @@ else
   echo ""
   exit 3
 fi
-echo  "Unsetting local vars from .env file"
-echo "Now, run:"
-echo "  docker-compose up -d"
-echo "  Hint: to stop everything, run 'docker-compose down'"
+echo ""
+echo "Stacks V2 Configs created:"
+echo "  - ${FOLLOWER_TOML}"
+echo "  - ${MINER_TOML}"
 echo ""
 exit 0
