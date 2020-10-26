@@ -182,7 +182,7 @@ docker-compose logs -f <service>
 docker logs -f <container_name>
 ```
 
-## accessing the services
+## Accessing the services
 - miner
   - ports `20443-20444` are exposed to `localhost`
 ```bash
@@ -205,7 +205,7 @@ export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d sta
   - open a browser to http://localhost:3000
 
 
-## workarounds to potential issues
+## Workarounds to potential issues
 - Port already in use
   - if you have a port conflict, typically this means you already have a process using that same port.
     - to resolve, find the port you have in use (i.e. `5432` and edit the `.env` file to use the new port)
