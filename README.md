@@ -1,10 +1,10 @@
 # Stacks Mocknet for local development
 ## Quickstart
-1. start:
+1. Start:
 ```bash
 docker-compose up -d
 ```
-2. stop:
+2. Stop:
 ```bash
 docker-compose down
 ```
@@ -93,36 +93,125 @@ POSTGRES_PASSWORD=postgres
 ```
 
 ## docker-compose
-### Disable mocknet explorer
-- highlight how to disable the explorer if so desired
-  - ideally, a command to remove it would be sweet
+### Ensure all images are up to date
+Running the mocknet explicitly via `docker-compose up/down` should also update the images used.
 
-### Starting Mocknet Services
-- how to run the compose file
-- how to restart individual services
+However you can also run the following at anytime to enforce the local images are up to date:
+```bash
+docker-compose pull
+```
 
-### Stopping Mocknet Services
-- how to stop the compose file
-- how  to stop services
+### Disable Mocknet explorer
+Mocknet explorer is set to start by default. However, if you'd prefer to not run this service you can easily disable it.
+The section of the `docker-compose.yaml` file looks like this:
+```bash
+  explorer:
+    image: ${EXPLORER_IMAGE}
+    container_name: ${EXPLORER_NAME}
+    restart: unless-stopped
+    cpus: ${EXPLORER_CPU}
+    mem_reservation: ${EXPLORER_MEM}
+    ports:
+      - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
+    environment:
+      - MOCKNET_API_SERVER=${EXPLORER_MOCKNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
+      - TESTNET_API_SERVER=${EXPLORER_TESTNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
+      - API_SERVER=${EXPLORER_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
+      - NODE_ENV=${EXPLORER_NODE_ENV}
+    networks:
+      - mocknet
+    depends_on:
+      - api
+```
 
-### Services in the mocknet
-- components of the compose file
-  - miner
-  - follower
-  - api
-  - postgres
-  - explorer
+To disable this service, simply comment the section with `#`
+i.e.
+```bash
+#  explorer:
+#    image: ${EXPLORER_IMAGE}
+#    container_name: ${EXPLORER_NAME}
+```
 
-### logging
-- how to retrieve the logs
-- through compose
-- through  docker natively
+### Services Running in Mocknet
+Defined Mocknet services:
+- miner
+- follower
+- api
+- postgres
+- explorer
+
+Docker container names:
+- mocknet_stacks-node-miner
+- mocknet_stacks-node-follower
+- mocknet_stacks-node-api
+- mocknet_postgres
+- mocknet_explorer
+
+
+#### Starting Mocknet Services
+1. Start all services:
+```bash
+docker-compose up -d
+```
+2. Start specific service:
+```bash
+docker-compose start <service>
+```
+
+#### Stopping Mocknet Services
+1. Stop all services:
+```bash
+docker-compose down
+```
+2. Stop specific service:
+```bash
+docker-compose stop <service>
+```
+3. Restart:
+```bash
+docker-compose restart <service>
+```
+
+#### Retrieving Mocknet logs
+1. tail logs with docker-compose:
+```bash
+docker-compose logs -f <service>
+```
+2. tail logs through `docker`:
+```bash
+docker logs -f <container_name>
+```
 
 ## accessing the services
-- how to access the various services locally
+- miner
+  - ports `20443-20444` are exposed to `localhost`
+```bash
+curl localhost:20443/v2/info
+```
+- follower
+  - ports `20443-20444` are **only** exposed to the `mocknet` docker network.
+- api
+  - ports `3700, 30999` are exposed to `localhost`
+```bash
+curl localhost:3700/v2/info
+```
+- postgres
+  - port `5432` is exposed to `localhost` (PGPASSWORD is defined in `.env` file)
+```bash
+export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
+```
+- explorer
+  - port `3000` is exposed to `localhost`
+  - open a browser to http://localhost:3000
 
 
 ## workarounds to potential issues
-- port already in use locally
-  - netstat etc, then link to changing the local port we open
-- issue from friedger -> restart docker
+- Port already in use
+  - if you have a port conflict, typically this means you already have a process using that same port.
+    - to resolve, find the port you have in use (i.e. `5432` and edit the `.env` file to use the new port)
+```bash
+$ netstat -anl | grep 5432
+tcp46      0      0  *.5432                 *.*                    LISTEN
+```
+- Containers not starting (hanging on start)
+  - Occasionally, docker can get **stuck** and not allow new containers to start. if this happens, simply restart your docker daemon and try again.
