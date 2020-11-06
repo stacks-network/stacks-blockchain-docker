@@ -254,7 +254,7 @@ curl localhost:20443/v2/info | jq
 - Ports `3700, 30999` are exposed to `localhost`
 
 ```bash
-curl localhost:3700/v2/info | jq
+curl localhost:3999/v2/info | jq
 ```
 
 **postgres**:
