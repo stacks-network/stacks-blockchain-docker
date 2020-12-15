@@ -9,12 +9,51 @@ services:
     command: sh -c "./setup.sh"
     networks:
       - mocknet
+  bitcoin:
+    image: ${BTC_IMAGE}
+    container_name: ${BTC_NAME}
+    restart: on-failure
+    # cpus: ${BTC_CPU}
+    # mem_reservation: ${BTC_MEM}
+    volumes:
+      - ${BTC_CONFIG}:/etc/bitcoin/bitcoin.conf
+    ports:
+      - ${BTC_RPC_PORT_LOCAL}:${BTC_RPC_PORT}
+      - ${BTC_P2P_PORT_LOCAL}:${BTC_P2P_PORT}
+    expose:
+      - ${BTC_RPC_PORT}
+      - ${BTC_P2P_PORT}
+    networks:
+      - mocknet
+    depends_on:
+      - bootstrap
+    command: /usr/local/bin/bitcoind -conf=/etc/bitcoin/bitcoin.conf -nodebuglogfile -pid=/run/bitcoind.pid -datadir=/root/.bitcoin
+
+  bitcoin-controller:
+    image: ${BTC_CONTROLLER_IMAGE}
+    container_name: ${BTC_CONTROLLER_NAME}
+    restart: on-failure
+    # cpus: ${BTC_CONTROLLER_CPU}
+    # mem_reservation: ${BTC_CONTROLLER_MEM}
+    volumes:
+      - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
+    ports:
+      - ${BTC_CONTROLLER_RPC_PORT_LOCAL}:${BTC_CONTROLLER_RPC_PORT}
+      - 3001:3000
+    environment:
+      - DYNAMIC_GENESIS_TIMESTAMP=1
+    networks:
+      - mocknet
+    depends_on:
+      - bitcoin
+    command: /bin/bitcoin-neon-controller /etc/bitcoin-controller/Config.toml
+
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
     restart: on-failure
-    cpus: ${POSTGRES_CPU}
-    mem_reservation: ${POSTGRES_MEM}
+    # cpus: ${POSTGRES_CPU}
+    # mem_reservation: ${POSTGRES_MEM}
     volumes:
       - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
     ports:
@@ -31,8 +70,8 @@ services:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_MINER_NAME}
     restart: on-failure
-    cpus: ${STACKS_MINER_CPU}
-    mem_reservation: ${STACKS_MINER_MEM}
+    # cpus: ${STACKS_MINER_CPU}
+    # mem_reservation: ${STACKS_MINER_MEM}
     volumes:
       - ${STACKS_MINER_CONFIG}:/src/stacks-node/Config.toml
     ports:
@@ -45,13 +84,15 @@ services:
       - mocknet
     depends_on:
       - bootstrap
+      - bitcoin
+      - bitcoin-controller
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_FOLLOWER_NAME}
     restart: on-failure
-    cpus: ${STACKS_FOLLOWER_CPU}
-    mem_reservation: ${STACKS_FOLLOWER_MEM}
+    # cpus: ${STACKS_FOLLOWER_CPU}
+    # mem_reservation: ${STACKS_FOLLOWER_MEM}
     volumes:
       - ${STACKS_FOLLOWER_CONFIG}:/src/stacks-node/Config.toml
     expose:
@@ -67,8 +108,8 @@ services:
     image: ${API_IMAGE}
     container_name: ${API_NAME}
     restart: on-failure
-    cpus: ${API_CPU}
-    mem_reservation: ${API_MEM}
+    # cpus: ${API_CPU}
+    # mem_reservation: ${API_MEM}
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
@@ -91,34 +132,32 @@ services:
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
       - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mocknet
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
-      - STACKS_FAUCET_NODE_HOST=${STACKS_MINER_NAME}.mocknet
-      - STACKS_FAUCET_NODE_PORT=${STACKS_MINER_RPC_PORT}
       - BTC_FAUCET_PK=${BTC_FAUCET_PK}
       - BTC_RPC_PORT=${BTC_RPC_PORT}
-      - BTC_RPC_HOST=http://${BTC_HOST}
+      - BTC_RPC_HOST=http://${BTC_NAME}.mocknet
       - BTC_RPC_PW=${BTC_PW}
       - BTC_RPC_USER=${BTC_USER}
     networks:
       - mocknet
     depends_on:
       - postgres
-  explorer:
-    image: ${EXPLORER_IMAGE}
-    container_name: ${EXPLORER_NAME}
-    restart: unless-stopped
-    cpus: ${EXPLORER_CPU}
-    mem_reservation: ${EXPLORER_MEM}
-    ports:
-      - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
-    environment:
-      - MOCKNET_API_SERVER=${EXPLORER_MOCKNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
-      - TESTNET_API_SERVER=${EXPLORER_TESTNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
-      - API_SERVER=${EXPLORER_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
-      - NODE_ENV=${EXPLORER_NODE_ENV}
-    networks:
-      - mocknet
-    depends_on:
-      - api
+  # # explorer is disabled. Uncomment to re-enable
+  # explorer:
+  #   image: ${EXPLORER_IMAGE}
+  #   container_name: ${EXPLORER_NAME}
+  #   restart: unless-stopped
+  #   cpus: ${EXPLORER_CPU}
+  #   mem_reservation: ${EXPLORER_MEM}
+  #   ports:
+  #     - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
+  #   environment:
+  #   - MOCKNET_API_SERVER=http://${API_NAME}.mocknet:3999
+  #   - TESTNET_API_SERVER=http://${API_NAME}.mocknet:3999
+  #   - API_SERVER=http://${API_NAME}.mocknet:3999
+  #   networks:
+  #     - mocknet
+  #   depends_on:
+  #     - api
 networks:
   mocknet:
     driver: bridge
