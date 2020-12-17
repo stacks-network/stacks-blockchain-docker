@@ -4,29 +4,31 @@ p2p_bind = "0.0.0.0:${STACKS_FOLLOWER_P2P_PORT}"
 bootstrap_node = "${STACKS_FOLLOWER_PUBLIC_KEY}@${STACKS_MINER_NAME}.mocknet:${STACKS_MINER_P2P_PORT}"
 
 [[events_observer]]
-endpoint = "${API_NAME}.mocknet:${API_STACKS_CORE_EVENT_PORT_LOCAL}"
+endpoint = "${API_NAME}.mocknet:${API_STACKS_CORE_EVENT_PORT}"
 retry_count = 255
 events_keys = ["*"]
 
 [burnchain]
 chain = "bitcoin"
 mode = "${BTC_MODE}"
-peer_host = "host.docker.internal" #"${BTC_NAME}.mocknet"
+#peer_host = "host.docker.internal" #"${BTC_NAME}.mocknet"
+peer_host = "${BTC_NAME}.mocknet"
 rpc_port = ${BTC_CONTROLLER_RPC_PORT}
 peer_port = ${BTC_P2P_PORT}
+magic_byte = "X2"
 
-[[mstx_balance]]
+[[ustx_balance]]
 address = "STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6"
 amount = 10000000000000000
 
-[[mstx_balance]]
+[[ustx_balance]]
 address = "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P2Y"
 amount = 10000000000000000
 
-[[mstx_balance]]
+[[ustx_balance]]
 address = "ST1HB1T8WRNBYB0Y3T7WXZS38NKKPTBR3EG9EPJKR"
 amount = 10000000000000000
 
-[[mstx_balance]]
+[[ustx_balance]]
 address = "STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP"
 amount = 10000000000000000

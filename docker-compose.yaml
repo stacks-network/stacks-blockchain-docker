@@ -17,37 +17,20 @@ services:
     # mem_reservation: ${BTC_MEM}
     volumes:
       - ${BTC_CONFIG}:/etc/bitcoin/bitcoin.conf
+      - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
     ports:
       - ${BTC_RPC_PORT_LOCAL}:${BTC_RPC_PORT}
       - ${BTC_P2P_PORT_LOCAL}:${BTC_P2P_PORT}
+    environment:
+      - DYNAMIC_GENESIS_TIMESTAMP=1
     expose:
-      - ${BTC_RPC_PORT}
-      - ${BTC_P2P_PORT}
+      - ${BTC_RPC_PORT_LOCAL}
+      - ${BTC_P2P_PORT_LOCAL}
     networks:
       - mocknet
     depends_on:
       - bootstrap
-    command: /usr/local/bin/bitcoind -conf=/etc/bitcoin/bitcoin.conf -nodebuglogfile -pid=/run/bitcoind.pid -datadir=/root/.bitcoin
-
-  bitcoin-controller:
-    image: ${BTC_CONTROLLER_IMAGE}
-    container_name: ${BTC_CONTROLLER_NAME}
-    restart: on-failure
-    # cpus: ${BTC_CONTROLLER_CPU}
-    # mem_reservation: ${BTC_CONTROLLER_MEM}
-    volumes:
-      - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
-    ports:
-      - ${BTC_CONTROLLER_RPC_PORT_LOCAL}:${BTC_CONTROLLER_RPC_PORT}
-      - 3001:3000
-    environment:
-      - DYNAMIC_GENESIS_TIMESTAMP=1
-    networks:
-      - mocknet
-    depends_on:
-      - bitcoin
-    command: /bin/bitcoin-neon-controller /etc/bitcoin-controller/Config.toml
-
+    command: /docker-entrypoint.sh
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
@@ -85,7 +68,6 @@ services:
     depends_on:
       - bootstrap
       - bitcoin
-      - bitcoin-controller
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}

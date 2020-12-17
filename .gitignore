@@ -28,3 +28,4 @@ Session.vim
 node_modules/
 stacks-node-miner/Config.toml
 stacks-node-follower/Config.toml
+bitcoin/bitcoin.conf

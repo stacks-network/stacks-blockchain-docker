@@ -8,19 +8,25 @@ miner = true
 [burnchain]
 chain = "bitcoin"
 mode = "${BTC_MODE}"
-peer_host = "host.docker.internal"
+#peer_host = "host.docker.internal" #"${BTC_NAME}.mocknet"
+#peer_host = "bitcoin.mocknet"
+peer_host = "${BTC_NAME}.mocknet"
 rpc_port = ${BTC_CONTROLLER_RPC_PORT}
 peer_port = ${BTC_P2P_PORT}
+magic_byte = "X2"
 
-[[mstx_balance]]
+[[ustx_balance]]
 address = "STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6"
 amount = 10000000000000000
-[[mstx_balance]]
+
+[[ustx_balance]]
 address = "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P2Y"
 amount = 10000000000000000
-[[mstx_balance]]
+
+[[ustx_balance]]
 address = "ST1HB1T8WRNBYB0Y3T7WXZS38NKKPTBR3EG9EPJKR"
 amount = 10000000000000000
-[[mstx_balance]]
+
+[[ustx_balance]]
 address = "STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP"
 amount = 10000000000000000
