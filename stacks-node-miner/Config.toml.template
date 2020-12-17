@@ -8,8 +8,7 @@ miner = true
 [burnchain]
 chain = "bitcoin"
 mode = "${BTC_MODE}"
-#peer_host = "host.docker.internal" #"${BTC_NAME}.mocknet"
-peer_host = "bitcoin.mocknet"
+peer_host = "host.docker.internal"
 rpc_port = ${BTC_CONTROLLER_RPC_PORT}
 peer_port = ${BTC_P2P_PORT}
 

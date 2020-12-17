@@ -4,7 +4,7 @@ block_time = 120000
 miner_private_key = "92N23LxafaL2rJT19pFh4fn9bRvySCzktAsyejNoNL9U1mkk1qh"
 miner_address = "mx2uds6sgnn9znABQ6iDSSmXY9K5D4SHF9"
 faucet_address = "my5G8TSCYKARY6VLQ7e2xGo2qGzPj4Xe8S"
-genesis_timestamp = 1590779006 # 1608141466
+genesis_timestamp = 1590779006 # 1608059617
 bitcoind_rpc_host = "mocknet_bitcoin.mocknet:18443"
 
 bitcoind_rpc_user = "blockstack"
