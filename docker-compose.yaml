@@ -9,28 +9,28 @@ services:
     command: sh -c "./setup.sh"
     networks:
       - mocknet
-  bitcoin:
-    image: ${BTC_IMAGE}
-    container_name: ${BTC_NAME}
-    restart: on-failure
-    # cpus: ${BTC_CPU}
-    # mem_reservation: ${BTC_MEM}
-    volumes:
-      - ${BTC_CONFIG}:/etc/bitcoin/bitcoin.conf
-      - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
-    ports:
-      - ${BTC_RPC_PORT_LOCAL}:${BTC_RPC_PORT}
-      - ${BTC_P2P_PORT_LOCAL}:${BTC_P2P_PORT}
-    environment:
-      - DYNAMIC_GENESIS_TIMESTAMP=1
-    expose:
-      - ${BTC_RPC_PORT_LOCAL}
-      - ${BTC_P2P_PORT_LOCAL}
-    networks:
-      - mocknet
-    depends_on:
-      - bootstrap
-    command: /docker-entrypoint.sh
+  # bitcoin:
+  #   image: ${BTC_IMAGE}
+  #   container_name: ${BTC_NAME}
+  #   restart: on-failure
+  #   # cpus: ${BTC_CPU}
+  #   # mem_reservation: ${BTC_MEM}
+  #   volumes:
+  #     - ${BTC_CONFIG}:/etc/bitcoin/bitcoin.conf
+  #     - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
+  #   ports:
+  #     - ${BTC_RPC_PORT_LOCAL}:${BTC_RPC_PORT}
+  #     - ${BTC_P2P_PORT_LOCAL}:${BTC_P2P_PORT}
+  #   environment:
+  #     - DYNAMIC_GENESIS_TIMESTAMP=1
+  #   expose:
+  #     - ${BTC_RPC_PORT_LOCAL}
+  #     - ${BTC_P2P_PORT_LOCAL}
+  #   networks:
+  #     - mocknet
+  #   depends_on:
+  #     - bootstrap
+  #   command: /docker-entrypoint.sh
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
@@ -67,7 +67,7 @@ services:
       - mocknet
     depends_on:
       - bootstrap
-      - bitcoin
+      # - bitcoin
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}
