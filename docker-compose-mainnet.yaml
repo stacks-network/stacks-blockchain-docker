@@ -6,7 +6,7 @@ services:
     working_dir: /srv
     volumes:
       - ./:/srv
-    command: sh -c "./setup.sh"
+    command: sh -c "./setup-mainnet.sh"
     networks:
       - mainnet
   # bitcoin:
