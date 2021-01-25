@@ -2,13 +2,13 @@ version: "2"
 services:
   bootstrap:
     image: bhgedigital/envsubst
-    container_name: mainnet_bootstrap
+    container_name: stx-network-01_bootstrap
     working_dir: /srv
     volumes:
       - ./:/srv
     command: sh -c "./setup.sh"
     networks:
-      - mainnet
+      - stx-network-01
   # bitcoin:
   #   image: ${BTC_IMAGE}
   #   container_name: ${BTC_NAME}
@@ -27,7 +27,7 @@ services:
   #     - ${BTC_RPC_PORT_LOCAL}
   #     - ${BTC_P2P_PORT_LOCAL}
   #   networks:
-  #     - mainnet
+  #     - stx-network-01
   #   depends_on:
   #     - bootstrap
   #   command: /docker-entrypoint.sh
@@ -46,7 +46,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
-      - mainnet
+      - stx-network-01
     depends_on:
       - bootstrap
   # miner:
@@ -64,7 +64,7 @@ services:
   #     - ${STACKS_MINER_RPC_PORT}
   #     - ${STACKS_MINER_P2P_PORT}
   #   networks:
-  #     - mainnet
+  #     - stx-network-01
   #   depends_on:
   #     - bootstrap
   #     # - bitcoin
@@ -81,7 +81,7 @@ services:
       - ${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT}
     networks:
-      - mainnet
+      - stx-network-01
     depends_on:
       # - miner
       - api
@@ -101,7 +101,7 @@ services:
     environment:
       - NODE_ENV=${API_NODE_ENV}
       - GIT_TAG=${API_GIT_TAG}
-      - PG_HOST=${POSTGRES_NAME}.mainnet
+      - PG_HOST=${POSTGRES_NAME}.stx-network-01
       - PG_PORT=${POSTGRES_PORT_LOCAL}
       - PG_USER=${API_PG_USER}
       - PG_PASSWORD=${POSTGRES_PASSWORD}
@@ -112,15 +112,15 @@ services:
       - STACKS_BLOCKCHAIN_API_PORT=${API_STACKS_BLOCKCHAIN_API_PORT}
       - STACKS_BLOCKCHAIN_API_HOST=${API_STACKS_BLOCKCHAIN_API_HOST}
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
-      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mainnet
+      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.stx-network-01
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
       - BTC_FAUCET_PK=${BTC_FAUCET_PK}
       - BTC_RPC_PORT=${BTC_RPC_PORT}
-      - BTC_RPC_HOST=http://${BTC_NAME}.mainnet
+      - BTC_RPC_HOST=http://${BTC_NAME}.stx-network-01
       - BTC_RPC_PW=${BTC_PW}
       - BTC_RPC_USER=${BTC_USER}
     networks:
-      - mainnet
+      - stx-network-01
     depends_on:
       - postgres
   # # explorer is disabled. Uncomment to re-enable
@@ -133,14 +133,14 @@ services:
   #   ports:
   #     - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
   #   environment:
-  #   - mainnet_API_SERVER=http://${API_NAME}.mainnet:3999
-  #   - TESTNET_API_SERVER=http://${API_NAME}.mainnet:3999
-  #   - API_SERVER=http://${API_NAME}.mainnet:3999
+  #   - stx-network-01_API_SERVER=http://${API_NAME}.stx-network-01:3999
+  #   - TESTNET_API_SERVER=http://${API_NAME}.stx-network-01:3999
+  #   - API_SERVER=http://${API_NAME}.stx-network-01:3999
   #   networks:
-  #     - mainnet
+  #     - stx-network-01
   #   depends_on:
   #     - api
 networks:
-  mainnet:
+  stx-network-01:
     driver: bridge
-    name: mainnet
+    name: stx-network-01
