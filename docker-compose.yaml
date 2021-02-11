@@ -9,28 +9,6 @@ services:
     command: sh -c "./setup.sh"
     networks:
       - mocknet
-  # bitcoin:
-  #   image: ${BTC_IMAGE}
-  #   container_name: ${BTC_NAME}
-  #   restart: on-failure
-  #   # cpus: ${BTC_CPU}
-  #   # mem_reservation: ${BTC_MEM}
-  #   volumes:
-  #     - ${BTC_CONFIG}:/etc/bitcoin/bitcoin.conf
-  #     - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
-  #   ports:
-  #     - ${BTC_RPC_PORT_LOCAL}:${BTC_RPC_PORT}
-  #     - ${BTC_P2P_PORT_LOCAL}:${BTC_P2P_PORT}
-  #   environment:
-  #     - DYNAMIC_GENESIS_TIMESTAMP=1
-  #   expose:
-  #     - ${BTC_RPC_PORT_LOCAL}
-  #     - ${BTC_P2P_PORT_LOCAL}
-  #   networks:
-  #     - mocknet
-  #   depends_on:
-  #     - bootstrap
-  #   command: /docker-entrypoint.sh
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
@@ -67,7 +45,6 @@ services:
       - mocknet
     depends_on:
       - bootstrap
-      # - bitcoin
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}
@@ -107,6 +84,8 @@ services:
       - PG_PASSWORD=${POSTGRES_PASSWORD}
       - PG_DATABASE=${API_PG_DATABASE}
       - PG_SCHEMA=${API_PG_SCHEMA}
+      - STACKS_CHAIN_ID=${API_STACKS_CHAIN_ID}
+      - V2_POX_MIN_AMOUNT_USTX=${API_V2_POX_MIN_AMOUNT_USTX}
       - STACKS_CORE_EVENT_PORT=${API_STACKS_CORE_EVENT_PORT}
       - STACKS_CORE_EVENT_HOST=${API_STACKS_CORE_EVENT_HOST}
       - STACKS_BLOCKCHAIN_API_PORT=${API_STACKS_BLOCKCHAIN_API_PORT}
@@ -123,23 +102,6 @@ services:
       - mocknet
     depends_on:
       - postgres
-  # # explorer is disabled. Uncomment to re-enable
-  # explorer:
-  #   image: ${EXPLORER_IMAGE}
-  #   container_name: ${EXPLORER_NAME}
-  #   restart: unless-stopped
-  #   cpus: ${EXPLORER_CPU}
-  #   mem_reservation: ${EXPLORER_MEM}
-  #   ports:
-  #     - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
-  #   environment:
-  #   - MOCKNET_API_SERVER=http://${API_NAME}.mocknet:3999
-  #   - TESTNET_API_SERVER=http://${API_NAME}.mocknet:3999
-  #   - API_SERVER=http://${API_NAME}.mocknet:3999
-  #   networks:
-  #     - mocknet
-  #   depends_on:
-  #     - api
 networks:
   mocknet:
     driver: bridge

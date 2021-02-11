@@ -1,24 +1,14 @@
 [node]
-working_dir = "/root/stacks-node/current"
 rpc_bind = "0.0.0.0:${STACKS_MINER_RPC_PORT}"
 p2p_bind = "0.0.0.0:${STACKS_MINER_P2P_PORT}"
 seed = "${STACKS_MINER_SEED}"
 miner = true
+wait_time_for_microblocks = 10000
 
 [burnchain]
 chain = "bitcoin"
 mode = "mocknet"
 commit_anchor_block_within = 5000
-
-# [burnchain]
-# chain = "bitcoin"
-# mode = "${BTC_MODE}"
-# #peer_host = "host.docker.internal" #"${BTC_NAME}.mocknet"
-# #peer_host = "bitcoin.mocknet"
-# peer_host = "${BTC_NAME}.mocknet"
-# rpc_port = ${BTC_CONTROLLER_RPC_PORT}
-# peer_port = ${BTC_P2P_PORT}
-# magic_byte = "X2"
 
 [[ustx_balance]]
 # Private key: b8d99fd45da58038d630d9855d3ca2466e8e0f89d3894c4724f0efc9ff4b51f001
@@ -39,3 +29,11 @@ amount = 100000000
 # Private key: 9aef533e754663a453984b69d36f109be817e9940519cc84979419e2be00864801
 address = "ST31HHVBKYCYQQJ5AQ25ZHA6W2A548ZADDQ6S16GP"
 amount = 100000000
+
+[connection_options]
+read_only_call_limit_write_length = 0
+read_only_call_limit_read_length = 100000
+read_only_call_limit_write_count = 0
+read_only_call_limit_read_count = 30
+read_only_call_limit_runtime = 1000000000
+
