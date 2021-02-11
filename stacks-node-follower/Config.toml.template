@@ -13,15 +13,6 @@ chain = "bitcoin"
 mode = "mocknet"
 commit_anchor_block_within = 5000
 
-# [burnchain]
-# chain = "bitcoin"
-# mode = "${BTC_MODE}"
-# #peer_host = "host.docker.internal" #"${BTC_NAME}.mocknet"
-# peer_host = "${BTC_NAME}.mocknet"
-# rpc_port = ${BTC_CONTROLLER_RPC_PORT}
-# peer_port = ${BTC_P2P_PORT}
-# magic_byte = "X2"
-
 [[ustx_balance]]
 address = "STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6"
 amount = 10000000000000000
@@ -37,3 +28,10 @@ amount = 10000000000000000
 [[ustx_balance]]
 address = "STRYYQQ9M8KAF4NS7WNZQYY59X93XEKR31JP64CP"
 amount = 10000000000000000
+
+[connection_options]
+read_only_call_limit_write_length = 0
+read_only_call_limit_read_length = 100000
+read_only_call_limit_write_count = 0
+read_only_call_limit_read_count = 30
+read_only_call_limit_runtime = 1000000000
