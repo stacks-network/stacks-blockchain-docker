@@ -1,12 +1,11 @@
 [neon]
-rpc_bind = "0.0.0.0:19443"
+rpc_bind = "0.0.0.0:18443"
 block_time = 120000
 miner_private_key = "92N23LxafaL2rJT19pFh4fn9bRvySCzktAsyejNoNL9U1mkk1qh"
 miner_address = "mx2uds6sgnn9znABQ6iDSSmXY9K5D4SHF9"
 faucet_address = "my5G8TSCYKARY6VLQ7e2xGo2qGzPj4Xe8S"
-genesis_timestamp = 1590779006 # 1608224000
-bitcoind_rpc_host = "localhost:19443"
-
+genesis_timestamp = 1590779006
+bitcoind_rpc_host = "bitcoin.dev-stacks.svc.cluster.local:28443"
 bitcoind_rpc_user = "blockstack"
 bitcoind_rpc_pass = "blockstacksystem"
 whitelisted_rpc_calls = [
@@ -16,5 +15,6 @@ whitelisted_rpc_calls = [
     "getrawtransaction",
     "scantxoutset",
     "getrawmempool",
-    "getblockstats"
+    "getblockstats",
+    "getblockhash"
 ]
