@@ -31,6 +31,9 @@ services:
     restart: on-failure
     volumes:
       - ${STACKS_FOLLOWER_CONFIG}:/src/stacks-node/Config.toml
+    ports:
+      - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
+      - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
     expose:
       - ${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT}
