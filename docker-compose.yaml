@@ -13,8 +13,6 @@ services:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
     restart: on-failure
-    # cpus: ${POSTGRES_CPU}
-    # mem_reservation: ${POSTGRES_MEM}
     volumes:
       - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
     ports:
@@ -31,8 +29,6 @@ services:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_MINER_NAME}
     restart: on-failure
-    # cpus: ${STACKS_MINER_CPU}
-    # mem_reservation: ${STACKS_MINER_MEM}
     volumes:
       - ${STACKS_MINER_CONFIG}:/src/stacks-node/Config.toml
     ports:
@@ -50,8 +46,6 @@ services:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_FOLLOWER_NAME}
     restart: on-failure
-    # cpus: ${STACKS_FOLLOWER_CPU}
-    # mem_reservation: ${STACKS_FOLLOWER_MEM}
     volumes:
       - ${STACKS_FOLLOWER_CONFIG}:/src/stacks-node/Config.toml
     expose:
@@ -67,8 +61,6 @@ services:
     image: ${API_IMAGE}
     container_name: ${API_NAME}
     restart: on-failure
-    # cpus: ${API_CPU}
-    # mem_reservation: ${API_MEM}
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}

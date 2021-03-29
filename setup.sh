@@ -1,18 +1,21 @@
 #/bin/sh
 FOLLOWER_CONFIG="./stacks-node-follower/Config.toml"
 MINER_CONFIG="./stacks-node-miner/Config.toml"
-# BTC_CONFIG="./bitcoin/bitcoin.conf"
-# BTC_CONTROLLER_CONFIG="./bitcoin/Config.toml"
-export EPOCH=$(echo `date +%s`) # don't think this works for windows
 echo ""
 if [ ! -f .env ]; then
-  echo ""
-  echo "*********************************"
-  echo "Error:"
-  echo "  File .env is missing"
-  echo "  Try 'git pull' or 'git checkout .env'"
-  echo ""
-  exit 2
+  if [ -f sample.env ]; then
+    echo "*********************************"
+    echo "Copying sample.env -> .env"
+    cp -a sample.env .env
+  else
+    echo ""
+    echo "*********************************"
+    echo "Error:"
+    echo "  File sample.env is missing"
+    echo "  Try 'git pull' or 'git checkout sample.env'"
+    echo ""
+    exit 2
+  fi
 fi
 echo  "Setting local vars from .env file"
 export $(grep -v '^#' .env | xargs)
