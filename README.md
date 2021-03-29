@@ -1,4 +1,4 @@
-# Stacks Mocknet for local development
+# Stacks Mocknet with Docker
 ## Requirements:
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -14,13 +14,18 @@
   git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
-2. Start the Mocknet:
+2. Create/Copy `.env` file
+```bash
+  cp sample.env .env
+```
+
+3. Start the Services:
 
 ```bash
 docker-compose up -d
 ```
 
-3. Stop the Mocknet:
+4. Stop the Services:
 
 ```bash
 docker-compose down
@@ -40,14 +45,12 @@ ex:
 
 ```bash
 POSTGRES_PORT_LOCAL=5432
-EXPLORER_PORT_LOCAL=3000
 ```
 
 Can be adjusted to:
 
 ```bash
 POSTGRES_PORT_LOCAL=5433
-EXPLORER_PORT_LOCAL=3001
 ```
 
 Docker will still use the default ports _internally_ - this modification will only affect how the **host** OS accesses the services.
@@ -58,48 +61,13 @@ For example, to access postgres (using the **new** port `5433`) after running `d
 export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d stacks_node_api
 ```
 
-### System Resources
-
-All sections in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file have specific CPU/MEM values, and can be adjusted to work in your local enviroment.
-
-The variables take the form of `xxxx_CPU` and `xxxx_MEM`.
-
-ex:
-
-```bash
-STACKS_MINER_CPU=0.3
-STACKS_MINER_MEM=128M
-STACKS_FOLLOWER_CPU=0.3
-STACKS_FOLLOWER_MEM=128M
-```
-
-### Bitcoin
-
-By default, we're using the bitcoin node operated by PBC.
-
-You're welcome to to use any bitcoin testnet/regtest node you'd prefer by changing the following variables in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file:
-
-```bash
-BTC_RPC_PORT=18443
-BTC_P2P_PORT=18443
-BTC_HOST=bitcoind.blockstack.org
-BTC_PW=blockstacksystem
-BTC_USER=blockstack
-```
-
-**Note**: There is an important env var related here: `BTC_FAUCET_PK`. This will have to be updated if you use a different btc node. For the server defined above, this is already setup - using a different node would require you to set this up manually.
-
-```bash
-BTC_FAUCET_PK=8b5c692c6583d5dca70102bb4365b23b40aba9b5a3f32404a1d31bc09d855d9b
-```
-
 ### Postgres
 
 Default password is easy to guess, and we do open a port to postgres locally.
 
 This password is defined in the file [./postgres/stacks-node-api.sql](https://github.com/blockstack/stacks-local-dev/blob/master/postgres/stacks-node-api.sql#L1)
 
-If you update this value to something other than `postgres`, you'll have to adjust the value in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file as well, as the mocknet API uses this:
+If you update this value to something other than `postgres`, you'll have to adjust the value in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file as well, as the API uses this:
 
 ```bash
 POSTGRES_PASSWORD=postgres
@@ -135,57 +103,23 @@ You can also run the following at anytime to ensure the local images are up to d
 docker-compose pull
 ```
 
-### Disable Mocknet explorer
-
-Mocknet explorer is set to start by default.
-
-However, if you'd prefer to not run this service you can easily disable it.
-The section of the [`docker-compose.yaml`](https://github.com/blockstack/stacks-local-dev/blob/master/docker-compose.yaml) file looks like this:
-
-```bash
-  explorer:
-    image: ${EXPLORER_IMAGE}
-    container_name: ${EXPLORER_NAME}
-    restart: unless-stopped
-    cpus: ${EXPLORER_CPU}
-    mem_reservation: ${EXPLORER_MEM}
-    ports:
-      - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
-    environment:
-      - MOCKNET_API_SERVER=${EXPLORER_MOCKNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
-      - TESTNET_API_SERVER=${EXPLORER_TESTNET_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
-      - API_SERVER=${EXPLORER_API_SERVER}:${API_STACKS_BLOCKCHAIN_API_PORT}
-      - NODE_ENV=${EXPLORER_NODE_ENV}
-    networks:
-      - mocknet
-    depends_on:
-      - api
-```
-
-To disable this service, simply comment the section with `#`
-
-i.e.
-```bash
-#  explorer:
-#    image: ${EXPLORER_IMAGE}
-#    container_name: ${EXPLORER_NAME}
-...
-```
-
 ### Services Running in Mocknet
 **docker-compose Mocknet service names**:
+=======
+### Services Running in Mocknet
+**docker-compose Mocknet service names**:
+>>>>>>> master
 - miner
 - follower
 - api
 - postgres
-- explorer
 
 **Docker container names**:
 - mocknet_stacks-node-miner
 - mocknet_stacks-node-follower
 - mocknet_stacks-node-api
 - mocknet_postgres
-- mocknet_explorer
+
 
 #### Starting Mocknet Services
 
@@ -264,11 +198,6 @@ curl localhost:3999/v2/info | jq
 ```bash
 export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
 ```
-
-**explorer**:
-
-- Port `3000` is exposed to `localhost`
-- Open a browser to [http://localhost:3000](http://localhost:3000)
 
 ## Workarounds to potential issues
 

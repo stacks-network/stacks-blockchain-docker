@@ -13,8 +13,6 @@ services:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
     restart: on-failure
-    # cpus: ${POSTGRES_CPU}
-    # mem_reservation: ${POSTGRES_MEM}
     volumes:
       - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
     ports:
@@ -31,8 +29,6 @@ services:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_FOLLOWER_NAME}
     restart: on-failure
-    # cpus: ${STACKS_FOLLOWER_CPU}
-    # mem_reservation: ${STACKS_FOLLOWER_MEM}
     volumes:
       - ${STACKS_FOLLOWER_CONFIG}:/src/stacks-node/Config.toml
     expose:
@@ -47,8 +43,6 @@ services:
     image: ${API_IMAGE}
     container_name: ${API_NAME}
     restart: on-failure
-    # cpus: ${API_CPU}
-    # mem_reservation: ${API_MEM}
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
@@ -73,11 +67,6 @@ services:
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
       - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mocknet
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
-      - BTC_FAUCET_PK=${BTC_FAUCET_PK}
-      - BTC_RPC_PORT=${BTC_RPC_PORT}
-      - BTC_RPC_HOST=http://${BTC_NAME}.mocknet
-      - BTC_RPC_PW=${BTC_PW}
-      - BTC_RPC_USER=${BTC_USER}
     networks:
       - mocknet
     depends_on:
