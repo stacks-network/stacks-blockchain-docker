@@ -103,18 +103,29 @@ You can also run the following at anytime to ensure the local images are up to d
 docker-compose pull
 ```
 
+### Services Running in Mocknet
+**docker-compose Mocknet service names**:
+=======
 ### Services Running in Mainnet
 **docker-compose Mainnet service names**:
+>>>>>>> master
 - miner
 - follower
 - api
 - postgres
 
 **Docker container names**:
+<<<<<<< HEAD
+- mocknet_stacks-node-miner
+- mocknet_stacks-node-follower
+- mocknet_stacks-node-api
+- mocknet_postgres
+=======
 - mainnet_stacks-node-miner
 - mainnet_stacks-node-follower
 - mainnet_stacks-node-api
 - mainnet_postgres
+>>>>>>> master
 
 #### Starting Mainnet Services
 

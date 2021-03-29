@@ -1,9 +1,6 @@
 #/bin/sh
 FOLLOWER_CONFIG="./stacks-node-follower/Config.toml"
 MINER_CONFIG="./stacks-node-miner/Config.toml"
-# BTC_CONFIG="./bitcoin/bitcoin.conf"
-# BTC_CONTROLLER_CONFIG="./bitcoin/Config.toml"
-export EPOCH=$(echo `date +%s`) # don't think this works for windows
 echo ""
 if [ ! -f .env ]; then
   if [ -f sample.env ]; then
