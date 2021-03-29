@@ -25,23 +25,6 @@ services:
       - mocknet
     depends_on:
       - bootstrap
-  miner:
-    image: ${STACKS_IMAGE}
-    container_name: ${STACKS_MINER_NAME}
-    restart: on-failure
-    volumes:
-      - ${STACKS_MINER_CONFIG}:/src/stacks-node/Config.toml
-    ports:
-      - ${STACKS_MINER_RPC_PORT_LOCAL}:${STACKS_MINER_RPC_PORT}
-      - ${STACKS_MINER_P2P_PORT_LOCAL}:${STACKS_MINER_P2P_PORT}
-    expose:
-      - ${STACKS_MINER_RPC_PORT}
-      - ${STACKS_MINER_P2P_PORT}
-    networks:
-      - mocknet
-    depends_on:
-      - bootstrap
-    command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_FOLLOWER_NAME}
@@ -54,7 +37,6 @@ services:
     networks:
       - mocknet
     depends_on:
-      - miner
       - api
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   api:
