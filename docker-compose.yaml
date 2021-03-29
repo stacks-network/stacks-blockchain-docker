@@ -9,34 +9,10 @@ services:
     command: sh -c "./setup.sh"
     networks:
       - mainnet
-  # bitcoin:
-  #   image: ${BTC_IMAGE}
-  #   container_name: ${BTC_NAME}
-  #   restart: on-failure
-  #   # cpus: ${BTC_CPU}
-  #   # mem_reservation: ${BTC_MEM}
-  #   volumes:
-  #     - ${BTC_CONFIG}:/etc/bitcoin/bitcoin.conf
-  #     - ${BTC_CONTROLLER_CONFIG}:/etc/bitcoin-controller/Config.toml
-  #   ports:
-  #     - ${BTC_RPC_PORT_LOCAL}:${BTC_RPC_PORT}
-  #     - ${BTC_P2P_PORT_LOCAL}:${BTC_P2P_PORT}
-  #   environment:
-  #     - DYNAMIC_GENESIS_TIMESTAMP=1
-  #   expose:
-  #     - ${BTC_RPC_PORT_LOCAL}
-  #     - ${BTC_P2P_PORT_LOCAL}
-  #   networks:
-  #     - mainnet
-  #   depends_on:
-  #     - bootstrap
-  #   command: /docker-entrypoint.sh
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
     restart: on-failure
-    # cpus: ${POSTGRES_CPU}
-    # mem_reservation: ${POSTGRES_MEM}
     volumes:
       - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
     ports:
@@ -49,49 +25,27 @@ services:
       - mainnet
     depends_on:
       - bootstrap
-  # miner:
-  #   image: ${STACKS_IMAGE}
-  #   container_name: ${STACKS_MINER_NAME}
-  #   restart: on-failure
-  #   # cpus: ${STACKS_MINER_CPU}
-  #   # mem_reservation: ${STACKS_MINER_MEM}
-  #   volumes:
-  #     - ${STACKS_MINER_CONFIG}:/src/stacks-node/Config.toml
-  #   ports:
-  #     - ${STACKS_MINER_RPC_PORT_LOCAL}:${STACKS_MINER_RPC_PORT}
-  #     - ${STACKS_MINER_P2P_PORT_LOCAL}:${STACKS_MINER_P2P_PORT}
-  #   expose:
-  #     - ${STACKS_MINER_RPC_PORT}
-  #     - ${STACKS_MINER_P2P_PORT}
-  #   networks:
-  #     - mainnet
-  #   depends_on:
-  #     - bootstrap
-  #     # - bitcoin
-  #   command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   follower:
     image: ${STACKS_IMAGE}
     container_name: ${STACKS_FOLLOWER_NAME}
     restart: on-failure
-    # cpus: ${STACKS_FOLLOWER_CPU}
-    # mem_reservation: ${STACKS_FOLLOWER_MEM}
     volumes:
       - ${STACKS_FOLLOWER_CONFIG}:/src/stacks-node/Config.toml
+    ports:
+      - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
+      - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
     expose:
       - ${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT}
     networks:
       - mainnet
     depends_on:
-      # - miner
       - api
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   api:
     image: ${API_IMAGE}
     container_name: ${API_NAME}
     restart: on-failure
-    # cpus: ${API_CPU}
-    # mem_reservation: ${API_MEM}
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
@@ -116,32 +70,10 @@ services:
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
       - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mainnet
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
-      - BTC_FAUCET_PK=${BTC_FAUCET_PK}
-      - BTC_RPC_PORT=${BTC_RPC_PORT}
-      - BTC_RPC_HOST=http://${BTC_NAME}.mainnet
-      - BTC_RPC_PW=${BTC_PW}
-      - BTC_RPC_USER=${BTC_USER}
     networks:
       - mainnet
     depends_on:
       - postgres
-  # # explorer is disabled. Uncomment to re-enable
-  # explorer:
-  #   image: ${EXPLORER_IMAGE}
-  #   container_name: ${EXPLORER_NAME}
-  #   restart: unless-stopped
-  #   cpus: ${EXPLORER_CPU}
-  #   mem_reservation: ${EXPLORER_MEM}
-  #   ports:
-  #     - ${EXPLORER_PORT_LOCAL}:${EXPLORER_PORT}
-  #   environment:
-  #   - mainnet_API_SERVER=http://${API_NAME}.mainnet:3999
-  #   - TESTNET_API_SERVER=http://${API_NAME}.mainnet:3999
-  #   - API_SERVER=http://${API_NAME}.mainnet:3999
-  #   networks:
-  #     - mainnet
-  #   depends_on:
-  #     - api
 networks:
   mainnet:
     driver: bridge
