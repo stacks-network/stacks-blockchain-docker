@@ -1,4 +1,4 @@
-# Stacks Mainnet with Docker
+# Stacks Mocknet with Docker
 ## Requirements:
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -95,7 +95,7 @@ sudo chmod 755 $DESTINATION
 
 ### Ensure all images are up to date
 
-Running the mainnet explicitly via `docker-compose up/down` should also update the images used.
+Running the mocknet explicitly via `docker-compose up/down` should also update the images used.
 
 You can also run the following at anytime to ensure the local images are up to date:
 
@@ -106,8 +106,8 @@ docker-compose pull
 ### Services Running in Mocknet
 **docker-compose Mocknet service names**:
 =======
-### Services Running in Mainnet
-**docker-compose Mainnet service names**:
+### Services Running in Mocknet
+**docker-compose Mocknet service names**:
 >>>>>>> master
 - miner
 - follower
@@ -115,19 +115,13 @@ docker-compose pull
 - postgres
 
 **Docker container names**:
-<<<<<<< HEAD
 - mocknet_stacks-node-miner
 - mocknet_stacks-node-follower
 - mocknet_stacks-node-api
 - mocknet_postgres
-=======
-- mainnet_stacks-node-miner
-- mainnet_stacks-node-follower
-- mainnet_stacks-node-api
-- mainnet_postgres
->>>>>>> master
 
-#### Starting Mainnet Services
+
+#### Starting Mocknet Services
 
 1. Start all services:
 
@@ -141,7 +135,7 @@ docker-compose up -d
 docker-compose start <compose service>
 ```
 
-#### Stopping Mainnet Services
+#### Stopping Mocknet Services
 
 1. Stop all services:
 
@@ -161,7 +155,7 @@ docker-compose stop <compose service>
 docker-compose restart <compose service>
 ```
 
-#### Retrieving Mainnet logs
+#### Retrieving Mocknet logs
 
 1. Tail logs with docker-compose:
 
@@ -187,7 +181,7 @@ curl localhost:20443/v2/info | jq
 
 **stacks-node-follower**:
 
-- Ports `20443-20444` are **only** exposed to the `mainnet` docker network.
+- Ports `20443-20444` are **only** exposed to the `mocknet` docker network.
 
 **stacks-node-api**:
 
