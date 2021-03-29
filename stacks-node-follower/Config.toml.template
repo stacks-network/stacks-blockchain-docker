@@ -1,7 +1,6 @@
 [node]
 rpc_bind = "0.0.0.0:${STACKS_FOLLOWER_RPC_PORT}"
 p2p_bind = "0.0.0.0:${STACKS_FOLLOWER_P2P_PORT}"
-bootstrap_node = "${STACKS_FOLLOWER_PUBLIC_KEY}@${STACKS_MINER_NAME}.mocknet:${STACKS_MINER_P2P_PORT}"
 use_test_genesis_chainstate = true
 
 [[events_observer]]
