@@ -1,4 +1,4 @@
-# Stacks Mocknet for local development
+# Stacks Mainnet with Docker
 ## Requirements:
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -14,13 +14,18 @@
   git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
-2. Start the Mocknet:
+2. Create/Copy `.env` file
+```bash
+  cp sample.env .env
+```
+
+3. Start the Services:
 
 ```bash
 docker-compose up -d
 ```
 
-3. Stop the Mocknet:
+4. Stop the Services:
 
 ```bash
 docker-compose down
@@ -56,33 +61,13 @@ For example, to access postgres (using the **new** port `5433`) after running `d
 export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d stacks_node_api
 ```
 
-### Bitcoin
-
-By default, we're using the bitcoin node operated by PBC.
-
-You're welcome to to use any bitcoin testnet/regtest node you'd prefer by changing the following variables in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file:
-
-```bash
-BTC_RPC_PORT=18443
-BTC_P2P_PORT=18443
-BTC_HOST=bitcoind.blockstack.org
-BTC_PW=blockstacksystem
-BTC_USER=blockstack
-```
-
-**Note**: There is an important env var related here: `BTC_FAUCET_PK`. This will have to be updated if you use a different btc node. For the server defined above, this is already setup - using a different node would require you to set this up manually.
-
-```bash
-BTC_FAUCET_PK=8b5c692c6583d5dca70102bb4365b23b40aba9b5a3f32404a1d31bc09d855d9b
-```
-
 ### Postgres
 
 Default password is easy to guess, and we do open a port to postgres locally.
 
 This password is defined in the file [./postgres/stacks-node-api.sql](https://github.com/blockstack/stacks-local-dev/blob/master/postgres/stacks-node-api.sql#L1)
 
-If you update this value to something other than `postgres`, you'll have to adjust the value in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file as well, as the mocknet API uses this:
+If you update this value to something other than `postgres`, you'll have to adjust the value in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file as well, as the API uses this:
 
 ```bash
 POSTGRES_PASSWORD=postgres
@@ -110,7 +95,7 @@ sudo chmod 755 $DESTINATION
 
 ### Ensure all images are up to date
 
-Running the mocknet explicitly via `docker-compose up/down` should also update the images used.
+Running the mainnet explicitly via `docker-compose up/down` should also update the images used.
 
 You can also run the following at anytime to ensure the local images are up to date:
 
@@ -118,21 +103,31 @@ You can also run the following at anytime to ensure the local images are up to d
 docker-compose pull
 ```
 
-
 ### Services Running in Mocknet
 **docker-compose Mocknet service names**:
+=======
+### Services Running in Mainnet
+**docker-compose Mainnet service names**:
+>>>>>>> master
 - miner
 - follower
 - api
 - postgres
 
 **Docker container names**:
+<<<<<<< HEAD
 - mocknet_stacks-node-miner
 - mocknet_stacks-node-follower
 - mocknet_stacks-node-api
 - mocknet_postgres
+=======
+- mainnet_stacks-node-miner
+- mainnet_stacks-node-follower
+- mainnet_stacks-node-api
+- mainnet_postgres
+>>>>>>> master
 
-#### Starting Mocknet Services
+#### Starting Mainnet Services
 
 1. Start all services:
 
@@ -146,7 +141,7 @@ docker-compose up -d
 docker-compose start <compose service>
 ```
 
-#### Stopping Mocknet Services
+#### Stopping Mainnet Services
 
 1. Stop all services:
 
@@ -166,7 +161,7 @@ docker-compose stop <compose service>
 docker-compose restart <compose service>
 ```
 
-#### Retrieving Mocknet logs
+#### Retrieving Mainnet logs
 
 1. Tail logs with docker-compose:
 
@@ -192,7 +187,7 @@ curl localhost:20443/v2/info | jq
 
 **stacks-node-follower**:
 
-- Ports `20443-20444` are **only** exposed to the `mocknet` docker network.
+- Ports `20443-20444` are **only** exposed to the `mainnet` docker network.
 
 **stacks-node-api**:
 
