@@ -1,4 +1,4 @@
-create role sidecar_rw with LOGIN ENCRYPTED PASSWORD 'postgres';
+CREATE ROLE sidecar_rw LOGIN PASSWORD 'password';
 --
 -- sidecar db setup
 --
