@@ -30,7 +30,7 @@ services:
     container_name: ${STACKS_FOLLOWER_NAME}
     restart: on-failure
     volumes:
-      - ${STACKS_FOLLOWER_CONFIG}:/src/stacks-node/Config.toml
+      - ${STACKS_FOLLOWER_CONFIG_DIRECTORY}:/src/stacks-node
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
