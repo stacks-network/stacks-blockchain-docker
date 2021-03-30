@@ -1,4 +1,4 @@
-#/bin/sh
+#!/bin/sh
 FOLLOWER_CONFIG="./stacks-node-follower/Config.toml"
 MINER_CONFIG="./stacks-node-miner/Config.toml"
 echo ""
