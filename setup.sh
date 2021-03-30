@@ -39,30 +39,9 @@ else
   exit 3
 fi
 
-# if [ -f ${BTC_CONFIG}.template -a -f ${BTC_CONTROLLER_CONFIG}.template ];then
-#   echo "Updating Bitcoin Configs with values from files: .env"
-#   envsubst "`env | awk -F = '{printf \" $%s\", $1}'`" \
-#     < ${BTC_CONFIG}.template \
-#     > ${BTC_CONFIG}
-#   envsubst "`env | awk -F = '{printf \" $%s\", $1}'`" \
-#     < ${BTC_CONTROLLER_CONFIG}.template \
-#     > ${BTC_CONTROLLER_CONFIG}
-# else
-#   echo ""
-#   echo "*********************************"
-#   echo "Error: missing template file(s)"
-#   echo "  Try 'git pull'"
-#   echo "  or:"
-#   echo "    'git checkout bitcoin/Config.toml.template; git checkout bitcoin/bitcoin.conf.template'"
-#   echo ""
-#   exit 3
-# fi
-
 echo ""
 echo "Stacks V2 Configs created:"
 echo "  - ${FOLLOWER_CONFIG}"
 echo "  - ${MINER_CONFIG}"
-# echo "  - ${BTC_CONFIG}"
-# echo "  - ${BTC_CONTROLLER_CONFIG}"
 echo ""
 exit 0
