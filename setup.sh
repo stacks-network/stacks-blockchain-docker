@@ -1,6 +1,5 @@
 #!/bin/sh
 FOLLOWER_CONFIG="./stacks-node-follower/Config.toml"
-MINER_CONFIG="./stacks-node-miner/Config.toml"
 echo ""
 if [ ! -f .env ]; then
   if [ -f sample.env ]; then
@@ -20,21 +19,18 @@ fi
 echo  "Setting local vars from .env file"
 export $(grep -v '^#' .env | xargs)
 
-if [ -f ${FOLLOWER_CONFIG}.template -a -f ${MINER_CONFIG}.template ];then
+if [ -f ${FOLLOWER_CONFIG}.template ];then
   echo "Updating Stacks Configs with values from files: .env"
   envsubst "`env | awk -F = '{printf \" $%s\", $1}'`" \
     < ${FOLLOWER_CONFIG}.template \
     > ${FOLLOWER_CONFIG}
-  envsubst "`env | awk -F = '{printf \" $%s\", $1}'`" \
-    < ${MINER_CONFIG}.template \
-    > ${MINER_CONFIG}
 else
   echo ""
   echo "*********************************"
   echo "Error: missing template file(s)"
   echo "  Try 'git pull'"
   echo "  or:"
-  echo "    'git checkout stacks-node-follower/Config.toml.template; git checkout stacks-node-miner/Config.toml.template'"
+  echo "    'git checkout stacks-node-follower/Config.toml.template'"
   echo ""
   exit 3
 fi
@@ -42,6 +38,5 @@ fi
 echo ""
 echo "Stacks V2 Configs created:"
 echo "  - ${FOLLOWER_CONFIG}"
-echo "  - ${MINER_CONFIG}"
 echo ""
 exit 0

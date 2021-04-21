@@ -30,3 +30,4 @@ stacks-node-miner/Config.toml
 stacks-node-follower/Config.toml
 bitcoin/bitcoin.conf
 .env
+data/
