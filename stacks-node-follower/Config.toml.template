@@ -6,7 +6,7 @@ bootstrap_node = "${STACKS_FOLLOWER_BOOTSTRAP_NODE}"
 wait_time_for_microblocks = 10000
 
 [[events_observer]]
-endpoint = "${API_NAME}.${STACKS_NETWORK}:${API_STACKS_CORE_EVENT_PORT}"
+endpoint = "${API_NAME}.${COMPOSE_PROJECT_NAME}:${API_STACKS_CORE_EVENT_PORT}"
 retry_count = 255
 events_keys = ["*"]
 

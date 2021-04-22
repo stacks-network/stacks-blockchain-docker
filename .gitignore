@@ -31,3 +31,6 @@ stacks-node-follower/Config.toml
 bitcoin/bitcoin.conf
 .env
 data/
+postgres-data/
+bns-data/
+export-data.tar.gz
