@@ -3,12 +3,12 @@ echo ""
 echo "*********************************"
 echo "Setting up BNS Data"
 echo ""
-echo "  Checking for existing file ${API_BNS_DATA}/export-data.tar.gz"
-if [ ! -f ${API_BNS_DATA}/export-data.tar.gz ]; then
-  echo "    - Retrieving V1 BNS data as ${API_BNS_DATA}/export-data.tar.gz"
-  wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ${API_BNS_DATA}/export-data.tar.gz
+echo "  Checking for existing file ${BNS_IMPORT_DIR}/export-data.tar.gz"
+if [ ! -f ${BNS_IMPORT_DIR}/export-data.tar.gz ]; then
+  echo "    - Retrieving V1 BNS data as ${BNS_IMPORT_DIR}/export-data.tar.gz"
+  wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ${BNS_IMPORT_DIR}/export-data.tar.gz
   if [ $? -ne 0 ]; then
-    echo "      - Failed to download https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -> ${API_BNS_DATA}/export-data.tar.gz"
+    echo "      - Failed to download https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -> ${BNS_IMPORT_DIR}/export-data.tar.gz"
     exit 1
   fi
 fi
@@ -20,21 +20,26 @@ BNS_FILES="
   subdomains.csv
 "
 for FILE in $BNS_FILES; do
-  if [ ! -f ${API_BNS_DATA}/$FILE ]; then
-    echo "  Extracting Missing BNS text file: ${API_BNS_DATA}/$FILE"
-    tar -xzf ${API_BNS_DATA}/export-data.tar.gz -C ${API_BNS_DATA}/ ${FILE}
+  if [ ! -f ${BNS_IMPORT_DIR}/$FILE ]; then
+    echo "  Extracting Missing BNS text file: ${BNS_IMPORT_DIR}/$FILE"
+    tar -xzf ${BNS_IMPORT_DIR}/export-data.tar.gz -C ${BNS_IMPORT_DIR}/ ${FILE}
     if [ $? -ne 0 ]; then
       echo "    - Failed to extract ${FILE}"
     fi
+  else
+    echo "  Using Existing BNS text file: ${BNS_IMPORT_DIR}/$FILE"
   fi
-  if [ ! -f ${API_BNS_DATA}/${FILE}.sha256 ]; then
-    echo "  Extracting Missing BNS sha256 file: ${API_BNS_DATA}/${FILE}.sha256"
-    tar -xzf ${API_BNS_DATA}/export-data.tar.gz -C ${API_BNS_DATA}/ ${FILE}.sha256
+  if [ ! -f ${BNS_IMPORT_DIR}/${FILE}.sha256 ]; then
+    echo "  Extracting Missing BNS sha256 file: ${BNS_IMPORT_DIR}/${FILE}.sha256"
+    tar -xzf ${BNS_IMPORT_DIR}/export-data.tar.gz -C ${BNS_IMPORT_DIR}/ ${FILE}.sha256
     if [ $? -ne 0 ]; then
       echo "    - Failed to extract ${FILE}"
     fi
+  else
+    echo "  Using Existing BNS sha256 file: ${BNS_IMPORT_DIR}/$FILE"
   fi
 done
 echo "Exiting"
 exit 0
+
 
