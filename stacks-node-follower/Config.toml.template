@@ -1,16 +1,18 @@
 [node]
+working_dir = "${STACKS_WORKING_DIR}"
 rpc_bind = "0.0.0.0:${STACKS_FOLLOWER_RPC_PORT}"
 p2p_bind = "0.0.0.0:${STACKS_FOLLOWER_P2P_PORT}"
+wait_time_for_microblocks = 10000
 use_test_genesis_chainstate = true
 
 [[events_observer]]
-endpoint = "${API_NAME}.mocknet:${API_STACKS_CORE_EVENT_PORT}"
+endpoint = "${API_NAME}.${COMPOSE_PROJECT_NAME}:${API_STACKS_CORE_EVENT_PORT}"
 retry_count = 255
 events_keys = ["*"]
 
 [burnchain]
 chain = "bitcoin"
-mode = "mocknet"
+mode = "${COMPOSE_PROJECT_NAME}"
 commit_anchor_block_within = 5000
 
 [[ustx_balance]]

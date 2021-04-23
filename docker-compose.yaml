@@ -1,20 +1,21 @@
 version: "2"
 services:
   bootstrap:
-    image: bhgedigital/envsubst
-    container_name: mocknet_bootstrap
+    image: ${ENVSUBST_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME}_bootstrap
     working_dir: /srv
     volumes:
       - ./:/srv
     command: sh -c "./setup.sh"
     networks:
-      - mocknet
+      - ${COMPOSE_PROJECT_NAME}
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
     restart: on-failure
     volumes:
       - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - ${POSTGRES_PORT_LOCAL}:${POSTGRES_PORT}
     expose:
@@ -22,7 +23,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
-      - mocknet
+      - ${COMPOSE_PROJECT_NAME}
     depends_on:
       - bootstrap
   follower:
@@ -31,6 +32,7 @@ services:
     restart: on-failure
     volumes:
       - ${STACKS_FOLLOWER_CONFIG_DIRECTORY}:/src/stacks-node
+      - ${STACKS_WORKING_DIR_LOCAL}:${STACKS_WORKING_DIR}
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
@@ -38,14 +40,17 @@ services:
       - ${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT}
     networks:
-      - mocknet
+      - ${COMPOSE_PROJECT_NAME}
     depends_on:
       - api
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   api:
     image: ${API_IMAGE}
     container_name: ${API_NAME}
-    restart: on-failure
+    restart: always
+    volumes:
+      - ./bns-data:/bns-data
+      - ./setup-bns.sh:/setup-bns.sh
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
@@ -55,7 +60,7 @@ services:
     environment:
       - NODE_ENV=${API_NODE_ENV}
       - GIT_TAG=${API_GIT_TAG}
-      - PG_HOST=${POSTGRES_NAME}.mocknet
+      - PG_HOST=${POSTGRES_NAME}.${COMPOSE_PROJECT_NAME}
       - PG_PORT=${POSTGRES_PORT_LOCAL}
       - PG_USER=${API_PG_USER}
       - PG_PASSWORD=${POSTGRES_PASSWORD}
@@ -68,13 +73,16 @@ services:
       - STACKS_BLOCKCHAIN_API_PORT=${API_STACKS_BLOCKCHAIN_API_PORT}
       - STACKS_BLOCKCHAIN_API_HOST=${API_STACKS_BLOCKCHAIN_API_HOST}
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
-      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mocknet
+      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.${COMPOSE_PROJECT_NAME}
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
+      - BNS_IMPORT_DIR=/bns-data
+    command: sh -c "/setup-bns.sh; npm run start"
     networks:
-      - mocknet
+      - ${COMPOSE_PROJECT_NAME}
     depends_on:
       - postgres
 networks:
   mocknet:
     driver: bridge
-    name: mocknet
+    name: ${COMPOSE_PROJECT_NAME}
+#
