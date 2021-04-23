@@ -14,7 +14,7 @@ services:
     container_name: ${POSTGRES_NAME}
     restart: on-failure
     volumes:
-      - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
+      - ${POSTGRES_SCRIPT}:/docker-entrypoint-initdb.d/stacks-node-api.sql
       - ${POSTGRES_DATA_LOCAL}:${POSTGRES_DATA}
     ports:
       - ${POSTGRES_PORT_LOCAL}:${POSTGRES_PORT}
