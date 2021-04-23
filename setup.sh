@@ -25,11 +25,11 @@ echo "Setting up local filesystem"
 echo ""
 if [ ! -d ${API_BNS_DATA_LOCAL} ]; then
   echo "  Creating BNS DATA dir ${API_BNS_DATA_LOCAL}"
-  mkdir ${API_BNS_DATA_LOCAL}
+  mkdir -p ${API_BNS_DATA_LOCAL}
 fi
 if [ ! -d ${POSTGRES_DATA_LOCAL} ]; then
   echo "  Creating Postgres data dir ${POSTGRES_DATA_LOCAL}"
-  mkdir ${POSTGRES_DATA_LOCAL}
+  mkdir -p ${POSTGRES_DATA_LOCAL}
 fi
 
 if [ -f ${STACKS_FOLLOWER_CONFIG_TEMPLATE} -a -f ${STACKS_FOLLOWER_CONFIG_TEMPLATE} ];then
