@@ -1,5 +1,5 @@
 [node]
-working_dir = "${STACKS_WORKING_DIR}"
+working_dir = "${STACKS_FOLLOWER_WORKING_DIR}"
 rpc_bind = "0.0.0.0:${STACKS_FOLLOWER_RPC_PORT}"
 p2p_bind = "0.0.0.0:${STACKS_FOLLOWER_P2P_PORT}"
 bootstrap_node = "${STACKS_FOLLOWER_BOOTSTRAP_NODE}"

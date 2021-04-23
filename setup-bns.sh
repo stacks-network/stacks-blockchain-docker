@@ -3,12 +3,12 @@ echo ""
 echo "*********************************"
 echo "Setting up BNS Data"
 echo ""
-echo "  Checking for existing file export-data.tar.gz"
-if [ ! -f /bns-data/export-data.tar.gz ]; then
-  echo "    - Retrieving V1 BNS data as /bns-data/export-data.tar.gz"
-  wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O /bns-data/export-data.tar.gz
+echo "  Checking for existing file ${API_BNS_DATA}/export-data.tar.gz"
+if [ ! -f ${API_BNS_DATA}/export-data.tar.gz ]; then
+  echo "    - Retrieving V1 BNS data as ${API_BNS_DATA}/export-data.tar.gz"
+  wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ${API_BNS_DATA}/export-data.tar.gz
   if [ $? -ne 0 ]; then
-    echo "      - Failed to download https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -> export-data.tar.gz"
+    echo "      - Failed to download https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -> ${API_BNS_DATA}/export-data.tar.gz"
     exit 1
   fi
 fi
@@ -20,16 +20,16 @@ BNS_FILES="
   subdomains.csv
 "
 for FILE in $BNS_FILES; do
-  if [ ! -f /bns-data/$FILE ]; then
-    echo "  Extracting Missing BNS text file: /bns-data/$FILE"
-    tar -xzf /bns-data/export-data.tar.gz -C /bns-data/ ${FILE}
+  if [ ! -f ${API_BNS_DATA}/$FILE ]; then
+    echo "  Extracting Missing BNS text file: ${API_BNS_DATA}/$FILE"
+    tar -xzf ${API_BNS_DATA}/export-data.tar.gz -C ${API_BNS_DATA}/ ${FILE}
     if [ $? -ne 0 ]; then
       echo "    - Failed to extract ${FILE}"
     fi
   fi
-  if [ ! -f /bns-data/${FILE}.sha256 ]; then
-    echo "  Extracting Missing BNS sha256 file: /bns-data/${FILE}.sha256"
-    tar -xzf /bns-data/export-data.tar.gz -C /bns-data/ ${FILE}.sha256
+  if [ ! -f ${API_BNS_DATA}/${FILE}.sha256 ]; then
+    echo "  Extracting Missing BNS sha256 file: ${API_BNS_DATA}/${FILE}.sha256"
+    tar -xzf ${API_BNS_DATA}/export-data.tar.gz -C ${API_BNS_DATA}/ ${FILE}.sha256
     if [ $? -ne 0 ]; then
       echo "    - Failed to extract ${FILE}"
     fi
