@@ -11,7 +11,7 @@
 1. Clone the repo locally:
 
 ```bash
-  git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
+  git clone -b mainnet --depth 1 https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
 2. Create/Copy `.env` file
@@ -20,10 +20,10 @@
 ```
 
 3. Start the Services:
-
 ```bash
 docker-compose up -d
 ```
+*NOTE*: We are now importing V1 BNS data. What this means is that initially, there will be a longer startup time while the data is downloaded and extracted, then loaded via the API container into postgres. Once this initial load is complete, subsequent restarts will be much faster. Additionally, all data is persistent here - postgres and the stacks-blockchain, so bringing a node up to the tip height should be much faster. 
 
 4. Stop the Services:
 
@@ -33,11 +33,15 @@ docker-compose down
 
 ## Env Vars
 
-All variables used in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file can be modified, but generally most of them should be left as-is.
+All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env) file can be modified, but generally most of them should be left as-is.
+
+## Local Data Dirs
+
+3 Directories will be created on first start that will store persistent data. Deleting this data will result in a full resync of the blockchain, and in the case of `bns-data`, it will have to download and extract the V1 BNS data again. 
 
 ### Locally opened ports
 
-In this section of the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file, the values can be modified to change the ports opened locally by docker.
+In this section of the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env) file, the values can be modified to change the ports opened locally by docker.
 
 Currently, default port values are used - but if you have a running service on any of the defined ports, they can be adjusted to any locally available port.
 
@@ -65,9 +69,7 @@ export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d sta
 
 Default password is easy to guess, and we do open a port to postgres locally.
 
-This password is defined in the file [./postgres/stacks-node-api.sql](https://github.com/blockstack/stacks-local-dev/blob/master/postgres/stacks-node-api.sql#L1)
-
-If you update this value to something other than `postgres`, you'll have to adjust the value in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file as well, as the API uses this:
+This password is defined in the file [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env#L59) 
 
 ```bash
 POSTGRES_PASSWORD=postgres
@@ -94,11 +96,6 @@ sudo chmod 755 $DESTINATION
 ```
 
 ### Ensure all images are up to date
-
-Running the mainnet explicitly via `docker-compose up/down` should also update the images used.
-
-You can also run the following at anytime to ensure the local images are up to date:
-
 ```bash
 docker-compose pull
 ```
@@ -110,9 +107,9 @@ docker-compose pull
 - postgres
 
 **Docker container names**:
-- mainnet_stacks-node-follower
-- mainnet_stacks-node-api
-- mainnet_postgres
+- testnet_stacks-node-follower
+- testnet_stacks-node-api
+- testnet_postgres
 
 #### Starting Mainnet Services
 
@@ -182,7 +179,7 @@ curl localhost:3999/v2/info | jq
 
 **postgres**:
 
-- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env))
+- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env))
 
 ```bash
 export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
@@ -193,7 +190,7 @@ export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d sta
 _Port already in use_:
 
 - If you have a port conflict, typically this means you already have a process using that same port.
-- To resolve, find the port you have in use (i.e. `5432` and edit the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file to use the new port)
+- To resolve, find the port you have in use (i.e. `5432` and edit the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env) file to use the new port)
 
 ```bash
 $ netstat -anl | grep 5432
