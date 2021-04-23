@@ -33,15 +33,15 @@ docker-compose down
 
 ## Bootstrap Container
 
-The first container to start will always be the `mainnet_bootstrap` container. The sole purpose of this container is to run a [script](https://github.com/blockstack/stacks-local-dev/blob/master/setup.sh) to replace the variables in the `.template` files with the values from `.env`
+The first container to start will always be the `mainnet_bootstrap` container. The sole purpose of this container is to run a [script](https://github.com/blockstack/stacks-local-dev/blob/mainnet/setup.sh) to replace the variables in the `.template` files with the values from `.env`
 
 ## API Container
 
-The API Container will run a [script](https://github.com/blockstack/stacks-local-dev/blob/master/setup-bns.sh) before starting it's server. The sole purpose of this is to download (or verify the files exist) V1 BNS data. Once the download/extraction/verification has finished, the `stacks-blockchain-api` server will start up
+The API Container will run a [script](https://github.com/blockstack/stacks-local-dev/blob/mainnet/setup-bns.sh) before starting it's server. The sole purpose of this is to download (or verify the files exist) V1 BNS data. Once the download/extraction/verification has finished, the `stacks-blockchain-api` server will start up
 
 ## Env Vars
 
-All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env) file can be modified, but generally most of them should be left as-is.
+All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env) file can be modified, but generally most of them should be left as-is.
 
 ## Local Data Dirs
 
@@ -49,7 +49,7 @@ All variables used in the [`sample.env`](https://github.com/blockstack/stacks-lo
 
 ### Locally opened ports
 
-In this section of the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env) file, the values can be modified to change the ports opened locally by docker.
+In this section of the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env) file, the values can be modified to change the ports opened locally by docker.
 
 Currently, default port values are used - but if you have a running service on any of the defined ports, they can be adjusted to any locally available port.
 
@@ -115,9 +115,9 @@ docker-compose pull
 - postgres
 
 **Docker container names**:
-- testnet_stacks-node-follower
-- testnet_stacks-node-api
-- testnet_postgres
+- mainnet_stacks-node-follower
+- mainnet_stacks-node-api
+- mainnet_postgres
 
 #### Starting Mainnet Services
 
@@ -187,7 +187,7 @@ curl localhost:3999/v2/info | jq
 
 **postgres**:
 
-- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env))
+- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env))
 
 ```bash
 export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
