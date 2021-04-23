@@ -31,6 +31,14 @@ docker-compose up -d
 docker-compose down
 ```
 
+## Bootstrap Container
+
+The first container to start will always be the `mainnet_bootstrap` container. The sole purpose of this container is to run a [script](https://github.com/blockstack/stacks-local-dev/blob/master/setup.sh) to replace the variables in the `.template` files with the values from `.env`
+
+## API Container
+
+The API Container will run a [script](https://github.com/blockstack/stacks-local-dev/blob/master/setup-bns.sh) before starting it's server. The sole purpose of this is to download (or verify the files exist) V1 BNS data. Once the download/extraction/verification has finished, the `stacks-blockchain-api` server will start up
+
 ## Env Vars
 
 All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env) file can be modified, but generally most of them should be left as-is.
@@ -187,7 +195,7 @@ export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d sta
 
 ## Workarounds to potential issues
 
-_Port already in use_:
+_**Port already in use**_:
 
 - If you have a port conflict, typically this means you already have a process using that same port.
 - To resolve, find the port you have in use (i.e. `5432` and edit the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env) file to use the new port)
@@ -197,6 +205,27 @@ $ netstat -anl | grep 5432
 tcp46      0      0  *.5432                 *.*                    LISTEN
 ```
 
-_Containers not starting (hanging on start)_:
+_**Containers not starting (hanging on start)**_:
 
 - Occasionally, docker can get **stuck** and not allow new containers to start. If this happens, simply restart your docker daemon and try again.
+
+_**BNS Data not imported/incorrect**_:
+- This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files. 
+```bash
+$ wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ./persistent-data/bns-data/export-data.tar.gz
+$ tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns-data/
+```
+
+_**Database Issues**_:
+- For any of the various Postgres issues, it may be easier to simply remove the persistent data dir for postgres. Note that doing so will result in a longer startup time as the data is repopulated. 
+```bash
+$ rm -rf ./persistent-data/postgres
+```
+
+_**Stacks Blockchain Issues**_:
+- For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is re-synced. 
+```bash
+$ rm -rf ./persistent-data/stacks-blockchain
+```
+
+
