@@ -15,7 +15,7 @@ services:
     restart: on-failure
     volumes:
       - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
-      - ./postgres-data:/var/lib/postgresql/data
+      - ${POSTGRES_DATA_LOCAL}:${POSTGRES_DATA}
     ports:
       - ${POSTGRES_PORT_LOCAL}:${POSTGRES_PORT}
     expose:
@@ -32,7 +32,6 @@ services:
     restart: on-failure
     volumes:
       - ${STACKS_FOLLOWER_CONFIG_DIRECTORY}:/src/stacks-node
-      - ${STACKS_WORKING_DIR_LOCAL}:${STACKS_WORKING_DIR}
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
@@ -49,7 +48,7 @@ services:
     container_name: ${API_NAME}
     restart: always
     volumes:
-      - ./bns-data:/bns-data
+      - ${API_BNS_DATA_LOCAL}:${API_BNS_DATA}
       - ./setup-bns.sh:/setup-bns.sh
     ports:
       - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
