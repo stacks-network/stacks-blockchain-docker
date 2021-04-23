@@ -187,7 +187,7 @@ curl localhost:3999/v2/info | jq
 
 **postgres**:
 
-- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/master/sample.env))
+- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/testnet/sample.env))
 
 ```bash
 export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
