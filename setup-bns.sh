@@ -27,7 +27,7 @@ for FILE in $BNS_FILES; do
       echo "    - Failed to extract ${FILE}"
     fi
   else
-    echo "  Using Existing BNS text file: ${BNS_IMPORT_DIR}/$FILE"
+    echo "  Using Existing BNS text file: ${BNS_IMPORT_DIR}/${FILE}"
   fi
   if [ ! -f ${BNS_IMPORT_DIR}/${FILE}.sha256 ]; then
     echo "  Extracting Missing BNS sha256 file: ${BNS_IMPORT_DIR}/${FILE}.sha256"
@@ -36,7 +36,7 @@ for FILE in $BNS_FILES; do
       echo "    - Failed to extract ${FILE}"
     fi
   else
-    echo "  Using Existing BNS sha256 file: ${BNS_IMPORT_DIR}/$FILE"
+    echo "  Using Existing BNS sha256 file: ${BNS_IMPORT_DIR}/${FILE}.sha256"
   fi
 done
 echo "Exiting"
