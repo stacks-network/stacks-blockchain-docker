@@ -56,13 +56,13 @@ Currently, default port values are used - but if you have a running service on a
 ex:
 
 ```bash
-POSTGRES_PORT_LOCAL=5432
+API_STACKS_BLOCKCHAIN_API_PORT_LOCAL=3999
 ```
 
 Can be adjusted to:
 
 ```bash
-POSTGRES_PORT_LOCAL=5433
+API_STACKS_BLOCKCHAIN_API_PORT_LOCAL=3000
 ```
 
 Docker will still use the default ports _internally_ - this modification will only affect how the **host** OS accesses the services.
@@ -185,24 +185,16 @@ curl localhost:20443/v2/info | jq
 curl localhost:3999/v2/info | jq
 ```
 
-**postgres**:
-
-- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env))
-
-```bash
-export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
-```
-
 ## Workarounds to potential issues
 
 _**Port already in use**_:
 
 - If you have a port conflict, typically this means you already have a process using that same port.
-- To resolve, find the port you have in use (i.e. `5432` and edit the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env) file to use the new port)
+- To resolve, find the port you have in use (i.e. `3999` and edit the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env) file to use the new port)
 
 ```bash
-$ netstat -anl | grep 5432
-tcp46      0      0  *.5432                 *.*                    LISTEN
+$ netstat -anl | grep 3999
+tcp46      0      0  *.3999                 *.*                    LISTEN
 ```
 
 _**Containers not starting (hanging on start)**_:
