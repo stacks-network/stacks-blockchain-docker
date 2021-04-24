@@ -16,10 +16,6 @@ services:
     volumes:
       - ${POSTGRES_SCRIPT}:/docker-entrypoint-initdb.d/stacks-node-api.sql
       - ${POSTGRES_DATA_LOCAL}:${POSTGRES_DATA}
-    ports:
-      - ${POSTGRES_PORT_LOCAL}:${POSTGRES_PORT}
-    expose:
-      - ${POSTGRES_PORT}
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
@@ -35,9 +31,6 @@ services:
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
-    expose:
-      - ${STACKS_FOLLOWER_RPC_PORT}
-      - ${STACKS_FOLLOWER_P2P_PORT}
     networks:
       - ${COMPOSE_PROJECT_NAME}
     depends_on:
@@ -51,16 +44,12 @@ services:
       - ${API_BNS_DATA_LOCAL}:${API_BNS_DATA}
       - ./setup-bns.sh:/setup-bns.sh
     ports:
-      - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
-    expose:
-      - ${API_STACKS_CORE_EVENT_PORT}
-      - ${API_STACKS_BLOCKCHAIN_API_PORT}
     environment:
       - NODE_ENV=${API_NODE_ENV}
       - GIT_TAG=${API_GIT_TAG}
       - PG_HOST=${POSTGRES_NAME}.${COMPOSE_PROJECT_NAME}
-      - PG_PORT=${POSTGRES_PORT_LOCAL}
+      - PG_PORT=${POSTGRES_PORT}
       - PG_USER=${API_PG_USER}
       - PG_PASSWORD=${POSTGRES_PASSWORD}
       - PG_DATABASE=${API_PG_DATABASE}
