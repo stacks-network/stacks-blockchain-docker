@@ -15,7 +15,6 @@ services:
     restart: on-failure
     volumes:
       - ${POSTGRES_SCRIPT}:/docker-entrypoint-initdb.d/stacks-node-api.sql
-      - ${POSTGRES_DATA_LOCAL}:${POSTGRES_DATA}
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:

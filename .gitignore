@@ -27,7 +27,7 @@ Session.vim
 *.save
 node_modules/
 stacks-node-follower/Config.toml
-stacks-node-miner/Config.toml
+postgres/stacks-node-api.sql
 bitcoin/bitcoin.conf
 .env
 persistent-data/
