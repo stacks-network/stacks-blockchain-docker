@@ -15,11 +15,12 @@
 ```
 
 2. Create/Copy `.env` file
+*Use a symlink as an alternative to copying: `ln -s sample.env .env`*
 ```bash
   cp sample.env .env
 ```
 
-3. Start the Services:
+1. Start the Services:
 ```bash
 docker-compose up -d
 ```
