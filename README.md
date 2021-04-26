@@ -11,19 +11,20 @@
 1. Clone the repo locally:
 
 ```bash
-  git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
+  git clone -b mocknet --depth 1 https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
 2. Create/Copy `.env` file
+*Use a symlink as an alternative to copying: `ln -s sample.env .env`*
 ```bash
   cp sample.env .env
 ```
 
 3. Start the Services:
-
 ```bash
 docker-compose up -d
 ```
+*NOTE*: We are now importing V1 BNS data. What this means is that initially, there will be a longer startup time while the data is downloaded and extracted, then loaded via the API container into postgres. Once this initial load is complete, subsequent restarts will be much faster. Additionally, all data is persistent here - postgres and the stacks-blockchain, so bringing a node up to the tip height should be much faster. 
 
 4. Stop the Services:
 
@@ -31,26 +32,38 @@ docker-compose up -d
 docker-compose down
 ```
 
+## Bootstrap Container
+
+The first container to start will always be the `mocknet_bootstrap` container. The sole purpose of this container is to run a [script](https://github.com/blockstack/stacks-local-dev/blob/mocknet/setup.sh) to replace the variables in the `.template` files with the values from `.env`
+
+## API Container
+
+The API Container will run a [script](https://github.com/blockstack/stacks-local-dev/blob/mocknet/setup-bns.sh) before starting it's server. The sole purpose of this is to download (or verify the files exist) V1 BNS data. Once the download/extraction/verification has finished, the `stacks-blockchain-api` server will start up
+
 ## Env Vars
 
-All variables used in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file can be modified, but generally most of them should be left as-is.
+All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env) file can be modified, but generally most of them should be left as-is.
+
+## Local Data Dirs
+
+3 Directories will be created on first start that will store persistent data. Deleting this data will result in a full resync of the blockchain, and in the case of `bns-data`, it will have to download and extract the V1 BNS data again. 
 
 ### Locally opened ports
 
-In this section of the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file, the values can be modified to change the ports opened locally by docker.
+In this section of the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env) file, the values can be modified to change the ports opened locally by docker.
 
 Currently, default port values are used - but if you have a running service on any of the defined ports, they can be adjusted to any locally available port.
 
 ex:
 
 ```bash
-POSTGRES_PORT_LOCAL=5432
+API_STACKS_BLOCKCHAIN_API_PORT_LOCAL=3999
 ```
 
 Can be adjusted to:
 
 ```bash
-POSTGRES_PORT_LOCAL=5433
+API_STACKS_BLOCKCHAIN_API_PORT_LOCAL=3000
 ```
 
 Docker will still use the default ports _internally_ - this modification will only affect how the **host** OS accesses the services.
@@ -65,9 +78,7 @@ export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d sta
 
 Default password is easy to guess, and we do open a port to postgres locally.
 
-This password is defined in the file [./postgres/stacks-node-api.sql](https://github.com/blockstack/stacks-local-dev/blob/master/postgres/stacks-node-api.sql#L1)
-
-If you update this value to something other than `postgres`, you'll have to adjust the value in the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file as well, as the API uses this:
+This password is defined in the file [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env#L59) 
 
 ```bash
 POSTGRES_PASSWORD=postgres
@@ -94,32 +105,20 @@ sudo chmod 755 $DESTINATION
 ```
 
 ### Ensure all images are up to date
-
-Running the mocknet explicitly via `docker-compose up/down` should also update the images used.
-
-You can also run the following at anytime to ensure the local images are up to date:
-
 ```bash
 docker-compose pull
 ```
 
 ### Services Running in Mocknet
 **docker-compose Mocknet service names**:
-=======
-### Services Running in Mocknet
-**docker-compose Mocknet service names**:
->>>>>>> master
-- miner
 - follower
 - api
 - postgres
 
 **Docker container names**:
-- mocknet_stacks-node-miner
 - mocknet_stacks-node-follower
 - mocknet_stacks-node-api
 - mocknet_postgres
-
 
 #### Starting Mocknet Services
 
@@ -171,17 +170,13 @@ docker logs -f <docker container name>
 
 ## Accessing the services
 
-**stacks-node-miner**:
+**stacks-node-folloer**:
 
 - Ports `20443-20444` are exposed to `localhost`
 
 ```bash
 curl localhost:20443/v2/info | jq
 ```
-
-**stacks-node-follower**:
-
-- Ports `20443-20444` are **only** exposed to the `mocknet` docker network.
 
 **stacks-node-api**:
 
@@ -191,26 +186,39 @@ curl localhost:20443/v2/info | jq
 curl localhost:3999/v2/info | jq
 ```
 
-**postgres**:
-
-- Port `5432` is exposed to `localhost` (PGPASSWORD is defined in [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env))
-
-```bash
-export PGPASSWORD='postgres' && psql --host localhost -p 5432 -U postgres -d stacks_node_api
-```
-
 ## Workarounds to potential issues
 
-_Port already in use_:
+_**Port already in use**_:
 
 - If you have a port conflict, typically this means you already have a process using that same port.
-- To resolve, find the port you have in use (i.e. `5432` and edit the [`.env`](https://github.com/blockstack/stacks-local-dev/blob/master/.env) file to use the new port)
+- To resolve, find the port you have in use (i.e. `3999` and edit the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mocknet/sample.env) file to use the new port)
 
 ```bash
-$ netstat -anl | grep 5432
-tcp46      0      0  *.5432                 *.*                    LISTEN
+$ netstat -anl | grep 3999
+tcp46      0      0  *.3999                 *.*                    LISTEN
 ```
 
-_Containers not starting (hanging on start)_:
+_**Containers not starting (hanging on start)**_:
 
 - Occasionally, docker can get **stuck** and not allow new containers to start. If this happens, simply restart your docker daemon and try again.
+
+_**BNS Data not imported/incorrect**_:
+- This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files. 
+```bash
+$ wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ./persistent-data/bns-data/export-data.tar.gz
+$ tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns-data/
+```
+
+_**Database Issues**_:
+- For any of the various Postgres issues, it may be easier to simply remove the persistent data dir for postgres. Note that doing so will result in a longer startup time as the data is repopulated. 
+```bash
+$ rm -rf ./persistent-data/postgres
+```
+
+_**Stacks Blockchain Issues**_:
+- For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is re-synced. 
+```bash
+$ rm -rf ./persistent-data/stacks-blockchain
+```
+
+
