@@ -1,10 +1,11 @@
 [node]
 rpc_bind = "0.0.0.0:${STACKS_FOLLOWER_RPC_PORT}"
 p2p_bind = "0.0.0.0:${STACKS_FOLLOWER_P2P_PORT}"
+wait_time_for_microblocks = 10000
 use_test_genesis_chainstate = true
 
 [[events_observer]]
-endpoint = "${API_NAME}.mocknet:${API_STACKS_CORE_EVENT_PORT}"
+endpoint = "${API_NAME}.${COMPOSE_PROJECT_NAME}:${API_STACKS_CORE_EVENT_PORT}"
 retry_count = 255
 events_keys = ["*"]
 
@@ -63,4 +64,3 @@ read_only_call_limit_read_length = 100000
 read_only_call_limit_write_count = 0
 read_only_call_limit_read_count = 30
 read_only_call_limit_runtime = 1000000000
-
