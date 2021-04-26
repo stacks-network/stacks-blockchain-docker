@@ -48,6 +48,14 @@ All variables used in the [`sample.env`](https://github.com/blockstack/stacks-lo
 
 3 Directories will be created on first start that will store persistent data. Deleting this data will result in a full resync of the blockchain, and in the case of `bns-data`, it will have to download and extract the V1 BNS data again. 
 
+
+**Note that there will be occasions where persistent-data needs to be deleted**
+If the version of [stacks-node changes](https://github.com/blockstack/stacks-blockchain#versioning), for example: from `2.0.11.0` -> `2.0.12.0`, or `2.0.11.0` -> `2.1.0.0`, the chainstate and the postgres data should be removed:
+```bash
+$ rm -rf ./persistent-data/stacks-blockchain && rm -rf ./persistent-data/postgres
+```
+
+
 ### Locally opened ports
 
 In this section of the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/mainnet/sample.env) file, the values can be modified to change the ports opened locally by docker.
