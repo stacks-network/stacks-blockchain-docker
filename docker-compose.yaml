@@ -1,28 +1,27 @@
 version: "2"
 services:
   bootstrap:
-    image: bhgedigital/envsubst
-    container_name: mainnet_bootstrap
-    working_dir: /srv
+    image: ${ENVSUBST_IMAGE}
+    container_name: ${COMPOSE_PROJECT_NAME}_bootstrap
+    working_dir: ${ENVSUBST_WORKING_DIR}
     volumes:
-      - ./:/srv
-    command: sh -c "./setup.sh"
+      - ./:${ENVSUBST_WORKING_DIR}
+    environment:
+      - BASEDIR=${ENVSUBST_WORKING_DIR}
+    command: sh -c "${ENVSUBST_WORKING_DIR}/scripts/setup.sh"
     networks:
-      - mainnet
+      - ${COMPOSE_PROJECT_NAME}
   postgres:
     image: ${POSTGRES_IMAGE}
     container_name: ${POSTGRES_NAME}
     restart: on-failure
     volumes:
-      - ${POSTGRES_SETUP}:/docker-entrypoint-initdb.d/stacks-node-api.sql
-    ports:
-      - ${POSTGRES_PORT_LOCAL}:${POSTGRES_PORT}
-    expose:
-      - ${POSTGRES_PORT}
+      - ${POSTGRES_SCRIPT}:/docker-entrypoint-initdb.d/stacks-node-api.sql
+      - ${POSTGRES_DATA_LOCAL}:${POSTGRES_DATA}
     environment:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
-      - mainnet
+      - ${COMPOSE_PROJECT_NAME}
     depends_on:
       - bootstrap
   follower:
@@ -31,32 +30,29 @@ services:
     restart: on-failure
     volumes:
       - ${STACKS_FOLLOWER_CONFIG_DIRECTORY}:/src/stacks-node
+      - ${STACKS_FOLLOWER_WORKING_DIR_LOCAL}:${STACKS_FOLLOWER_WORKING_DIR}
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL}:${STACKS_FOLLOWER_RPC_PORT}
       - ${STACKS_FOLLOWER_P2P_PORT_LOCAL}:${STACKS_FOLLOWER_P2P_PORT}
-    expose:
-      - ${STACKS_FOLLOWER_RPC_PORT}
-      - ${STACKS_FOLLOWER_P2P_PORT}
     networks:
-      - mainnet
+      - ${COMPOSE_PROJECT_NAME}
     depends_on:
       - api
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
   api:
     image: ${API_IMAGE}
     container_name: ${API_NAME}
-    restart: on-failure
+    restart: always
+    volumes:
+      - ${API_BNS_DATA_LOCAL}:${API_BNS_DATA}
+      - ./scripts:/scripts
     ports:
-      - ${API_STACKS_CORE_EVENT_PORT_LOCAL}:${API_STACKS_CORE_EVENT_PORT}
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
-    expose:
-      - ${API_STACKS_CORE_EVENT_PORT}
-      - ${API_STACKS_BLOCKCHAIN_API_PORT}
     environment:
       - NODE_ENV=${API_NODE_ENV}
       - GIT_TAG=${API_GIT_TAG}
-      - PG_HOST=${POSTGRES_NAME}.mainnet
-      - PG_PORT=${POSTGRES_PORT_LOCAL}
+      - PG_HOST=${POSTGRES_NAME}.${COMPOSE_PROJECT_NAME}
+      - PG_PORT=${POSTGRES_PORT}
       - PG_USER=${API_PG_USER}
       - PG_PASSWORD=${POSTGRES_PASSWORD}
       - PG_DATABASE=${API_PG_DATABASE}
@@ -68,13 +64,16 @@ services:
       - STACKS_BLOCKCHAIN_API_PORT=${API_STACKS_BLOCKCHAIN_API_PORT}
       - STACKS_BLOCKCHAIN_API_HOST=${API_STACKS_BLOCKCHAIN_API_HOST}
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
-      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.mainnet
+      - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.${COMPOSE_PROJECT_NAME}
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
+      - BNS_IMPORT_DIR=/bns-data
+    command: sh -c "/scripts/setup-bns.sh; npm run start"
     networks:
-      - mainnet
+      - ${COMPOSE_PROJECT_NAME}
     depends_on:
       - postgres
 networks:
   mainnet:
     driver: bridge
-    name: mainnet
+    name: ${COMPOSE_PROJECT_NAME}
+#
