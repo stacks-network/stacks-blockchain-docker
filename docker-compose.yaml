@@ -3,10 +3,12 @@ services:
   bootstrap:
     image: ${ENVSUBST_IMAGE}
     container_name: ${COMPOSE_PROJECT_NAME}_bootstrap
-    working_dir: /srv
+    working_dir: ${ENVSUBST_WORKING_DIR}
     volumes:
-      - ./:/srv
-    command: sh -c "./setup.sh"
+      - ./:${ENVSUBST_WORKING_DIR}
+    environment:
+      - BASEDIR=${ENVSUBST_WORKING_DIR}
+    command: sh -c "${ENVSUBST_WORKING_DIR}/scripts/setup.sh"
     networks:
       - ${COMPOSE_PROJECT_NAME}
   postgres:
@@ -41,7 +43,7 @@ services:
     restart: always
     volumes:
       - ${API_BNS_DATA_LOCAL}:${API_BNS_DATA}
-      - ./setup-bns.sh:/setup-bns.sh
+      - ./scripts:/scripts
     ports:
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL}:${API_STACKS_BLOCKCHAIN_API_PORT}
     environment:
@@ -63,7 +65,7 @@ services:
       - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.${COMPOSE_PROJECT_NAME}
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
       - BNS_IMPORT_DIR=/bns-data
-    command: sh -c "/setup-bns.sh; npm run start"
+    command: sh -c "/scripts/setup-bns.sh; npm run start"
     networks:
       - ${COMPOSE_PROJECT_NAME}
     depends_on:
