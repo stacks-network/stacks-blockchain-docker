@@ -64,8 +64,8 @@ services:
       - STACKS_BLOCKCHAIN_API_DB=${API_STACKS_BLOCKCHAIN_API_DB}
       - STACKS_CORE_RPC_HOST=${STACKS_FOLLOWER_NAME}.${COMPOSE_PROJECT_NAME}
       - STACKS_CORE_RPC_PORT=${STACKS_FOLLOWER_RPC_PORT}
-      - BNS_IMPORT_DIR=/bns-data
-    command: sh -c "/scripts/setup-bns.sh; npm run start"
+      # - BNS_IMPORT_DIR=/bns-data
+    # command: sh -c "/scripts/setup-bns.sh; npm run start"
     networks:
       - ${COMPOSE_PROJECT_NAME}
     depends_on:
