@@ -13,7 +13,7 @@ events_keys = ["*"]
 [burnchain]
 chain = "bitcoin"
 mode = "mainnet"
-peer_host = "bitcoin.mainnet.blockstack.com"
+peer_host = "bitcoin.blockstack.com"
 username = "blockstack"
 password = "blockstacksystem"
 rpc_port = 8332

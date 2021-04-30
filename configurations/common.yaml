@@ -31,11 +31,8 @@ services:
       - ../scripts:/scripts
     ports:
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL:-3999}:${API_STACKS_BLOCKCHAIN_API_PORT:-3999}
-    # environment:
-    #  - BNS_IMPORT_DIR=/bns-data
     env_file:
       - ../.env
-    command: sh -c "npm run start" #/scripts/setup-bns.sh; 
     networks:
       - stacks-blockchain
     depends_on:
