@@ -1,0 +1,47 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:alpine
+    container_name: postgres
+    restart: on-failure
+    volumes:
+      - ../postgres:/docker-entrypoint-initdb.d
+    env_file:
+        - ../.env
+    networks:
+      - stacks-blockchain
+  stacks-node-follower:
+    image: blockstack/stacks-blockchain:latest
+    container_name: stacks-node-follower
+    restart: on-failure
+    ports:
+      - ${STACKS_FOLLOWER_RPC_PORT_LOCAL:-20443}:20443
+      - ${STACKS_FOLLOWER_P2P_PORT_LOCAL:-20444}:20444
+    networks:
+      - stacks-blockchain
+    depends_on:
+      - stacks-node-api
+    command: /bin/stacks-node start --config /src/stacks-node/Config.toml
+  stacks-node-api:
+    image: blockstack/stacks-blockchain-api:latest
+    container_name: stacks-node-api
+    restart: always
+    volumes:
+      - ../persistent-data/bns-data:/bns-data
+      - ../scripts:/scripts
+    ports:
+      - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL:-3999}:${API_STACKS_BLOCKCHAIN_API_PORT:-3999}
+    # environment:
+    #  - BNS_IMPORT_DIR=/bns-data
+    env_file:
+      - ../.env
+    command: sh -c "npm run start" #/scripts/setup-bns.sh; 
+    networks:
+      - stacks-blockchain
+    depends_on:
+      - postgres
+networks:
+  stacks-blockchain:
+    driver: bridge
+    name: stacks-blockchain
+#

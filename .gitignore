@@ -12,6 +12,7 @@ crash.log
 *.pyc
 .gitconfig
 .idea
+/configurations/*/Config.toml
 
 # Vim-related files
 [._]*.s[a-w][a-z]
