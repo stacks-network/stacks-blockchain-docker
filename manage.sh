@@ -1,53 +1,111 @@
 #!/bin/bash
-network=$1
-action=$2
+
+NETWORK=$1
+ACTION=$2
+PARAM=""
+WHICH=$(which docker-compose)
+if [ $? -ne 0 ]; then
+	echo ""
+	echo "Missing binary: docker-compose"
+	echo "  https://docs.docker.com/compose/install/"
+	echo ""
+	exit 1
+fi
 
 usage() {
-	echo ""
-	echo "Usage: $0 [mainnet|testnet|mocknet] [up|down|logs|reset]"
+	echo
+	echo "Usage:"
+	echo "  $0 <network> <action>"
+	echo "      network: [mainnet|testnet|mocknet|bns]"
+	echo "      action: [up|down|logs|reset]"
+	echo
+	exit 0
+} 
+
+download_bns_data() {
+	echo "Downloading and extracting V1 bns-data"
+	echo "Running: docker-compose -f ./configurations/bns.yaml up"
+	docker-compose -f ./configurations/bns.yaml up
+	echo "Running: docker-compose -f ./configurations/bns.yaml down"
+	docker-compose -f ./configurations/bns.yaml down
+	usage
+	exit 0
+}
+
+reset_data() {
+	if [ -d ./persistent-data/${NETWORK} ]; then
+		if [[ ! $(docker-compose -f configurations/common.yaml ps -q) ]]; then
+			echo "Resetting Persistent data for ${NETWORK}"
+			echo "Running: rm -rf ./persistent-data/${NETWORK}"
+			rm -rf ./persistent-data/${NETWORK}
+		else
+			echo "Can't reset while services are running"
+			echo "  Run: $0 ${NETWORK} down"
+			echo "  And try again"
+			echo
+			exit 
+		fi
+	fi
 	exit 0
 }
 
 ordered_stop() {
-	# if we're not mocknet, we have to bring down stacks-node before the api or the data is corrupt
 	echo "Stopping stacks-node-follower first to prevent database errors"
-	docker-compose -f ./configurations/common.yaml -f ./configurations/$network.yaml stop stacks-node-follower
+	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-node-follower"
+	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-node-follower
 }
 
-if [[ $network == "bns" ]]; then
-	echo "Downloading and extracting V1 bns-data"
-	docker-compose -f ./configurations/bns.yaml up
-	docker-compose -f ./configurations/bns.yaml down
-	usage
-fi
+run_docker() {
+	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${ACTION} ${PARAM}"
+	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${ACTION} ${PARAM}
+	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
+		echo "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
+	fi
+	exit $?
+}
 
-if ( [[ $network != "mainnet" ]] && [[ $network != "testnet" ]] && [[ $network != "mocknet" ]] ) || ( [[ $action != "up" ]] && [[ $action != "down" ]] && [[ $action != "logs" ]] && [[ $action != "reset" ]]); then
-	usage
-fi
-if [[ $action == "reset" ]]; then
-	# bring down containers
-	if [ -d ./persistent-data/$network ]; then
-		echo "Resetting Persistent data for $network"
-		rm -rf ./persistent-data/$network
-	fi
-else
-	if [[ $action == "up" ]] && [[ $(docker-compose -f configurations/common.yaml ps -q) ]]; then
-		echo "Network already running, bring it down using '$0 $network down' first."
-		exit 1
-	fi
-	if [[ $network != "mocknet" ]];then
-		if [[ $action == "down" ]]; then
-			# we have to bring down the follower node first, else the DB can have missing data
-			ordered_stop
-			# continue to the generic "down" later in script
-		else
-			mkdir -p ./persistent-data/$network
+
+case ${NETWORK} in
+	mainnet | testnet | mocknet)
+		if [[ ${NETWORK} != "mocknet" && ${ACTION} != "reset" ]];then
+			echo "Creating persistent-data for ${NETWORK}"
+			mkdir -p ./persistent-data/${NETWORK}
 		fi
-	fi
-	[[ ! -f "./configurations/$network/Config.toml" ]] && cp ./configurations/$network/Config.toml.sample ./configurations/$network/Config.toml
-	[[ $action == "up" ]] && param=-d
-	[[ $action == "logs" ]] && param=-f
-	docker-compose -f ./configurations/common.yaml -f ./configurations/$network.yaml $action $param
-	[[ $action == "up" ]] && echo "Brought up $network, use '$0 $network logs' to follow log files."
-fi
-exit 0
+		;;
+	bns)
+		download_bns_data
+		;;
+  	*)
+		usage
+    	;;
+esac
+
+case ${ACTION} in 
+	up|start)
+		ACTION="up"
+		[[ ! -f "./configurations/${NETWORK}/Config.toml" ]] && cp ./configurations/${NETWORK}/Config.toml.sample ./configurations/${NETWORK}/Config.toml
+		PARAM="-d"
+		;;
+	down|stop)
+		ACTION="down"
+		if [ ${NETWORK} != "mocknet" ];then
+			ordered_stop
+		fi
+		;;
+	logs)
+		PARAM="-f"
+		if [[ ! $(docker-compose -f configurations/common.yaml ps -q) ]]; then
+			echo 
+			echo "*** No ${NETWORK} services running ***"
+			usage
+		fi
+		;;
+	reset)
+		reset_data
+		;;
+	*)
+		usage
+		;;
+esac
+run_docker
+exit
