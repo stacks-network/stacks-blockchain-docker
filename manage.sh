@@ -17,7 +17,7 @@ usage() {
 	echo "Usage:"
 	echo "  $0 <network> <action>"
 	echo "      network: [mainnet|testnet|mocknet|bns]"
-	echo "      action: [up|down|logs|reset]"
+	echo "      action: [up|down|logs|reset|upgrade]"
 	echo
 	exit 0
 } 
@@ -99,6 +99,9 @@ case ${ACTION} in
 			echo "*** No ${NETWORK} services running ***"
 			usage
 		fi
+		;;
+	upgrade|pull)
+		ACTION="pull"
 		;;
 	reset)
 		reset_data
