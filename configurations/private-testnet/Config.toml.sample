@@ -14,10 +14,11 @@ events_keys = ["*"]
 chain = "bitcoin"
 mode = "xenon"
 peer_host = "bitcoin"
+rpc_port = 18443
+peer_port = 18444
+magic_byte = "X2"
 username = "blockstack"
 password = "blockstacksystem"
-rpc_port = 28332
-peer_port = 18333
 
 [[ustx_balance]]
 address = "STB44HYPYAT2BB2QE513NSP81HTMYWBJP02HPGK6"

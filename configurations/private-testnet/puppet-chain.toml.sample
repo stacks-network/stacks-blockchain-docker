@@ -1,9 +1,9 @@
 [network]
-rpc_bind = "0.0.0.0:18332"
+rpc_bind = "0.0.0.0:18443"
 block_time = 7000
 miner_address = "mx2uds6sgnn9znABQ6iDSSmXY9K5D4SHF9"
 faucet_address = "n2pGfZaAVztWqFzuy8iLS3VSuHB2SimWUR"
-bitcoind_rpc_host = "bitcoin:28332"
+bitcoind_rpc_host = "localhost:28443"
 bitcoind_rpc_user = "blockstack"
 bitcoind_rpc_pass = "blockstacksystem"
 genesis_timestamp = 1588615296
