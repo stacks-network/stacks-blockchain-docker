@@ -1,0 +1,29 @@
+version: "3"
+services:
+  bitcoin:
+    image: blockstack/bitcoind:latest
+    container_name: bitcoin
+    restart: on-failure
+    volumes:
+      - ./private-testnet:/etc/bitcoin
+    ports:
+      - 28332:28332
+      - 18333:18333
+    environment:
+      - DYNAMIC_GENESIS_TIMESTAMP=1
+    networks:
+      - stacks-blockchain
+    command: /usr/local/bin/bitcoind -conf=/etc/bitcoin/bitcoin.conf
+  puppet-chain:
+    image: blockstack/stacks-blockchain:latest
+    container_name: puppet-chain
+    restart: on-failure
+    volumes:
+      - ./private-testnet:/src/stacks-node
+    ports:
+      - 18332:18332
+    networks:
+      - stacks-blockchain
+    depends_on:
+      - bitcoin
+    command: /bin/puppet-chain /src/stacks-node/puppet-chain.toml

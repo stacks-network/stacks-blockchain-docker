@@ -29,5 +29,8 @@ Session.vim
 node_modules/
 stacks-node-follower/Config.toml
 configurations/*/Config.toml
+configurations/private-testnet/*.toml
+configurations/private-testnet/*.conf
+
 .env
 persistent-data/
