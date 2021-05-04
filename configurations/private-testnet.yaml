@@ -1,5 +1,8 @@
 version: "3"
 services:
+  stacks-node-follower:
+    volumes:
+      - ./private-testnet:/src/stacks-node
   bitcoin:
     image: blockstack/bitcoind:latest
     container_name: bitcoin

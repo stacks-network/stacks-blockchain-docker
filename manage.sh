@@ -113,12 +113,8 @@ docker_up() {
 }
 
 run_docker() {
-	CONFIG="-f ./configurations/${NETWORK}.yaml"
-	if [[ ${NETWORK} == "private-testnet" ]]; then
-		CONFIG="-f ./configurations/mocknet.yaml -f ./configurations/${NETWORK}.yaml"
-	fi
-	echo "Running: docker-compose -f ./configurations/common.yaml ${CONFIG} ${ACTION} ${PARAM}"
-	docker-compose -f ./configurations/common.yaml ${CONFIG} ${ACTION} ${PARAM}
+	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${ACTION} ${PARAM}"
+	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		echo "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
 	fi
