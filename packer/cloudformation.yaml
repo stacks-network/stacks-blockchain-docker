@@ -38,7 +38,7 @@ Parameters:
 Mappings:
   AWSRegion2AMI:
     us-east-1:
-      HVM64: ami-0e6922a433152a117
+      HVM64: ami-0093f53bdbd4b59d9
 Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
