@@ -1,6 +1,7 @@
 version: "3"
 services:
   stacks-node-follower:
+    image: stacks-blockchain:private-testnet
     volumes:
       - ./private-testnet:/src/stacks-node
   bitcoin:
@@ -9,9 +10,9 @@ services:
     restart: on-failure
     volumes:
       - ./private-testnet:/etc/bitcoin
-    ports:
-      - 18443:18443
-      - 28444:28444
+    expose:
+      - 18443
+      - 28444
     environment:
       - DYNAMIC_GENESIS_TIMESTAMP=1
       - RUST_BACKTRACE=1
