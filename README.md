@@ -6,81 +6,6 @@
 - [git](https://git-scm.com/downloads)
 - `jq` binary
 
-## Quickstart
-
-1. Clone the repo locally:
-
-```bash
-  git clone -b private-testnet --depth 1 https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
-```
-
-2. Create/Copy `.env` file
-*Use a symlink as an alternative to copying: `ln -s sample.env .env`*
-```bash
-  cp sample.env .env
-```
-
-3. Start the Services:
-```bash
-docker-compose up -d
-```
-*NOTE*: We are now importing V1 BNS data. What this means is that initially, there will be a longer startup time while the data is downloaded and extracted, then loaded via the API container into postgres. Once this initial load is complete, subsequent restarts will be much faster. Additionally, all data is persistent here - postgres and the stacks-blockchain, so bringing a node up to the tip height should be much faster. 
-
-4. Stop the Services:
-
-```bash
-docker-compose down
-```
-
-## API Container
-
-The API Container will run a [script](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/scripts/setup-bns.sh) before starting it's server. The sole purpose of this is to download (or verify the files exist) V1 BNS data. Once the download/extraction/verification has finished, the `stacks-blockchain-api` server will start up
-
-## Env Vars
-
-All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env) file can be modified, but generally most of them should be left as-is.
-
-## Local Data Dirs
-
-3 Directories will be created on first start that will store persistent data. Deleting this data will result in a full resync of the blockchain, and in the case of `bns-data`, it will have to download and extract the V1 BNS data again. 
-
-### Locally opened ports
-
-In this section of the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env) file, the values can be modified to change the ports opened locally by docker.
-
-Currently, default port values are used - but if you have a running service on any of the defined ports, they can be adjusted to any locally available port.
-
-ex:
-
-```bash
-API_STACKS_BLOCKCHAIN_API_PORT_LOCAL=3999
-```
-
-Can be adjusted to:
-
-```bash
-API_STACKS_BLOCKCHAIN_API_PORT_LOCAL=3000
-```
-
-Docker will still use the default ports _internally_ - this modification will only affect how the **host** OS accesses the services.
-
-For example, to access postgres (using the **new** port `5433`) after running `docker-compose up -d`:
-
-```bash
-export PGPASSWORD='postgres' && psql --host localhost -p 5433 -U postgres -d stacks_node_api
-```
-
-### Postgres
-
-Default password is easy to guess, and we do open a port to postgres locally.
-
-This password is defined in the file [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env#L28) 
-
-```bash
-POSTGRES_PASSWORD=postgres
-```
-
-## docker-compose
 
 ### Install/Update docker-compose
 
@@ -100,68 +25,71 @@ sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/dock
 sudo chmod 755 $DESTINATION
 ```
 
-### Ensure all images are up to date
+### Env Vars
+All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env) file can be modified, but generally most of them should be left as-is.
+
+### Local Data Dirs
+Directories will be created on first start that will store persistent data under `./persistent-data/<network>`
+
+
+## Quickstart
+
+`<network>` can be 1 of:
+  - mocknet
+  - testnet
+  - mainnet
+  - private-testnet
+  
+
+1. Clone the repo locally:
+
 ```bash
-$ ./manage.sh private-testnet pull
+$ git clone -b private-testnet --depth 1 https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
-### Services Running in Mocknet
-**docker-compose Mocknet service names**:
-- follower
-- api
-- postgres
-
-**Docker container names**:
-- stacks-node-follower
-- stacks-node-api
-- postgres
-- bitcoin
-
-#### Starting Mocknet Services
-
-1. Start all services:
-
+2. Create/Copy `.env` file
+*Use a symlink as an alternative to copying: `ln -s sample.env .env`*
 ```bash
-$ ./manage.sh private-testnet up
+$ cp sample.env .env
+```
+3. We are **not** importing V1 BNS data by default. If you'd like to use BNS data, [uncomment this line](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env#L21) in your `.env` file
+```
+BNS_IMPORT_DIR=/bns-data
 ```
 
-#### Stopping Mocknet Services
-
-1. Stop all services:
-
+4. Ensure all images are up to date
 ```bash
-$ ./manage.sh private-testnet down
+$ ./manage.sh <network> pull
 ```
 
-
-1. Restart:
-
+4. Start the Services:
 ```bash
-$ ./manage.sh private-testnet restart
+$ ./manage.sh <network> up
 ```
 
-#### Retrieving Mocknet logs
-
-1. Tail logs with docker-compose:
-
+5. Stop the Services:
 ```bash
-$ ./manage.sh private-testnet logs
+$ ./manage.sh <network> down
 ```
 
-2. Tail logs through `docker`:
-
+6. Retrieve Service Logs
 ```bash
-docker logs -f <docker container name>
+$ ./manage.sh <network> logs
+```
+
+7. Restart all services:
+```bash
+$ ./manage.sh <network> restart
 ```
 
 ## Accessing the services
 
-**stacks-node-folloer**:
+**stacks-node-follower**:
 
 - Ports `20443-20444` are exposed to `localhost`
 
 ```bash
-curl localhost:20443/v2/info | jq
+$ curl localhost:20443/v2/info | jq
 ```
 
 **stacks-node-api**:
@@ -169,71 +97,12 @@ curl localhost:20443/v2/info | jq
 - Ports `3999` are exposed to `localhost`
 
 ```bash
-curl localhost:3999/v2/info | jq
+$ curl localhost:3999/v2/info | jq
 ```
+
+---
 
 ## Using the private testnet
-
-### Spin up the private testnet
-
-Write `.env` file:
-
-```
-###############################
-## Stacks-Node-API
-##
-NODE_ENV=production
-GIT_TAG=master
-PG_HOST=postgres
-PG_PORT=5432
-PG_USER=stacks
-PG_PASSWORD=postgres
-PG_DATABASE=stacks_blockchain
-PG_SCHEMA=stacks_node_api
-STACKS_CHAIN_ID=2147483648
-V2_POX_MIN_AMOUNT_USTX=90000000260
-STACKS_CORE_EVENT_PORT=3700
-STACKS_CORE_EVENT_HOST=0.0.0.0
-STACKS_BLOCKCHAIN_API_PORT=3999
-STACKS_BLOCKCHAIN_API_HOST=0.0.0.0
-STACKS_BLOCKCHAIN_API_DB=pg
-STACKS_CORE_RPC_HOST=stacks-node-follower
-STACKS_CORE_RPC_PORT=20443
-#BNS_IMPORT_DIR=/bns-data
-
-###############################
-## Postgres
-##
-# Make sure the password is the same as PG_PASSWORD above.
-# note to document: this is set in the sql for postgres. if the above is changed, that needs to change as well. 
-POSTGRES_PASSWORD=postgres
-```
-
-Pull the latest docker images
-
-```bash
-./manage.sh private-testnet pull
-```
-
-Start the testnet
-
-```bash
-./manage.sh private-testnet up
-```
-
-It will take a few minutes for the stacks-node to sync with the regtest bitcoin node, build a genesis block, etc.
-Once `v2/info` returns a non-zero stacks height, the private testnet is ready to use:
-
-```bash
-$ curl -s localhost:20443/v2/info | jq .stacks_tip_height
-1
-```
-
-You can monitor the bootup process by watching the logs:
-
-```bash
-$ docker logs --tail 20 -f stacks-node-follower
-```
 
 ### Deploying a contract
 
@@ -335,13 +204,15 @@ $ tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/b
 _**Database Issues**_:
 - For any of the various Postgres issues, it may be easier to simply remove the persistent data dir for postgres. Note that doing so will result in a longer startup time as the data is repopulated. 
 ```bash
-$ rm -rf ./persistent-data/postgres
+$ rm -rf ./persistent-data/<network>
+$ ./manage.sh <network> restart
 ```
 
 _**Stacks Blockchain Issues**_:
 - For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is re-synced. 
 ```bash
-$ rm -rf ./persistent-data/stacks-blockchain
+$ rm -rf ./persistent-data/<network>
+$ ./manage.sh <network> restart
 ```
 
 
