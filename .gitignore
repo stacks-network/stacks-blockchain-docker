@@ -34,3 +34,4 @@ configurations/private-testnet/*.conf
 
 .env
 persistent-data/
+packer/vars.json
