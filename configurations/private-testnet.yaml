@@ -1,7 +1,7 @@
 version: "3"
 services:
   stacks-node-follower:
-    image: stacks-blockchain:private-testnet
+    image: blockstack/stacks-blockchain:feat-miner-control
     volumes:
       - ./private-testnet:/src/stacks-node
   bitcoin:
