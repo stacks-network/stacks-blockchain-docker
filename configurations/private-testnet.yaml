@@ -10,8 +10,8 @@ services:
     volumes:
       - ./private-testnet:/etc/bitcoin
     ports:
-      - 18332:18332
-      - 18333:18333
+      - 18443:18443
+      - 28444:28444
     environment:
       - DYNAMIC_GENESIS_TIMESTAMP=1
       - RUST_BACKTRACE=1

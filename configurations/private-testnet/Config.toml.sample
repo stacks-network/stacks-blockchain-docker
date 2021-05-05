@@ -13,9 +13,11 @@ events_keys = ["*"]
 [burnchain]
 chain = "bitcoin"
 mode = "xenon"
-peer_host = "bitcoin"
+peer_host = "bitcoin.stacks-blockchain"
+# Connect to puppet
 rpc_port = 18443
-peer_port = 18444
+# Connect direct to bitcoind (no firewall)
+peer_port = 28444
 magic_byte = "X2"
 username = "blockstack"
 password = "blockstacksystem"

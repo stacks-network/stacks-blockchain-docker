@@ -10,6 +10,6 @@ rpcserialversion=0
 rpcworkqueue=100
 
 [regtest]
-bind=0.0.0.0:18444
+bind=0.0.0.0:28444
 rpcbind=0.0.0.0:28443
 rpcport=28443
