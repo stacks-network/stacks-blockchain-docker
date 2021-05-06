@@ -4,6 +4,18 @@ services:
     image: blockstack/stacks-blockchain:feat-miner-control
     volumes:
       - ./private-testnet:/src/stacks-node
+  explorer:
+    image: blockstack/explorer:latest
+    container_name: explorer
+    environment:
+      - NEXT_PUBLIC_MAINNET_API_SERVER=http://stacks-node-api.stacks-blockchain:3999
+      - NEXT_PUBLIC_TESTNET_API_SERVER=http://stacks-node-api.stacks-blockchain:3399
+      - MOCKNET_API_SERVER=http://localhost:3999
+      - TESTNET_API_SERVER=http://localhost:3999
+    ports:
+      - 3000:3000
+    networks:
+      - stacks-blockchain
   bitcoin:
     image: blockstack/bitcoind:puppet-chain
     container_name: bitcoin
