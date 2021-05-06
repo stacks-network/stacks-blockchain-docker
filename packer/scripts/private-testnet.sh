@@ -26,4 +26,6 @@ ExecReload=-/bin/bash manage.sh private-testnet restart
 [Install]
 WantedBy=testnet.service
 EOF
-systemctl enable testnet.service
+
+systemctl daemon-reload
+sudo systemctl disable testnet.service

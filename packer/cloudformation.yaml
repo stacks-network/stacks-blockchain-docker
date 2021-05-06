@@ -3,7 +3,7 @@
 #https://raw.githubusercontent.com/tongueroo/cloudformation-examples/master/templates/single-instance.yml
 ---
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Gaia Hub Template'
+Description: 'Stacks Node Private Testnet Template'
 Parameters:
   VpcId:
     Description: ID of the VPC in which to launch the EC2 instance
@@ -18,7 +18,7 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
     ConstraintDescription: must be the name of an existing EC2 KeyPair.
   InstanceType:
-    Description: Gaia Hub EC2 instance type
+    Description: EC2 instance type
     Type: String
     Default: t2.micro
     AllowedValues:
@@ -38,7 +38,9 @@ Parameters:
 Mappings:
   AWSRegion2AMI:
     us-east-1:
-      HVM64: ami-0093f53bdbd4b59d9
+      AMI: ami-0093f53bdbd4b59d9
+    us-west-2:
+      AMI: ami-0093f53bdbd4b59d9
 Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -85,17 +87,17 @@ Resources:
           Ref: AWS::StackName
 Outputs:
   InstanceId:
-    Description: InstanceId of the Gaia Hub
+    Description: InstanceId of the Private Testnet
     Value: 
       Ref: EC2Instance
   PublicDNS:
-    Description: Public DNSName of the Gaia Hub
+    Description: Public DNSName of the Private Testnet
     Value:
       Fn::GetAtt:
       - EC2Instance
       - PublicDnsName
   PublicIP:
-    Description: Public IP address of the Gaia Hub
+    Description: Public IP address of the Private Testnet
     Value:
       Fn::GetAtt:
       - EC2Instance
