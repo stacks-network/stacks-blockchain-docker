@@ -83,7 +83,7 @@ docker_down () {
 		echo 
 		return
 	fi
-	if [ ${NETWORK} != "mocknet" ];then
+	if [[ ${NETWORK} == "mainnet" || ${NETWORK} == "testnet" ]];then
 		ordered_stop
 	fi
 	run_docker
@@ -97,7 +97,17 @@ docker_up() {
 		echo
 		return
 	fi
+	if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet" ]];then
+		if [[ ! -d ./persistent-data/${NETWORK} ]];then
+			echo "Creating persistent-data for ${NETWORK}"
+			mkdir -p ./persistent-data/${NETWORK}
+		fi
+	fi
 	[[ ! -f "./configurations/${NETWORK}/Config.toml" ]] && cp ./configurations/${NETWORK}/Config.toml.sample ./configurations/${NETWORK}/Config.toml
+	if [[ ${NETWORK} == "private-testnet" ]]; then
+		[[ ! -f "./configurations/${NETWORK}/puppet-chain.toml" ]] && cp ./configurations/${NETWORK}/puppet-chain.toml.sample ./configurations/${NETWORK}/puppet-chain.toml
+		[[ ! -f "./configurations/${NETWORK}/bitcoin.conf" ]] && cp ./configurations/${NETWORK}/bitcoin.conf.sample ./configurations/${NETWORK}/bitcoin.conf
+	fi
 	PARAM="-d"
 	run_docker
 }
@@ -112,11 +122,7 @@ run_docker() {
 
 
 case ${NETWORK} in
-	mainnet | testnet | mocknet)
-		if [[ ${NETWORK} != "mocknet" && ${ACTION} != "reset" && ! -d ./persistent-data/${NETWORK} ]];then
-			echo "Creating persistent-data for ${NETWORK}"
-			mkdir -p ./persistent-data/${NETWORK}
-		fi
+	mainnet | testnet|mocknet | private-testnet)
 		;;
 	bns)
 		download_bns_data
@@ -152,4 +158,4 @@ case ${ACTION} in
 		usage
 		;;
 esac
-exit $?
+exit
