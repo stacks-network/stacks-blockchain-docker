@@ -44,7 +44,7 @@ Directories will be created on first start that will store persistent data under
 1. Clone the repo locally:
 
 ```bash
-$ git clone -b private-testnet --depth 1 https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
+$ git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
 2. Create/Copy `.env` file
