@@ -4,8 +4,6 @@ services:
     image: postgres:alpine
     container_name: postgres
     restart: on-failure
-    volumes:
-      - ../postgres:/docker-entrypoint-initdb.d
     env_file:
         - ../.env
     networks:
