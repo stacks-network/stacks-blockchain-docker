@@ -1,4 +1,4 @@
-# Stacks Private Testnet with Docker
+# Stacks Blockchain with Docker
 ## Requirements:
 
 - [Docker](https://docs.docker.com/get-docker/)
@@ -8,9 +8,9 @@
 
 
 ### Install/Update docker-compose
+*Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*
 
 First, check if you have `docker-compose` installed locally:
-
 ```bash
 $ docker-compose --version
 docker-compose version 1.27.4, build 40524192
@@ -26,21 +26,19 @@ sudo chmod 755 $DESTINATION
 ```
 
 ### Env Vars
-All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env) file can be modified, but generally most of them should be left as-is.
+All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/main/sample.env) file can be modified, but generally most of them should be left as-is.
 
 ### Local Data Dirs
 Directories will be created on first start that will store persistent data under `./persistent-data/<network>`
-
-
-## Quickstart
 
 `<network>` can be 1 of:
   - mocknet
   - testnet
   - mainnet
   - private-testnet
-  
 
+
+## Quickstart
 1. Clone the repo locally:
 
 ```bash
@@ -52,7 +50,7 @@ $ git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev &&
 ```bash
 $ cp sample.env .env
 ```
-3. We are **not** importing V1 BNS data by default. If you'd like to use BNS data, [uncomment this line](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env#L21) in your `.env` file
+1. V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](https://github.com/blockstack/stacks-local-dev/blob/main/sample.env#L21) in your `.env` file
 ```
 BNS_IMPORT_DIR=/bns-data
 ```
@@ -105,14 +103,14 @@ $ curl localhost:3999/v2/info | jq
 ## Using the private testnet
 
 ### Deploying a contract
+*[Follow the guide here](https://docs.stacks.co/understand-stacks/command-line-interface#installation) to install the `stx` cli*
 
 1. Make a keychain
-
 ```bash
 $ stx make_keychain -t | jq . > cli_keychain.json
 ```
 
-2. Get some testnet STX:
+1. Get some testnet STX:
 
 ```
 $ curl -s -X POST "localhost:3999/extended/v1/faucets/stx?address=$(cat ./cli_keychain.json | jq -r .keyInfo.address)" | jq .
@@ -180,10 +178,10 @@ $ curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defa
 
 ## Workarounds to potential issues
 
-_**Port already in use**_:
+_**Port(s) already in use**_:
 
 - If you have a port conflict, typically this means you already have a process using that same port.
-- To resolve, find the port you have in use (i.e. `3999` and edit the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/private-testnet/sample.env) file to use the new port)
+- To resolve, find the port you have in use (i.e. `3999` and edit your `.env` file to use the new port.
 
 ```bash
 $ netstat -anl | grep 3999
@@ -193,6 +191,7 @@ tcp46      0      0  *.3999                 *.*                    LISTEN
 _**Containers not starting (hanging on start)**_:
 
 - Occasionally, docker can get **stuck** and not allow new containers to start. If this happens, simply restart your docker daemon and try again.
+
 
 _**BNS Data not imported/incorrect**_:
 - This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files. 
@@ -209,7 +208,7 @@ $ ./manage.sh <network> restart
 ```
 
 _**Stacks Blockchain Issues**_:
-- For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is re-synced. 
+- For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the chainstate is synced. 
 ```bash
 $ rm -rf ./persistent-data/<network>
 $ ./manage.sh <network> restart
