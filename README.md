@@ -24,6 +24,13 @@ DESTINATION=/usr/local/bin/docker-compose
 sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
 sudo chmod 755 $DESTINATION
 ```
+[Install Docker-compose](https://docs.docker.com/compose/install/)
+[Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)
+[Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)
+[Docker Engine for Linux](https://docs.docker.com/engine/install/#server)
+
+
+
 
 ### Env Vars
 All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/main/sample.env) file can be modified, but generally most of them should be left as-is.
@@ -81,9 +88,10 @@ $ ./manage.sh <network> restart
 ```
 
 ## Accessing the services
+*Note*: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data. 
+Use the command `./manage.sh <network> logs` to check the sync progress
 
 **stacks-node-follower**:
-
 - Ports `20443-20444` are exposed to `localhost`
 
 ```bash
