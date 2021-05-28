@@ -1,0 +1,5 @@
+version: "3"
+services:
+  stacks-node-follower:
+    volumes:
+      - ./mocknet:/src/stacks-node

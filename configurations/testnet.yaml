@@ -1,0 +1,12 @@
+version: "3"
+services:
+  postgres:
+    volumes:
+      - ../persistent-data/testnet/postgres:/var/lib/postgresql/data
+  stacks-node-follower:
+    volumes:
+      - ./testnet:/src/stacks-node
+      - ../persistent-data/testnet/stacks-blockchain:/root/stacks-node/data
+  stacks-node-api:
+    environment:
+      - STACKS_CHAIN_ID=0x80000000

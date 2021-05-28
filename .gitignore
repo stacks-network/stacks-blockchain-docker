@@ -12,6 +12,7 @@ crash.log
 *.pyc
 .gitconfig
 .idea
+/configurations/*/Config.toml
 
 # Vim-related files
 [._]*.s[a-w][a-z]
@@ -27,7 +28,10 @@ Session.vim
 *.save
 node_modules/
 stacks-node-follower/Config.toml
-postgres/stacks-node-api.sql
-bitcoin/bitcoin.conf
+configurations/*/Config.toml
+configurations/private-testnet/*.toml
+configurations/private-testnet/*.conf
+
 .env
 persistent-data/
+packer/vars.json

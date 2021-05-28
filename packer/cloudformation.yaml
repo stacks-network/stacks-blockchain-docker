@@ -1,0 +1,104 @@
+# http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/sample-templates-services-us-west-2.html#w1ab2c21c45c15c15
+# Amazon EC2 instance in a security group Creates an Amazon EC2 instance in an Amazon EC2 security group.
+#https://raw.githubusercontent.com/tongueroo/cloudformation-examples/master/templates/single-instance.yml
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Stacks Node Private Testnet Template'
+Parameters:
+  VpcId:
+    Description: ID of the VPC in which to launch the EC2 instance
+    Type: AWS::EC2::VPC::Id
+    ConstraintDescription: must be the ID of an existing VPC.
+  SubnetId:
+    Description: ID of the Subnet in which to launch the EC2 instance
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: must be the ID of an existing Subnet.
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instance
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.medium
+      - m5.large
+      - m5.xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+  SSHLocation:
+    Description: The IP address range that can be used to SSH to the EC2 instances
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})"
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
+Mappings:
+  AWSRegion2AMI:
+    us-east-1:
+      AMI: ami-0093f53bdbd4b59d9
+    us-west-2:
+      AMI: ami-0093f53bdbd4b59d9
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Stacks Private Testnet
+      GroupName: !Ref AWS::StackName
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 
+          Ref: SSHLocation
+      - IpProtocol: tcp
+        FromPort: 20443
+        ToPort: 20443
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 20444
+        ToPort: 20444
+        CidrIp: 0.0.0.0/0
+      - IpProtocol: tcp
+        FromPort: 3999
+        ToPort: 3999
+        CidrIp: 0.0.0.0/0
+      VpcId: !Ref VpcId
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType:
+        Ref: InstanceType
+      SecurityGroupIds:
+      - Ref: InstanceSecurityGroup
+      SubnetId: !Ref SubnetId
+      KeyName:
+        Ref: KeyName
+      ImageId:
+        Fn::FindInMap:
+        - AWSRegion2AMI
+        - Ref: AWS::Region
+        - AMI
+      Tags:
+      - Key: Name
+        Value:
+          Ref: AWS::StackName
+Outputs:
+  InstanceId:
+    Description: InstanceId of the Private Testnet
+    Value: 
+      Ref: EC2Instance
+  PublicDNS:
+    Description: Public DNSName of the Private Testnet
+    Value:
+      Fn::GetAtt:
+      - EC2Instance
+      - PublicDnsName
+  PublicIP:
+    Description: Public IP address of the Private Testnet
+    Value:
+      Fn::GetAtt:
+      - EC2Instance
+      - PublicIp

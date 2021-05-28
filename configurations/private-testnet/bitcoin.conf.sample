@@ -7,8 +7,9 @@ rpcpassword=blockstacksystem
 txindex=1
 listen=1
 rpcserialversion=0
+rpcworkqueue=100
 
 [regtest]
-bind=0.0.0.0:18444
-rpcbind=0.0.0.0:18443
-rpcport=18443
+bind=0.0.0.0:28444
+rpcbind=0.0.0.0:28443
+rpcport=28443
