@@ -8,8 +8,13 @@
 
 
 ### Install/Update docker-compose
-*Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*
-
+*Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*  
+[Install Docker-compose](https://docs.docker.com/compose/install/)  
+[Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)  
+[Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)  
+[Docker Engine for Linux](https://docs.docker.com/engine/install/#server)  
+  
+  
 First, check if you have `docker-compose` installed locally:
 ```bash
 $ docker-compose --version
@@ -24,16 +29,10 @@ DESTINATION=/usr/local/bin/docker-compose
 sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
 sudo chmod 755 $DESTINATION
 ```
-[Install Docker-compose](https://docs.docker.com/compose/install/)
-[Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)
-[Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)
-[Docker Engine for Linux](https://docs.docker.com/engine/install/#server)
-
-
 
 
 ### Env Vars
-All variables used in the [`sample.env`](https://github.com/blockstack/stacks-local-dev/blob/main/sample.env) file can be modified, but generally most of them should be left as-is.
+All variables used in the [`sample.env`](sample.env) file can be modified, but generally most of them should be left as-is.
 
 ### Local Data Dirs
 Directories will be created on first start that will store persistent data under `./persistent-data/<network>`
@@ -57,7 +56,7 @@ $ git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev &&
 ```bash
 $ cp sample.env .env
 ```
-1. V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](https://github.com/blockstack/stacks-local-dev/blob/main/sample.env#L21) in your `.env` file
+1. V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L20) in your `.env` file
 ```
 BNS_IMPORT_DIR=/bns-data
 ```
