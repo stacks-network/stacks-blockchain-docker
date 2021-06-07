@@ -48,13 +48,13 @@ Directories will be created on first start that will store persistent data under
 1. Clone the repo locally:
 
 ```bash
-$ git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
+git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
 ```
 
 2. Create/Copy `.env` file
 *Use a symlink as an alternative to copying: `ln -s sample.env .env`*
 ```bash
-$ cp sample.env .env
+cp sample.env .env
 ```
 1. V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L20) in your `.env` file
 ```
@@ -63,27 +63,27 @@ BNS_IMPORT_DIR=/bns-data
 
 4. Ensure all images are up to date
 ```bash
-$ ./manage.sh <network> pull
+./manage.sh <network> pull
 ```
 
 4. Start the Services:
 ```bash
-$ ./manage.sh <network> up
+./manage.sh <network> up
 ```
 
 5. Stop the Services:
 ```bash
-$ ./manage.sh <network> down
+./manage.sh <network> down
 ```
 
 6. Retrieve Service Logs
 ```bash
-$ ./manage.sh <network> logs
+./manage.sh <network> logs
 ```
 
 7. Restart all services:
 ```bash
-$ ./manage.sh <network> restart
+./manage.sh <network> restart
 ```
 
 ## Accessing the services
@@ -94,7 +94,7 @@ Use the command `./manage.sh <network> logs` to check the sync progress
 - Ports `20443-20444` are exposed to `localhost`
 
 ```bash
-$ curl localhost:20443/v2/info | jq
+curl localhost:20443/v2/info | jq
 ```
 
 **stacks-node-api**:
@@ -102,7 +102,7 @@ $ curl localhost:20443/v2/info | jq
 - Ports `3999` are exposed to `localhost`
 
 ```bash
-$ curl localhost:3999/v2/info | jq
+curl localhost:3999/v2/info | jq
 ```
 
 ---
@@ -114,13 +114,15 @@ $ curl localhost:3999/v2/info | jq
 
 1. Make a keychain
 ```bash
-$ stx make_keychain -t | jq . > cli_keychain.json
+stx make_keychain -t | jq . > cli_keychain.json
 ```
 
 1. Get some testnet STX:
 
 ```
-$ curl -s -X POST "localhost:3999/extended/v1/faucets/stx?address=$(cat ./cli_keychain.json | jq -r .keyInfo.address)" | jq .
+curl -s -X POST "localhost:3999/extended/v1/faucets/stx?address=$(cat ./cli_keychain.json | jq -r .keyInfo.address)" | jq .
+```
+```
 {
   "success": true,
   "txId": "0xdd8cfd9070f2cdfa13f513e45f7ce6f2fa350f6f4a45c8393b0b0ae88df6fa6a",
@@ -131,7 +133,9 @@ $ curl -s -X POST "localhost:3999/extended/v1/faucets/stx?address=$(cat ./cli_ke
 3. Check your balance:
 
 ```bash
-$ curl -s "localhost:3999/v2/accounts/$(cat ./cli_keychain.json | jq -r .keyInfo.address)?proof=0" | jq -r .balance
+curl -s "localhost:3999/v2/accounts/$(cat ./cli_keychain.json | jq -r .keyInfo.address)?proof=0" | jq -r .balance
+```
+```
 0x0000000000000000000000003b9aca00
 ```
 
@@ -140,20 +144,22 @@ $ curl -s "localhost:3999/v2/accounts/$(cat ./cli_keychain.json | jq -r .keyInfo
 Generate the transaction hex:
 
 ```bash
-$ stx deploy_contract -x -t ~/devel/stacks-blockchain/sample-contracts/tokens.clar hello-world 2000 0 $(cat ./cli_keychain.json | jq -r .keyInfo.privateKey) > /tmp/deploy-tx.hex
+stx deploy_contract -x -t ~/devel/stacks-blockchain/sample-contracts/tokens.clar hello-world 2000 0 $(cat ./cli_keychain.json | jq -r .keyInfo.privateKey) > /tmp/deploy-tx.hex
 ```
 
 Push to the miner's mempool:
 
 ```bash
-$ cat /tmp/deploy-tx.hex | xxd -p -r | curl -H "Content-Type: application/octet-stream" -X POST --data-binary @- localhost:20443/v2/transactions
+cat /tmp/deploy-tx.hex | xxd -p -r | curl -H "Content-Type: application/octet-stream" -X POST --data-binary @- localhost:20443/v2/transactions
 "c1a41067d67e55962018b449fc7defabd409f317124e190d6bbb2905ae11b735"
 ```
 
 Check the API's view of the transaction:
 
 ```
-$ curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defabd409f317124e190d6bbb2905ae11b735 | jq .
+curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defabd409f317124e190d6bbb2905ae11b735 | jq .
+```
+```
 {
   "tx_id": "0xc1a41067d67e55962018b449fc7defabd409f317124e190d6bbb2905ae11b735",
   "tx_type": "smart_contract",
@@ -191,7 +197,9 @@ _**Port(s) already in use**_:
 - To resolve, find the port you have in use (i.e. `3999` and edit your `.env` file to use the new port.
 
 ```bash
-$ netstat -anl | grep 3999
+netstat -anl | grep 3999
+```
+```
 tcp46      0      0  *.3999                 *.*                    LISTEN
 ```
 
@@ -203,22 +211,22 @@ _**Containers not starting (hanging on start)**_:
 _**BNS Data not imported/incorrect**_:
 - This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files. 
 ```bash
-$ wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ./persistent-data/bns-data/export-data.tar.gz
-$ tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns-data/
+wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ./persistent-data/bns-data/export-data.tar.gz
+tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns-data/
 ```
 
 _**Database Issues**_:
 - For any of the various Postgres issues, it may be easier to simply remove the persistent data dir for postgres. Note that doing so will result in a longer startup time as the data is repopulated. 
 ```bash
-$ rm -rf ./persistent-data/<network>
-$ ./manage.sh <network> restart
+rm -rf ./persistent-data/<network>
+./manage.sh <network> restart
 ```
 
 _**Stacks Blockchain Issues**_:
 - For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the chainstate is synced. 
 ```bash
-$ rm -rf ./persistent-data/<network>
-$ ./manage.sh <network> restart
+rm -rf ./persistent-data/<network>
+./manage.sh <network> restart
 ```
 
 
