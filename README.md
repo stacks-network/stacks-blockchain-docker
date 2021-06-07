@@ -120,7 +120,7 @@ $ stx make_keychain -t | jq . > cli_keychain.json
 1. Get some testnet STX:
 
 ```
-$ curl -s -X POST "localhost:3999/extended/v1/faucets/stx?address=$(cat ./cli_keychain.json | jq -r .keyInfo.address)" | jq .
+$ curl -s -X POST "https://stacks-node-api.regtest.stacks.co/extended/v1/faucets/stx?address=$(cat ./cli_keychain.json | jq -r .keyInfo.address)" | jq .
 {
   "success": true,
   "txId": "0xdd8cfd9070f2cdfa13f513e45f7ce6f2fa350f6f4a45c8393b0b0ae88df6fa6a",
