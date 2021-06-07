@@ -131,7 +131,7 @@ $ curl -s -X POST "https://stacks-node-api.regtest.stacks.co/extended/v1/faucets
 3. Check your balance:
 
 ```bash
-$ curl -s "localhost:3999/v2/accounts/$(cat ./cli_keychain.json | jq -r .keyInfo.address)?proof=0" | jq -r .balance
+$ curl -s "https://stacks-node-api.regtest.stacks.co/v2/accounts/$(cat ./cli_keychain.json | jq -r .keyInfo.address)?proof=0" | jq -r .balance
 0x0000000000000000000000003b9aca00
 ```
 
