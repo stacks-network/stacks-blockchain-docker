@@ -17,7 +17,9 @@
   
 First, check if you have `docker-compose` installed locally:
 ```bash
-$ docker-compose --version
+docker-compose --version
+``` 
+```
 docker-compose version 1.27.4, build 40524192
 ```
 
