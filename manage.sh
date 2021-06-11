@@ -16,8 +16,8 @@ usage() {
 	echo
 	echo "Usage:"
 	echo "  $0 <network> <action>"
-	echo "      network: [mainnet|testnet|mocknet|bns]"
-	echo "      action: [up|down|logs|reset|upgrade]"
+	echo "      network: [ mainnet| testnet| mocknet | private-testnet | bns ]"
+	echo "      action: [ up | down | logs | reset | upgrade ]"
 	echo
 	exit 0
 } 
@@ -97,7 +97,7 @@ docker_up() {
 		echo
 		return
 	fi
-	if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet" ]];then
+	if [[ ${NETWORK} != "mocknet" ]];then
 		if [[ ! -d ./persistent-data/${NETWORK} ]];then
 			echo "Creating persistent-data for ${NETWORK}"
 			mkdir -p ./persistent-data/${NETWORK}

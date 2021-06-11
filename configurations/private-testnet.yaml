@@ -1,8 +1,14 @@
 version: "3"
 services:
+  # postgres:
+  #   volumes:
+  #     - ../persistent-data/private-testnet/postgres:/var/lib/postgresql/data
   stacks-node-follower:
+    # image: blockstack/stacks-blockchain:latest
     image: blockstack/stacks-blockchain:feat-miner-control
+    # image: blockstack/stacks-blockchain:develop
     volumes:
+      # - ../persistent-data/private-testnet/stacks-blockchain:/root/stacks-node/data
       - ./private-testnet:/src/stacks-node
   explorer:
     image: blockstack/explorer:latest
@@ -21,6 +27,7 @@ services:
     container_name: bitcoin
     restart: on-failure
     volumes:
+      # - ../persistent-data/private-testnet/bitcoin:/root/.bitcoin
       - ./private-testnet:/etc/bitcoin
     expose:
       - 18443
