@@ -15,9 +15,14 @@
 [Docker Engine for Linux](https://docs.docker.com/engine/install/#server)  
   
   
-First, check if you have `docker-compose` installed locally:
+First, check if you have `docker-compose` installed locally. 
+
+To do that, run this command in your terminal : 
 ```bash
-$ docker-compose --version
+docker-compose --version
+``` 
+Output should look something very similar to this : 
+```
 docker-compose version 1.27.4, build 40524192
 ```
 
