@@ -4,6 +4,7 @@ services:
     image: blockstack/stacks-blockchain:feat-miner-control
     volumes:
       - ./private-testnet:/src/stacks-node
+    command: sh -c "sleep 60 && /bin/stacks-node start --config /src/stacks-node/Config.toml"
   explorer:
     image: blockstack/explorer:latest
     container_name: explorer
