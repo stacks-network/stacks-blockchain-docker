@@ -4,7 +4,8 @@ services:
     image: blockstack/stacks-blockchain:feat-miner-control
     volumes:
       - ./private-testnet:/src/stacks-node
-    command: sh -c "sleep 60 && /bin/stacks-node start --config /src/stacks-node/Config.toml"
+    # command: sh -c "sleep 60 && /bin/stacks-node start --config /src/stacks-node/Config.toml"
+    command: sh -c "until nc -vz bitcoin.stacks-blockchain 18443; do echo \"Waiting for bitcoin\"; sleep 2; done; /bin/stacks-node start --config /src/stacks-node/Config.toml"
   explorer:
     image: blockstack/explorer:latest
     container_name: explorer
