@@ -29,6 +29,7 @@ docker-compose version 1.27.4, build 40524192
 If the command is not found, or the version is < `1.27.4`, run the following to install the latest to `/usr/local/bin/docker-compose`:
 
 ```bash
+#You will need to have jq installed, or this snippet won't run.
 VERSION=$(curl --silent https://api.github.com/repos/docker/compose/releases/latest | jq .name -r)
 DESTINATION=/usr/local/bin/docker-compose
 sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
