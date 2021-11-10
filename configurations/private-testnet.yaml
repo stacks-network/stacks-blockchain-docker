@@ -1,11 +1,13 @@
 version: "3"
 services:
   stacks-node-follower:
-    image: blockstack/stacks-blockchain:feat-miner-control
+    image: blockstack/stacks-blockchain:feat-serde-toml
     volumes:
       - ./private-testnet:/src/stacks-node
     # command: sh -c "sleep 60 && /bin/stacks-node start --config /src/stacks-node/Config.toml"
     command: sh -c "until nc -vz bitcoin.stacks-blockchain 18443; do echo \"Waiting for bitcoin\"; sleep 2; done; /bin/stacks-node start --config /src/stacks-node/Config.toml"
+    expose:
+      - 20443
   explorer:
     image: blockstack/explorer:latest
     container_name: explorer
@@ -14,6 +16,8 @@ services:
       - NEXT_PUBLIC_TESTNET_API_SERVER=http://stacks-node-api.stacks-blockchain:3399
       - MOCKNET_API_SERVER=http://localhost:3999
       - TESTNET_API_SERVER=http://localhost:3999
+    expose:
+      - 3000
     ports:
       - 3000:3000
     networks:
