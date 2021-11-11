@@ -1,7 +1,7 @@
 version: "3"
 services:
   stacks-node-follower:
-    image: blockstack/stacks-blockchain:feat-serde-toml
+    image: blockstack/stacks-blockchain:print-limits-3
     volumes:
       - ./private-testnet:/src/stacks-node
     # command: sh -c "sleep 60 && /bin/stacks-node start --config /src/stacks-node/Config.toml"

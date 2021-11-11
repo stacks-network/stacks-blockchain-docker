@@ -146,6 +146,9 @@ case ${ACTION} in
 	logs)
 		docker_logs
 		;;
+	check)
+		check_network
+		;;
 	upgrade|pull)
 		ACTION="pull"
 		run_docker

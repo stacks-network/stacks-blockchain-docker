@@ -20,6 +20,8 @@ services:
     depends_on:
       - stacks-node-api
     command: /bin/stacks-node start --config /src/stacks-node/Config.toml
+    env_file:
+      - ../.env
   stacks-node-api:
     image: blockstack/stacks-blockchain-api:latest
     container_name: stacks-node-api
