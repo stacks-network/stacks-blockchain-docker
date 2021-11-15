@@ -1,0 +1,318 @@
+[node]
+working_dir = "/root/stacks-node/data"
+rpc_bind = "0.0.0.0:20443"
+p2p_bind = "0.0.0.0:20444"
+bootstrap_node="047435c194e9b01b3d7f7a2802d6684a3af68d05bbf4ec8f17021980d777691f1d51651f7f1d566532c804da506c117bbf79ad62eea81213ba58f8808b4d9504ad@testnet.stacks.co:20444"
+miner = true
+pox_sync_sample_secs = 0
+seed = "0000000000000000000000000000000000000000000000000000000000000000"
+use_test_genesis_chainstate = true
+
+mine_microblocks = true
+wait_time_for_microblocks = 30000
+
+[[events_observer]]
+endpoint = "stacks-node-api:3700"
+retry_count = 255
+events_keys = ["*"]
+
+[burnchain]
+chain = "bitcoin"
+mode = "krypton"
+peer_host = "bitcoin.stacks-blockchain"
+# Connect to puppet
+rpc_port = 18443
+# Connect direct to bitcoind (no firewall)
+peer_port = 28444
+magic_byte = "X2"
+username = "blockstack"
+password = "blockstacksystem"
+
+[[burnchain.epochs]]
+epoch_id = 'Epoch20'
+start_height = 0
+end_height = 310
+
+[burnchain.epochs.block_limit]
+write_length = 100000000
+write_count = 1200
+read_length = 1000000000
+read_count = 50000
+runtime = 5000000000
+
+[[burnchain.epochs]]
+epoch_id = 'Epoch2_05'
+start_height = 310
+end_height = 9223372036854775807
+
+[burnchain.epochs.block_limit]
+write_length = 100000000
+write_count = 600
+read_length = 1000000000
+read_count = 50000
+runtime = 5000000000
+
+
+[[ustx_balance]]
+address = "STAA8DM54WPTEMRD5RGY7J67ZR532SEC4HB85KF5"
+amount = 10000000000000000
+
+[[ustx_balance]]
+address = "STSR49W1EKWD8JB1PPKXD34TQCHS6SD9RNT6K7TC"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3Q491FABQAMHCN9FNX4S7E36KKC9VTQKWPPY4CS"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STRR8YQKV3H64QJRA3AYQ4C3F4FECXVWSEXA1N1T"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1ET801P6Z7EJQXTGJDZG7D8KWX0CJSCM7N5B4W0"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST94J2ASXP3W9VJH99V4GW6RJFJ1M7ETY95R3TJY"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2SAZ97AW8478XJEGBKE21S2HX2Z1XZDKHFTPVDC"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STHCYVY0FZRFZZWRA33V79W577D6J891EFDAM864"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST10NKSKZ18RPWP3MPVDNVD8T5TM1G0XE57FGETES"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1A6664SAXBAMGC1Q1R74N9GSBYYQ4JZJHHZ6QJ1"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST181Z52572GYED6AD0BG2G82EBNTDYD25JY2PD3D"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3W7XAXJY629D85N73TCVP40SJCHHPS4DZWW0B3G"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1TQ393VAKC6AAN3SNGHJJKYXH656ZA6N34GR6MG"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST55FG62RAQKDSHBGNQ2Z12TSE9DFMQ7HRYZ51TH"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST39ECNEMRV5N8XK4Q8EVAVB9R8A27GEPF88MES6S"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3VRW9DM3QRY53HPY28K4FXF3J8GTAV2GCAFQRZB"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST23679EMVYVYHQ9YDV0G8D32KEPBR1Q652YC2E9N"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1Z16X1FD62DVG9MDYT9A032W5RWX3V8PEJMDYYD"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST29XXEY66M493QJ4WKKEBFCK4FBVVASHE70T9EJX"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3R8XZDPYB8BH9QKEERDNDGQP5MV9QZXKPZWVPKH"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1ETZ3Y2BCT36TH89WXX1T1VD84K6ZYEWSXMH0RP"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STMFXJC2P05MBSKQ3TRZTQ2AJV5H10VAKCV6FYGZ"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3WEJ9D0DQ9WMF8WA8SYASB41PTSX02EGP1AZHCN"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1VCSPWMVVWWSH0NE8W3888J4K8ZZ45TXD8TN347"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2F1F36ECBMZ52ZRDF5CNPY7Q07GB670JK02VCFN"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1YA9KWDG6ZZK5GN3T8TK1KQVVDVQ0CPJD4EDY35"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STDY31BQ6CAV35YAW077N97DWXN7RCVH42MYJKZD"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2201H4P83K4FRNQVZFSV82N0VYTS4T07R9WARRV"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2R1NT2P19D6XHGYYKA73FS3QXZPXJNGT4V3M4PK"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST37FMGPWQ62F8XMACNNHZW5BHD9PZN21G0CS5MQZ"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STA6DJMF0KN1QP4NFZHFC539G8GAKEG2WN7JJZXR"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3VHF72PZARYGXVQCGGJ862S381JYZYF3096NB0Y"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2VWFPP0HKHG89MR0XP3NEJHN1X09VMJKG9G30SW"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST8BD11R9MWZ90P0E68TW9959P9SNEAYS7AFYZAG"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3N9V4GCKEA29SFRG7A8DCTKAXJCDSRWZR6JFQ2R"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3R9Z3GTTWNDZM49DQYT5B0ER5FETYPNKZ4TPAJB"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST19QF7KAKQE4H5KSPB7HPCXK9Q88CTV64C20HS6C"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST29KHVYE97WM20XW4MN53BKR95YDBRSE55EDQ53V"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2X94Z14TXWY7YQC22BR0P37G6Z0423GZH0SR5BJ"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST3X0AY650J6873T88SZ91XQWHETAQMBRKQZ5C5CP"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STJET8DYST44A35Y55Q182NDYD35ZCB5VEDR31YK"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST17M3QDN0N8YC01XDBZQQ1MS17TQ4VAHEM9600TE"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STA4203NHYDXGMTN1NSSDXPF88HT2J73X326ACS1"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST97F105FE8KW50QKG2GGFFD5K0H5DYK8M5GYF9S"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST10J402C5DGG9SRAVCZH72Y89VKZ61VBF3ZA9V39"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2GQ03FDRBX5V10B6DBGXSWS0EJAECBYZ2S5V36H"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST25E2SVF23E5R0K1G99XRZWYSTVSSE01SFJEB0BZ"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST2QMEZ8J1NQN7JRARNEG3HYWS13XJHBBX9MJZCCY"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST225HFT0WY0JE4TT6WZ3T4RHRV5ZGJXAJF6EHCNR"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "STT9VFKMNJQ1BTE6C7ND389C6M5G48AGJDJ7HJTM"
+amount = 10000000000000000
+
+
+[[ustx_balance]]
+address = "ST1PR42WXJWYK58XJJB5NTKVWDESVEQRYZEGV8DFN"
+amount = 10000000000000000
+
+
+[connection_options]
+read_only_call_limit_write_length = 0
+read_only_call_limit_read_length = 100000
+read_only_call_limit_write_count = 0
+read_only_call_limit_read_count = 30
+read_only_call_limit_runtime = 1000000000
+
+[miner]
+first_attempt_time_ms = 20000

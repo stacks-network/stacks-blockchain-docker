@@ -12,7 +12,6 @@ crash.log
 *.pyc
 .gitconfig
 .idea
-/configurations/*/Config.toml
 
 # Vim-related files
 [._]*.s[a-w][a-z]
@@ -27,10 +26,6 @@ Session.vim
 *.secret
 *.save
 node_modules/
-stacks-node-follower/Config.toml
-configurations/*/Config.toml
-configurations/private-testnet/*.toml
-configurations/private-testnet/*.conf
 
 .env
 persistent-data/
