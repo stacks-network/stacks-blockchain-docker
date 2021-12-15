@@ -5,7 +5,7 @@ wait_time_for_microblocks = 10000
 use_test_genesis_chainstate = true
 
 [[events_observer]]
-endpoint = "stacks-node-api:3700"
+endpoint = "stacks-blockchain-api:3700"
 retry_count = 255
 events_keys = ["*"]
 

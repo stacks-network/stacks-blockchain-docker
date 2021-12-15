@@ -1,0 +1,8 @@
+version: "3"
+services:
+  stacks-blockchain-api:
+    restart: "no"
+    command: >
+      /bin/sh -c "
+      if [ -f $${STACKS_EXPORT_EVENTS_FILE} ]; then rm $${STACKS_EXPORT_EVENTS_FILE}; fi
+      && node ./lib/index.js export-events --file $${STACKS_EXPORT_EVENTS_FILE}"

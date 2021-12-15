@@ -3,6 +3,8 @@
 NETWORK=$1
 ACTION=$2
 PARAM=""
+PROFILE="stacks-blockchain"
+EVENT_REPLAY=""
 WHICH=$(which docker-compose)
 if [ $? -ne 0 ]; then
 	echo ""
@@ -16,8 +18,9 @@ usage() {
 	echo
 	echo "Usage:"
 	echo "  $0 <network> <action>"
-	echo "      network: [mainnet|testnet|mocknet|bns]"
-	echo "      action: [up|down|logs|reset|upgrade]"
+	echo "      network: [ mainnet | testnet |mocknet |bns ]"
+	echo "      action: [ up | down | logs | reset | upgrade | import | export ]"
+	echo "      ex: $0 mainnet up"
 	echo
 	exit 0
 } 
@@ -60,9 +63,9 @@ reset_data() {
 }
 
 ordered_stop() {
-	echo "Stopping stacks-node-follower first to prevent database errors"
-	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-node-follower"
-	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-node-follower
+	echo "Stopping stacks-blockchain first to prevent database errors"
+	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain"
+	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
 }
 
 docker_logs(){
@@ -79,7 +82,7 @@ docker_down () {
 	ACTION="down"
 	if ! check_network; then
 		echo
-		echo "*** stacks-node network is not running ***"
+		echo "*** stacks-blockchain network is not running ***"
 		echo 
 		return
 	fi
@@ -93,7 +96,7 @@ docker_up() {
 	ACTION="up"
 	if check_network; then
 		echo
-		echo "*** stacks-node network is already running ***"
+		echo "*** stacks-blockchain network is already running ***"
 		echo
 		return
 	fi
@@ -101,6 +104,7 @@ docker_up() {
 		if [[ ! -d ./persistent-data/${NETWORK} ]];then
 			echo "Creating persistent-data for ${NETWORK}"
 			mkdir -p ./persistent-data/${NETWORK}
+			mkdir -p ./persistent-data/${NETWORK}/event-replay
 		fi
 	fi
 	[[ ! -f "./configurations/${NETWORK}/Config.toml" ]] && cp ./configurations/${NETWORK}/Config.toml.sample ./configurations/${NETWORK}/Config.toml
@@ -113,8 +117,8 @@ docker_up() {
 }
 
 run_docker() {
-	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${ACTION} ${PARAM}"
-	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${ACTION} ${PARAM}
+	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}"
+	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		echo "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
 	fi
@@ -145,6 +149,39 @@ case ${ACTION} in
 		;;
 	logs)
 		docker_logs
+		;;
+	import)
+		if check_network; then
+			docker_down
+		fi
+		EVENT_REPLAY="-f ./configurations/api-import-events.yaml"
+		PROFILE="event-replay"
+		docker_up
+		# echo "Stopping unneeded service \"stacks-blockchain\" for the import process"
+		# docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain
+		echo ""
+		echo ""
+		echo " ** This operation can take a long while....check logs for completion **"
+		echo "    $0 $NETWORK logs"
+		echo "      - Look for a log \"Event import and playback successful.\""
+		echo "Once the import is done, restart the service with: $0 $NETWORK restart"
+		echo ""
+		;;
+	export)
+		if check_network; then
+			docker_down
+		fi
+		EVENT_REPLAY="-f ./configurations/api-export-events.yaml"
+		PROFILE="event-replay"
+		docker_up
+		# echo "Stopping unneeded service \"stacks-blockchain\" for the export process"
+		# docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain
+		echo ""
+		echo " ** This operation can take a long while....check logs for completion **"
+		echo "    $0 $NETWORK logs"
+		echo "      - Look for a log \"Export successful.\""
+		echo "Once the import is done, restart the service with: $0 $NETWORK restart"
+		echo ""
 		;;
 	upgrade|pull)
 		ACTION="pull"
