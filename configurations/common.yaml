@@ -8,9 +8,12 @@ services:
         - ../.env
     networks:
       - stacks-blockchain
-  stacks-node-follower:
+    profiles: 
+      - event-replay
+      - stacks-blockchain
+  stacks-blockchain:
     image: blockstack/stacks-blockchain:latest
-    container_name: stacks-node-follower
+    container_name: stacks-blockchain
     restart: on-failure
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL:-20443}:20443
@@ -18,15 +21,18 @@ services:
     networks:
       - stacks-blockchain
     depends_on:
-      - stacks-node-api
-    command: /bin/stacks-node start --config /src/stacks-node/Config.toml
-  stacks-node-api:
+      - stacks-blockchain-api
+    profiles: 
+      - stacks-blockchain
+    command: /bin/stacks-node start --config /src/stacks-blockchain/Config.toml
+  stacks-blockchain-api:
     image: blockstack/stacks-blockchain-api:latest
-    container_name: stacks-node-api
+    container_name: stacks-blockchain-api
     restart: always
     volumes:
       - ../persistent-data/bns-data:/bns-data
       - ../scripts:/scripts
+      - ../persistent-data/mainnet/event-replay:/tmp/event-replay
     ports:
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL:-3999}:${API_STACKS_BLOCKCHAIN_API_PORT:-3999}
     env_file:
@@ -35,8 +41,11 @@ services:
       - stacks-blockchain
     depends_on:
       - postgres
+    profiles: 
+      - event-replay
+      - stacks-blockchain
+    command: npm run start
 networks:
   stacks-blockchain:
     driver: bridge
-    name: stacks-blockchain
-#
+    name: stacks

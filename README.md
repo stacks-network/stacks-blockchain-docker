@@ -1,5 +1,8 @@
 # Stacks Blockchain with Docker
 ## Requirements:
+**MacOS with an M1 processor is *NOT* recommended for this repo**
+The way docker for mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are very heavy on I/O. This only seems to affect MacOS, other Arm based systems seem to work fine. 
+
 
 - [Docker](https://docs.docker.com/get-docker/)
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
@@ -59,15 +62,12 @@ git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && c
 
 2. Create/Copy `.env` file
 *Use a symlink as an alternative to copying: `ln -s sample.env .env`*
+   - V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L20) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`
 ```bash
 cp sample.env .env
 ```
-1. V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L20) in your `.env` file
-```
-BNS_IMPORT_DIR=/bns-data
-```
 
-4. Ensure all images are up to date
+3. Ensure all images are up to date
 ```bash
 ./manage.sh <network> pull
 ```
@@ -92,18 +92,38 @@ BNS_IMPORT_DIR=/bns-data
 ./manage.sh <network> restart
 ```
 
+7. Delete all data in `./persistent-data/<network>`:
+```bash
+./manage.sh <network> reset
+```
+
+8. export stacks-blockchain-api events (Not applicable for mocknet)
+```bash
+./manage.sh <network> export
+# check logs for completion
+./manage.sh <network> restart
+```
+
+
+9. replay stacks-blockchain-api events (Not applicable for mocknet)
+```bash
+./manage.sh <network> import
+# check logs for completion
+./manage.sh <network> restart
+```
+
 ## Accessing the services
 *Note*: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data. 
 Use the command `./manage.sh <network> logs` to check the sync progress
 
-**stacks-node-follower**:
+**stacks-blockchain**:
 - Ports `20443-20444` are exposed to `localhost`
 
 ```bash
 curl localhost:20443/v2/info | jq
 ```
 
-**stacks-node-api**:
+**stacks-blockchain-api**:
 
 - Ports `3999` are exposed to `localhost`
 

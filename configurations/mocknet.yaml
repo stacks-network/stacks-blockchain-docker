@@ -1,5 +1,5 @@
 version: "3"
 services:
-  stacks-node-follower:
+  stacks-blockchain:
     volumes:
-      - ./mocknet:/src/stacks-node
+      - ./mocknet:/src/stacks-blockchain

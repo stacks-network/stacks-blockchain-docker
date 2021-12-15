@@ -1,0 +1,7 @@
+version: "3"
+services:
+  stacks-blockchain-api:
+    restart: "no"
+    command: >
+      /bin/sh -c "
+      node ./lib/index.js import-events --file $${STACKS_EXPORT_EVENTS_FILE} --wipe-db --force"
