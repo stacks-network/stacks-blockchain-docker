@@ -4,6 +4,7 @@ NETWORK=$1
 ACTION=$2
 PARAM=""
 PROFILE="stacks-blockchain"
+ENV_FILE=".env"
 EVENT_REPLAY=""
 WHICH=$(which docker-compose)
 if [ $? -ne 0 ]; then
@@ -36,10 +37,10 @@ check_network() {
 
 download_bns_data() {
 	echo "Downloading and extracting V1 bns-data"
-	echo "Running: docker-compose -f ./configurations/bns.yaml up"
-	docker-compose -f ./configurations/bns.yaml up
-	echo "Running: docker-compose -f ./configurations/bns.yaml down"
-	docker-compose -f ./configurations/bns.yaml down
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ./configurations/bns.yaml up"
+	docker-compose --env-file ${ENV_FILE} -f ./configurations/bns.yaml up
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ./configurations/bns.yaml down"
+	docker-compose --env-file ${ENV_FILE} -f ./configurations/bns.yaml down
 	usage
 	exit 0
 }
@@ -64,8 +65,8 @@ reset_data() {
 
 ordered_stop() {
 	echo "Stopping stacks-blockchain first to prevent database errors"
-	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain"
-	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain"
+	docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
 }
 
 docker_logs(){
@@ -117,8 +118,8 @@ docker_up() {
 }
 
 run_docker() {
-	echo "Running: docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}"
-	docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}"
+	docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		echo "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
 	fi
@@ -157,8 +158,6 @@ case ${ACTION} in
 		EVENT_REPLAY="-f ./configurations/api-import-events.yaml"
 		PROFILE="event-replay"
 		docker_up
-		# echo "Stopping unneeded service \"stacks-blockchain\" for the import process"
-		# docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain
 		echo ""
 		echo ""
 		echo " ** This operation can take a long while....check logs for completion **"
@@ -174,8 +173,6 @@ case ${ACTION} in
 		EVENT_REPLAY="-f ./configurations/api-export-events.yaml"
 		PROFILE="event-replay"
 		docker_up
-		# echo "Stopping unneeded service \"stacks-blockchain\" for the export process"
-		# docker-compose -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml stop stacks-blockchain
 		echo ""
 		echo " ** This operation can take a long while....check logs for completion **"
 		echo "    $0 $NETWORK logs"

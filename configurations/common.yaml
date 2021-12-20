@@ -1,7 +1,7 @@
 version: "3"
 services:
   postgres:
-    image: postgres:13-alpine
+    image: postgres:${POSTGRES_VERSION:-13}-alpine
     container_name: postgres
     restart: on-failure
     env_file:
@@ -12,7 +12,7 @@ services:
       - event-replay
       - stacks-blockchain
   stacks-blockchain:
-    image: blockstack/stacks-blockchain:latest
+    image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}
     container_name: stacks-blockchain
     restart: on-failure
     ports:
@@ -26,7 +26,7 @@ services:
       - stacks-blockchain
     command: /bin/stacks-node start --config /src/stacks-blockchain/Config.toml
   stacks-blockchain-api:
-    image: blockstack/stacks-blockchain-api:latest
+    image: blockstack/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
     restart: always
     volumes:
