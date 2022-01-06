@@ -1,5 +1,5 @@
 # Stacks Blockchain with Docker
-Note: repo has renamed from `stacks-local-dev` to `stacks-blockchain-docker`\
+Note: repo has renamed from `stacks-local-dev` to `stacks-blockchain-docker`
 
 
 ### **MacOS with an M1 processor is *NOT* recommended for this repo**
