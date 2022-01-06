@@ -1,4 +1,7 @@
 # Stacks Blockchain with Docker
+Note: repo has renamed from `stacks-local-dev` to `stacks-blockchain-docker`\
+
+
 ### **MacOS with an M1 processor is *NOT* recommended for this repo**
 The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are ***very*** heavy on I/O. \
 This only seems to affect MacOS, other Arm based systems seem to work fine. 
