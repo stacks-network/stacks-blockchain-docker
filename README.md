@@ -1,16 +1,18 @@
 # Stacks Blockchain with Docker
-## Requirements:
-**MacOS with an M1 processor is *NOT* recommended for this repo**
-The way docker for mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are very heavy on I/O. This only seems to affect MacOS, other Arm based systems seem to work fine. 
+### **MacOS with an M1 processor is *NOT* recommended for this repo**
+The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are ***very*** heavy on I/O. \
+This only seems to affect MacOS, other Arm based systems seem to work fine. 
 
 
+
+## **Requirements:**
 - [Docker](https://docs.docker.com/get-docker/)
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
 
 
-### Install/Update docker-compose
+### **Install/Update docker-compose**
 *Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*  
 [Install Docker-compose](https://docs.docker.com/compose/install/)  
 [Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)  
@@ -40,7 +42,7 @@ sudo chmod 755 $DESTINATION
 ```
 
 
-### Env Vars
+### **Env Vars**
 All variables used in the [`sample.env`](sample.env) file can be modified, but generally most of them should be left as-is.
 
 ### Local Data Dirs
@@ -53,7 +55,7 @@ Directories will be created on first start that will store persistent data under
   - private-testnet
 
 
-## Quickstart
+## **Quickstart**
 1. Clone the repo locally:
 
 ```bash
@@ -112,7 +114,7 @@ cp sample.env .env
 ./manage.sh <network> restart
 ```
 
-## Accessing the services
+## **Accessing the services**
 *Note*: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data. 
 Use the command `./manage.sh <network> logs` to check the sync progress
 
@@ -133,9 +135,9 @@ curl localhost:3999/v2/info | jq
 
 ---
 
-## Using the private testnet
+## **Using the private testnet**
 
-### Deploying a contract
+### **Deploying a contract**
 *[Follow the guide here](https://docs.stacks.co/understand-stacks/command-line-interface#installation) to install the `stx` cli*
 
 1. Make a keychain
@@ -215,12 +217,11 @@ curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defabd
 }
 ```
 
-## Workarounds to potential issues
+## **Workarounds to potential issues**
 
 _**Port(s) already in use**_:
-
-- If you have a port conflict, typically this means you already have a process using that same port.
-- To resolve, find the port you have in use (i.e. `3999` and edit your `.env` file to use the new port.
+- If you have a port conflict, typically this means you already have a process using that same port.\
+  To resolve, find the port you have in use (i.e. `3999` and edit your `.env` file to use the new port.
 
 ```bash
 netstat -anl | grep 3999
@@ -230,9 +231,7 @@ tcp46      0      0  *.3999                 *.*                    LISTEN
 ```
 
 _**Containers not starting (hanging on start)**_:
-
 - Occasionally, docker can get **stuck** and not allow new containers to start. If this happens, simply restart your docker daemon and try again.
-
 
 _**BNS Data not imported/incorrect**_:
 - This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files. 
@@ -242,16 +241,28 @@ tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns
 ```
 
 _**Database Issues**_:
-- For any of the various Postgres issues, it may be easier to simply remove the persistent data dir for postgres. Note that doing so will result in a longer startup time as the data is repopulated. 
+- For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated. 
 ```bash
-rm -rf ./persistent-data/<network>
+./manage.sh <network> reset
 ./manage.sh <network> restart
 ```
 
-_**Stacks Blockchain Issues**_:
-- For any of the various stacks blockchain issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the chainstate is synced. 
+_**API Missing Parent Block Error**_:\
+- If the Stacks blockchain is no longer syncing blocks, and the API reports an error similar to this:\
+  `Error processing core node block message DB does not contain a parent block at height 1970 with index_hash 0x3367f1abe0ee35b10e77fbcaa00d3ca452355478068a0662ec492bb30ee0f13e"`,\
+  The API (and by extension the DB) is out of sync with the blockchain. \
+  The only known method to recover is to resync from genesis (**event-replay *may* work, but in all likliehood will restore data to the same broken state**).
+
+- To attempt the event-replay
 ```bash
-rm -rf ./persistent-data/<network>
+./manage.sh <network> import
+# check logs for completion
+./manage.sh <network> restart
+```
+
+- To wipe data and re-sync from genesis 
+```bash
+./manage.sh <network> reset
 ./manage.sh <network> restart
 ```
 
