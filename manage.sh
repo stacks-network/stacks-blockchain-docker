@@ -24,7 +24,17 @@ usage() {
 	echo "      ex: $0 mainnet up"
 	echo
 	exit 0
-} 
+}
+
+check_device() {
+    if [[ `uname -m` == 'arm64' ]]; then
+        echo "⚠️  WARNING"
+        echo "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
+        echo "⚠️  see README for details"
+        echo "⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
+        read -p "Press enter to continue anyway or Ctrl+C to exit"
+    fi
+}
 
 check_network() {
 	if [[ $(docker-compose -f configurations/common.yaml ps -q) ]]; then
@@ -57,7 +67,7 @@ reset_data() {
 			echo "  Run: $0 ${NETWORK} down"
 			echo "  And try again"
 			echo
-			exit 
+			exit
 		fi
 	fi
 	exit 0
@@ -72,7 +82,7 @@ ordered_stop() {
 docker_logs(){
 	PARAM="-f"
 	if ! check_network; then
-		echo 
+		echo
 		echo "*** No ${NETWORK} services running ***"
 		usage
 	fi
@@ -84,7 +94,7 @@ docker_down () {
 	if ! check_network; then
 		echo
 		echo "*** stacks-blockchain network is not running ***"
-		echo 
+		echo
 		return
 	fi
 	if [[ ${NETWORK} == "mainnet" || ${NETWORK} == "testnet" ]];then
@@ -137,7 +147,11 @@ case ${NETWORK} in
     	;;
 esac
 
-case ${ACTION} in 
+
+check_device
+
+case ${ACTION} in
+
 	up|start)
 		docker_up
 		;;
