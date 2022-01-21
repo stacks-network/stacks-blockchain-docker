@@ -4,8 +4,8 @@ Be sure to update the remote url: `git remote set-url origin https://github.com/
 
 
 ### **MacOS with an M1 processor is *NOT* recommended for this repo**
-The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are ***very*** heavy on I/O. \
-This only seems to affect MacOS, other Arm based systems seem to work fine. 
+⚠️ The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are ***very*** heavy on I/O. \
+This only seems to affect MacOS, other Arm based systems seem to work fine.
 
 
 
@@ -17,20 +17,20 @@ This only seems to affect MacOS, other Arm based systems seem to work fine.
 
 
 ### **Install/Update docker-compose**
-*Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*  
-[Install Docker-compose](https://docs.docker.com/compose/install/)  
-[Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)  
-[Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)  
-[Docker Engine for Linux](https://docs.docker.com/engine/install/#server)  
-  
-  
-First, check if you have `docker-compose` installed locally. 
+*Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*
+[Install Docker-compose](https://docs.docker.com/compose/install/)
+[Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)
+[Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)
+[Docker Engine for Linux](https://docs.docker.com/engine/install/#server)
 
-To do that, run this command in your terminal : 
+
+First, check if you have `docker-compose` installed locally.
+
+To do that, run this command in your terminal :
 ```bash
 docker-compose --version
-``` 
-Output should look something very similar to this : 
+```
+Output should look something very similar to this :
 ```
 docker-compose version 1.27.4, build 40524192
 ```
@@ -119,7 +119,7 @@ cp sample.env .env
 ```
 
 ## **Accessing the services**
-*Note*: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data. 
+*Note*: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data.
 Use the command `./manage.sh <network> logs` to check the sync progress
 
 **stacks-blockchain**:
@@ -238,14 +238,14 @@ _**Containers not starting (hanging on start)**_:
 - Occasionally, docker can get **stuck** and not allow new containers to start. If this happens, simply restart your docker daemon and try again.
 
 _**BNS Data not imported/incorrect**_:
-- This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files. 
+- This could happen if a file exists, but is empty or truncated. The script to extract these files *should* address this, but if it doesn't you can manually extract the files.
 ```bash
 wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ./persistent-data/bns-data/export-data.tar.gz
 tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns-data/
 ```
 
 _**Database Issues**_:
-- For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated. 
+- For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated.
 ```bash
 ./manage.sh <network> reset
 ./manage.sh <network> restart
@@ -264,7 +264,7 @@ _**API Missing Parent Block Error**_:\
 ./manage.sh <network> restart
 ```
 
-- To wipe data and re-sync from genesis 
+- To wipe data and re-sync from genesis
 ```bash
 ./manage.sh <network> reset
 ./manage.sh <network> restart
