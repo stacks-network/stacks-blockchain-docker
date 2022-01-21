@@ -31,7 +31,7 @@ check_device() {
         echo "⚠️  WARNING"
         echo "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
         echo "⚠️  see README for details"
-        echo "⚠️  https://github.com/dcsan/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo "
+        echo "⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
         read -p "Press enter to continue anyway or Ctrl+C to exit"
     fi
 }
