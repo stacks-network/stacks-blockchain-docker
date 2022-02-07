@@ -64,7 +64,7 @@ Directories will be created on first start that will store persistent data under
 1. Clone the repo locally:
 
 ```bash
-git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && cd ./stacks-local-dev
+git clone https://github.com/stacks-network/stacks-blockchain-docker && cd ./stacks-blockchain-docker
 ```
 
 2. Create/Copy `.env` file
@@ -122,7 +122,7 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 
 ## **Accessing the services**
 *Note*: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data.
-Use the command `./manage.sh <network> logs` to check the sync progress
+Use the command `./manage.sh <network> logs` to check the sync progress.
 
 **stacks-blockchain**:
 - Ports `20443-20444` are exposed to `localhost`
@@ -151,7 +151,7 @@ curl localhost:3999/v2/info | jq
 stx make_keychain -t | jq . > cli_keychain.json
 ```
 
-1. Get some testnet STX:
+2. Get some testnet STX:
 
 ```
 curl -s -X POST "localhost:3999/extended/v1/faucets/stx?address=$(cat ./cli_keychain.json | jq -r .keyInfo.address)" | jq .
@@ -253,7 +253,7 @@ _**Database Issues**_:
 ./manage.sh <network> restart
 ```
 
-_**API Missing Parent Block Error**_:\
+_**API Missing Parent Block Error**_:
 - If the Stacks blockchain is no longer syncing blocks, and the API reports an error similar to this:\
   `Error processing core node block message DB does not contain a parent block at height 1970 with index_hash 0x3367f1abe0ee35b10e77fbcaa00d3ca452355478068a0662ec492bb30ee0f13e"`,\
   The API (and by extension the DB) is out of sync with the blockchain. \
