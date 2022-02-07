@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VERSION=$(curl -sL https://api.github.com/repos/blockstack/stacks-blockchain/releases/latest | jq .tag_name | tr -d '"')
+VERSION=$(curl -sL https://api.github.com/repos/stacks-network/stacks-blockchain/releases/latest | jq .tag_name | tr -d '"')
 echo "Setting Version to ${VERSION}"
 echo ""
 echo "Building private-testnet"

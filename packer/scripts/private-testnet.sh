@@ -1,7 +1,7 @@
 #!/bin/sh
-echo === Cloning stacks-local-dev ===
-git clone -b private-testnet  --depth 1 https://github.com/blockstack/stacks-local-dev /stacks-local-dev
-ln -s /stacks-local-dev/sample.env /stacks-local-dev/.env
+echo === Cloning stacks-blockchain-docker ===
+git clone -b private-testnet  --depth 1 https://github.com/stacks-network/stacks-blockchain-docker /stacks-blockchain-docker
+ln -s /stacks-blockchain-docker/sample.env /stacks-blockchain-docker/.env
 
 echo === Adding testnet unit-file ===
 cat <<EOF> /etc/systemd/system/testnet.service
@@ -12,7 +12,7 @@ After=docker.service
 ConditionFileIsExecutable=/usr/local/bin/docker-compose
 
 [Service]
-WorkingDirectory=/stacks-local-dev
+WorkingDirectory=/stacks-blockchain-docker
 TimeoutStartSec=0
 Restart=on-failure
 RemainAfterExit=yes

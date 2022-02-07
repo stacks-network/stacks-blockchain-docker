@@ -1,11 +1,11 @@
 # Stacks Blockchain with Docker
-Note: repo has renamed from `stacks-local-dev` to `stacks-blockchain-docker`\
-Be sure to update the remote url: `git remote set-url origin https://github.com/blockstack/stacks-blockchain-docker`
+Note: repo has renamed from `stacks-local-dev` to `stacks-blockchain-docker` and moved from github user `blockstack` to `stacks-network`\
+Be sure to update the remote url: `git remote set-url origin https://github.com/stacks-network/stacks-blockchain-docker`
 
 
 ### **MacOS with an M1 processor is *NOT* recommended for this repo**
 ⚠️ The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are ***very*** heavy on I/O. \
-This only seems to affect MacOS, other Arm based systems seem to work fine.
+This only seems to affect MacOS, other Arm based systems like Raspberry Pi's seem to work fine.
 
 
 
@@ -18,10 +18,11 @@ This only seems to affect MacOS, other Arm based systems seem to work fine.
 
 ### **Install/Update docker-compose**
 *Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively*
-[Install Docker-compose](https://docs.docker.com/compose/install/)
-[Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)
-[Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)
-[Docker Engine for Linux](https://docs.docker.com/engine/install/#server)
+
+* [Install Docker-compose](https://docs.docker.com/compose/install/)
+* [Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)
+* [Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)
+* [Docker Engine for Linux](https://docs.docker.com/engine/install/#server)
 
 
 First, check if you have `docker-compose` installed locally.
@@ -67,11 +68,12 @@ git clone https://github.com/blockstack/stacks-local-dev ./stacks-local-dev && c
 ```
 
 2. Create/Copy `.env` file
-*Use a symlink as an alternative to copying: `ln -s sample.env .env`*
-   - V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L20) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`
 ```bash
 cp sample.env .env
 ```
+*You may also use a symlink as an alternative to copying: `ln -s sample.env .env`*
+
+Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L21) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`
 
 3. Ensure all images are up to date
 ```bash
@@ -142,7 +144,7 @@ curl localhost:3999/v2/info | jq
 ## **Using the private testnet**
 
 ### **Deploying a contract**
-*[Follow the guide here](https://docs.stacks.co/understand-stacks/command-line-interface#installation) to install the `stx` cli*
+*[Follow the guide here](https://docs.hiro.so/references/stacks-cli#installing-the-stacks-cli) to install the `stx` cli*
 
 1. Make a keychain
 ```bash
