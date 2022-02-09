@@ -102,6 +102,11 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 ./manage.sh <network> up
 ```
 
+- Optional (with a proxy):
+```bash
+./manage.sh <network> up proxy
+```
+
 5. Stop the Services:
 
 ```bash
@@ -118,6 +123,11 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 
 ```bash
 ./manage.sh <network> restart
+```
+
+- Optional (with a proxy):
+```bash
+./manage.sh <network> restart proxy
 ```
 
 7. Delete all data in `./persistent-data/<network>`:
@@ -161,6 +171,15 @@ curl localhost:20443/v2/info | jq
 
 ```bash
 curl localhost:3999/v2/info | jq
+```
+
+**proxy**:
+
+- Port `80` is exposed to `localhost`
+
+```bash
+curl localhost/v2/info | jq
+curl localhost/ | jq
 ```
 
 ---
