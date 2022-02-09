@@ -2,10 +2,12 @@
 
 NETWORK=$1
 ACTION=$2
+FLAG=$3
 PARAM=""
 PROFILE="stacks-blockchain"
 ENV_FILE=".env"
 EVENT_REPLAY=""
+FLAGS=""
 WHICH=$(which docker-compose)
 if [ $? -ne 0 ]; then
 	echo ""
@@ -18,9 +20,10 @@ fi
 usage() {
 	echo
 	echo "Usage:"
-	echo "  $0 <network> <action>"
-	echo "      network: [ mainnet | testnet |mocknet |bns ]"
+	echo "  $0 <network> <action> <optional flags>"
+	echo "      network: [ mainnet | testnet | mocknet | bns ]"
 	echo "      action: [ up | down | logs | reset | upgrade | import | export ]"
+	echo "		optional flags: [ proxy ]"
 	echo "      ex: $0 mainnet up"
 	echo
 	exit 0
@@ -57,7 +60,6 @@ download_bns_data() {
 
 reset_data() {
 	if [ -d ./persistent-data/${NETWORK} ]; then
-		# if [[ ! $(docker-compose -f configurations/common.yaml ps -q) ]]; then
 		if ! check_network; then
 			echo "Resetting Persistent data for ${NETWORK}"
 			echo "Running: rm -rf ./persistent-data/${NETWORK}"
@@ -128,16 +130,35 @@ docker_up() {
 }
 
 run_docker() {
-	echo "Running: docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}"
-	docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} --profile ${PROFILE} ${ACTION} ${PARAM}
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
+	docker-compose --env-file ${ENV_FILE} -f ./configurations/common.yaml -f ./configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		echo "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
 	fi
 }
 
 
+check_device
+
+
+case ${ACTION} in
+	# ensure we also act on any proxy containers based on ACTION
+    down|stop|logs|upgrade|pull)
+        FLAGS="-f ./configurations/proxy.yaml" 
+        ;;
+    *)
+		# set the FLAG regardless of ACTION if defined 
+        case ${FLAG} in
+            proxy|nginx)
+                FLAGS="-f ./configurations/proxy.yaml"
+                ;;
+        esac
+        ;;
+esac 
+
+
 case ${NETWORK} in
-	mainnet | testnet|mocknet | private-testnet)
+	mainnet|testnet|mocknet|private-testnet)
 		;;
 	bns)
 		download_bns_data
@@ -147,8 +168,6 @@ case ${NETWORK} in
     	;;
 esac
 
-
-check_device
 
 case ${ACTION} in
 
