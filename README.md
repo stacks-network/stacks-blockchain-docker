@@ -23,7 +23,10 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
-
+- VM with at a minimum:
+  - 4GB memory
+  - 1 Vcpu
+  - 50GB storage
 ### **Install/Update docker-compose**
 
 _Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively_
