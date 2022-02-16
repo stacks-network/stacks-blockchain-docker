@@ -2,11 +2,11 @@ version: "3"
 services:
   postgres:
     volumes:
-      - ../persistent-data/testnet/postgres:/var/lib/postgresql/data
+      - ${SCRIPTPATH}/persistent-data/testnet/postgres:/var/lib/postgresql/data
   stacks-blockchain:
     volumes:
-      - ./testnet:/src/stacks-blockchain
-      - ../persistent-data/testnet/stacks-blockchain:/root/stacks-blockchain/data
+      - ${SCRIPTPATH}/configurations/testnet:/src/stacks-blockchain
+      - ${SCRIPTPATH}/persistent-data/testnet/stacks-blockchain:/root/stacks-blockchain/data
   stacks-blockchain-api:
     environment:
       - STACKS_CHAIN_ID=0x80000000
