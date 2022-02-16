@@ -142,7 +142,7 @@ run_docker() {
 
 case ${ACTION} in
 	# ensure we also act on any proxy containers based on ACTION
-    down|stop|logs|upgrade|pull)
+    down|stop|logs|upgrade|pull|export|import)
         FLAGS="-f ${SCRIPTPATH}/configurations/proxy.yaml" 
         ;;
     *)
@@ -178,8 +178,8 @@ case ${ACTION} in
 		docker_down
 		;;
 	restart)
-		stop
-		start
+		docker_down
+		docker_up
 		;;
 	logs)
 		docker_logs
@@ -190,7 +190,7 @@ case ${ACTION} in
 		fi
 		EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-import-events.yaml"
 		PROFILE="event-replay"
-		docker_up
+		start
 		echo ""
 		echo ""
 		echo " ** This operation can take a long while - check logs for completion **"
@@ -205,7 +205,7 @@ case ${ACTION} in
 		fi
 		EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-export-events.yaml"
 		PROFILE="event-replay"
-		docker_up
+		start
 		echo ""
 		echo " ** This operation can take a long while - check logs for completion **"
 		echo "    $0 $NETWORK logs"
