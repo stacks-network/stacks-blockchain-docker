@@ -190,7 +190,7 @@ case ${ACTION} in
 		fi
 		EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-import-events.yaml"
 		PROFILE="event-replay"
-		start
+		docker_up
 		echo ""
 		echo ""
 		echo " ** This operation can take a long while - check logs for completion **"
@@ -205,7 +205,7 @@ case ${ACTION} in
 		fi
 		EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-export-events.yaml"
 		PROFILE="event-replay"
-		start
+		docker_up
 		echo ""
 		echo " ** This operation can take a long while - check logs for completion **"
 		echo "    $0 $NETWORK logs"
