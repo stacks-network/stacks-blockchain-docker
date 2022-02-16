@@ -11,4 +11,4 @@ services:
     profiles:
       - stacks-blockchain
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ${SCRIPTPATH}/configurations//nginx/default.conf:/etc/nginx/conf.d/default.conf

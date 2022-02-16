@@ -3,7 +3,7 @@ services:
   stacks-blockchain:
     image: blockstack/stacks-blockchain:feat-miner-control
     volumes:
-      - ./private-testnet:/src/stacks-blockchain
+      - ${SCRIPTPATH}/configurations/private-testnet:/src/stacks-blockchain
     command: sh -c "until nc -vz bitcoin.stacks-blockchain 18443; do echo \"Waiting for bitcoin\"; sleep 2; done; /bin/stacks-node start --config /src/stacks-blockchain/Config.toml"
   explorer:
     image: blockstack/explorer:latest
@@ -17,14 +17,14 @@ services:
       - 3000:3000
     networks:
       - stacks-blockchain
-    profiles: 
+    profiles:
       - stacks-blockchain
   bitcoin:
     image: blockstack/bitcoind:puppet-chain
     container_name: bitcoin
     restart: on-failure
     volumes:
-      - ./private-testnet:/etc/bitcoin
+      - ${SCRIPTPATH}/configurations/private-testnet:/etc/bitcoin
     expose:
       - 18443
       - 28444
@@ -33,5 +33,5 @@ services:
       - RUST_BACKTRACE=1
     networks:
       - stacks-blockchain
-    profiles: 
+    profiles:
       - stacks-blockchain
