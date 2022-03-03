@@ -1,10 +1,8 @@
-# FROM blockstack/stacks-blockchain:2.05.0.1.0-stretch as builder
 FROM debian:stretch-slim
 
 ARG BTC_VERSION=0.21.1
 ENV BTC_VERSION=${BTC_VERSION}
 WORKDIR /
-COPY --from=builder /bin/puppet-chain /usr/local/bin/
 COPY ./make_binary_dist.sh /make_binary_dist.sh
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod 755 /docker-entrypoint.sh /make_binary_dist.sh && mkdir -p /root/.bitcoin
