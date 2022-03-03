@@ -1,28 +1,35 @@
-FROM blockstack/stacks-blockchain as builder
-FROM alpine
-ARG BTC_URL="https://github.com/hirosystems/bitcoin-docker/releases/download/0.21.1/musl-v0.21.1.tar.gz"
+FROM blockstack/stacks-blockchain:2.05.0.1.0-stretch as builder
+FROM debian:stretch-slim
+
+ARG BTC_VERSION=0.21.1
+ENV BTC_VERSION=${BTC_VERSION}
 WORKDIR /
-COPY --from=builder /bin/puppet-chain /bin/
+COPY --from=builder /bin/puppet-chain /usr/local/bin/
+COPY ./make_binary_dist.sh /make_binary_dist.sh
 COPY ./docker-entrypoint.sh /docker-entrypoint.sh
-
-RUN apk add --update \
+RUN chmod 755 /docker-entrypoint.sh /make_binary_dist.sh
+RUN apt-get update && apt-get install -y \
+    autoconf \
+    build-essential \
+    libtool \
+    pkg-config \
+    python3 \
+    libboost-dev \
+    libboost-system-dev \
+    libboost-filesystem-dev \
+    libboost-thread-dev \
+    libboost-chrono-dev \
+    libssl-dev \
+    libevent-dev \
+    git \
+    libczmq-dev \
+    libzmq5 \
     curl \
-    gnupg \
-    boost-system \
-    boost-filesystem \
-    boost-thread \
-    boost-chrono \
-    libevent \
-    libzmq \
-    libgcc \
-    tini \
-    jq \
-    && curl -L -o /bitcoin.tar.gz ${BTC_URL} \
-    && tar -xzvf /bitcoin.tar.gz \
-    && mkdir -p /root/.bitcoin \
-    && mv /bitcoin-*/bin/* /usr/local/bin/ \
-    && rm -rf /bitcoin-*
-RUN chmod +x /docker-entrypoint.sh
+    vim-common \
+    procps \
+    net-tools \
+    netcat \
+    && /sbin/ldconfig /usr/lib /lib \
+    && sh /make_binary_dist.sh
+CMD ["/docker-entrypoint.sh"]
 
-ENTRYPOINT ["/sbin/tini", "--"]
-CMD [ "/docker-entrypoint.sh"]
