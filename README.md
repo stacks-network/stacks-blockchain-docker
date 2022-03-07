@@ -93,7 +93,7 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 
 Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L25) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`.
 
-3. Ensure all images are up to date
+3. Ensure all images are up to date. Change *<network>* for the appropiate network you would like to use, *mainnet*, *testnet* or *mocknet*.
 
 ```bash
 ./manage.sh <network> pull
