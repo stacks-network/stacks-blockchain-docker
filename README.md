@@ -80,7 +80,7 @@ Directories will be created on first start that will store persistent data under
 1. Clone the repo locally:
 
 ```bash
-git clone https://github.com/stacks-network/stacks-blockchain-docker && cd ./stacks-blockchain-docker
+git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stacks-blockchain-docker
 ```
 
 2. Create/Copy `.env` file
@@ -91,7 +91,7 @@ cp sample.env .env
 
 _You may also use a symlink as an alternative to copying: `ln -s sample.env .env`_
 
-Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L21) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`
+Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L25) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`.
 
 3. Ensure all images are up to date
 
