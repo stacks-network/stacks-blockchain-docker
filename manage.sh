@@ -65,10 +65,11 @@ download_bns_data() {
 run_bitcoin_node() {
 	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up"
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
-	echo "Running bitcoin node..."
+	echo "Running bitcoin node. Performing sync..."
 	echo "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
+	echo "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER".
 	docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
-	echo "Bitcoin node sync complete."
+	echo "Bitcoin node sync complete. Bitcoin node is fully operational."
 }
 
 reset_data() {
@@ -145,7 +146,7 @@ run_docker() {
 	# case will run if word bitcoin in contained in flag1 or flag2
 	case ${FLAG}${FLAG2} in
 		*bitcoin*)
-			echo "BITCOIN FLAG IN ON!"
+			# echo "BITCOIN FLAG IN ON!"
 			run_bitcoin_node
 			;;
 	esac

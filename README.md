@@ -26,7 +26,7 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
 - VM with at a minimum:
   - 4GB memory
   - 1 Vcpu
-  - 50GB storage
+  - 50GB storage (600GB if you optionaly also run the bitcoin node)
 ### **Install/Update docker-compose**
 
 _Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively_
@@ -154,6 +154,20 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 # check logs for completion
 ./manage.sh <network> restart
 ```
+
+## **Running also a bitcoin node (Optional)**
+
+Stacks needs to use the Bitcoin node, and by default when you run a Stacks node you will be using a public Bitcoin node, which is configured in the `.env` file. Default values is `BITCOIN_NODE=bitcoin.mainnet.stacks.org`.
+
+However, you can optionaly run both nodes together and configured in a way that you Stacks node will use your own Bitcoin node instead of a public one.
+
+### Why run Stacks node with your own Bitcoin node?
+
+Because running your own Bitcoin node will give you higher security and improved perfomance.
+
+* **Improved perfomance**: The Bitcoin node will serve you blocks faster, as well as UTXOs for your miner (if you run one).
+* **Higher security**: The Bitcoin node will also have validated all bitcoin transactions the Stacks node consumes. If you don't run your own Bitcoin node, you're relying on the SPV headers to vouch for the validity of Bitcoin blocks.
+
 
 ## **Accessing the services**
 
