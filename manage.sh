@@ -3,6 +3,7 @@
 NETWORK=$1
 ACTION=$2
 FLAG=$3
+FLAG2=$4
 PARAM=""
 PROFILE="stacks-blockchain"
 EVENT_REPLAY=""
@@ -26,7 +27,7 @@ usage() {
 	echo "  $0 <network> <action> <optional flags>"
 	echo "      network: [ mainnet | testnet | mocknet | bns ]"
 	echo "      action: [ up | down | logs | reset | upgrade | import | export ]"
-	echo "		optional flags: [ proxy ]"
+	echo "		optional flags: [ proxy | bitcoin ]"
 	echo "      ex: $0 mainnet up"
 	echo
 	exit 0
@@ -59,6 +60,15 @@ download_bns_data() {
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml down
 	usage
 	exit 0
+}
+
+run_bitcoin_node() {
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up"
+	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
+	echo "Running bitcoin node..."
+	echo "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
+	docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
+	echo "Bitcoin node sync complete."
 }
 
 reset_data() {
@@ -132,6 +142,13 @@ docker_up() {
 }
 
 run_docker() {
+	# case will run if word bitcoin in contained in flag1 or flag2
+	case ${FLAG}${FLAG2} in
+		*bitcoin*)
+			echo "BITCOIN FLAG IN ON!"
+			run_bitcoin_node
+			;;
+	esac
 	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
@@ -139,17 +156,17 @@ run_docker() {
 	fi
 }
 
-
 case ${ACTION} in
 	# ensure we also act on any proxy containers based on ACTION
     down|stop|logs|upgrade|pull|export|import)
-        FLAGS="-f ${SCRIPTPATH}/configurations/proxy.yaml" 
+        FLAGS="${FLAGS}-f ${SCRIPTPATH}/configurations/proxy.yaml" 
         ;;
     *)
-		# set the FLAG regardless of ACTION if defined 
-        case ${FLAG} in
-            proxy|nginx)
-                FLAGS="-f ${SCRIPTPATH}/configurations/proxy.yaml"
+		# set the FLAG regardless of ACTION if defined
+		# case will run if word proxy or nginx is contained in flag1 or flag2
+        case ${FLAG}${FLAG2} in
+            *proxy*|*nginx*)
+                FLAGS="${FLAGS}-f ${SCRIPTPATH}/configurations/proxy.yaml"
                 ;;
         esac
         ;;

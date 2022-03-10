@@ -1,0 +1,36 @@
+version: "3.8"
+services:
+
+  bitcoin-core:
+    image: ruimarinho/bitcoin-core
+    container_name: bitcoin-core
+    command:
+      -printtoconsole
+    environment:
+      - BITCOIN_DATA=/var/lib/bitcoin-core-data
+    volumes:
+      - "/mnt/blockchain-bitcoin:/var/lib/bitcoin-core-data"
+#      - "${SCRIPTPATH}/persistent-data/blockchain-bitcoin:/var/lib/bitcoin-core-data"
+#      - "${SCRIPTPATH}/configurations/bitcoin.conf:/var/lib/bitcoin-core-data/bitcoin.conf"
+      - "./bitcoin.conf:/var/lib/bitcoin-core-data/bitcoin.conf"
+    networks:
+      - stacks-blockchain
+
+#  stacks-node:
+#    image: blockstack/stacks-blockchain
+#    container_name: stacks-node
+#    depends_on:
+#      - bitcoin-core
+#    volumes:
+#      - "./stacks-node/persistent-data/stacks-blockchain/mainnet:/root/stacks-node/data"  
+#      - "./stacks-node/config/mainnet:/src/stacks-node"
+#    ports:
+#      - 20443:20443
+#      - 20444:20444
+#    networks:
+#      - net_blockchains
+
+networks:
+  stacks-blockchain:
+    driver: bridge
+    name: stacks        
