@@ -1,5 +1,8 @@
 # Stacks Blockchain with Docker
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Pull Requests Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
+
 ⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api/blob/master/CHANGELOG.md):
 
 ```bash
@@ -27,6 +30,7 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
   - 4GB memory
   - 1 Vcpu
   - 50GB storage
+
 ### **Install/Update docker-compose**
 
 _Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively_
@@ -106,6 +110,7 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 ```
 
 - Optional (with a proxy):
+
 ```bash
 ./manage.sh <network> up proxy
 ```
@@ -129,6 +134,7 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 ```
 
 - Optional (with a proxy):
+
 ```bash
 ./manage.sh <network> restart proxy
 ```
@@ -332,4 +338,3 @@ _**API Missing Parent Block Error**_:
 ./manage.sh <network> reset
 ./manage.sh <network> restart
 ```
-
