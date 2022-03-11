@@ -18,6 +18,8 @@ services:
     ports:
       - ${STACKS_FOLLOWER_RPC_PORT_LOCAL:-20443}:20443
       - ${STACKS_FOLLOWER_P2P_PORT_LOCAL:-20444}:20444
+    env_file:
+      - ${SCRIPTPATH}/.env
     networks:
       - stacks-blockchain
     depends_on:
