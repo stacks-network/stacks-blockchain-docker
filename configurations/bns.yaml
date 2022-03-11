@@ -9,4 +9,12 @@ services:
       - ${SCRIPTPATH}/scripts:/scripts
     env_file:
       - ${SCRIPTPATH}/.env
+    networks:
+      - stacks-blockchain
+    profiles:
+      - bns
     command: sh -c "/scripts/setup-bns.sh"
+networks:
+  stacks-blockchain:
+    driver: bridge
+    name: stacks

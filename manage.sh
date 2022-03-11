@@ -13,7 +13,7 @@ source ${ENV_FILE}
 
 
 exit_error() {
-   printf "%s" "$1\n" >&2
+   printf "%s\n" "$1" >&2
    exit 1
 }
 
@@ -21,17 +21,8 @@ for cmd in docker-compose docker; do
    command -v $cmd >/dev/null 2>&1 || exit_error "Missing command: $cmd"
 done
 
-
-set -uo pipefail
+set -eo pipefail
 set -Eo functrace
-
-failure() {
-  local lineno=$1
-  local msg=$2
-  echo >&2 "Command failed at $lineno: $msg"
-}
-
-trap 'failure ${LINENO} "$BASH_COMMAND"' ERR
 
 log() {
    printf >&2 "%s\n" "$1"
@@ -43,7 +34,8 @@ usage() {
 	log "      network: [ mainnet | testnet | mocknet | bns ]"
 	log "      action: [ up | down | logs | reset | upgrade | import | export ]"
 	log "		optional flags: [ proxy ]"
-	exit_error "      ex: $0 mainnet up"
+	log "      ex: $0 mainnet up"
+	exit_error ""
 }
 
 confirm() {
@@ -57,34 +49,6 @@ confirm() {
   done  
 }
 
-check_device() {
-    if [[ `uname -m` == 'arm64' ]]; then
-        log "⚠️  WARNING"
-        log "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
-        log "⚠️  see README for details"
-        log "⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
-        # read -p "Press enter to continue anyway or Ctrl+C to exit"
-		confirm "Continue Anyway?" || exit_error "Cancelled"
-    fi
-}
-
-check_api_breaking_change(){
-	CURRENT_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api | awk '{print substr ($0, 0, 1)}' | head -1)
-	CONFIGURED_API_VERSION=$( echo $STACKS_BLOCKCHAIN_API_VERSION | awk '{print substr ($0, 0, 1)}')
-	echo "CURRENT_API_VERSION: $CURRENT_API_VERSION"
-	echo "CONFIGURED_API_VERSION: $CONFIGURED_API_VERSION"
-	if [ "$CURRENT_API_VERSION" != "" ]; then
-		echo "CURRENT_API_VERSION Defined"
-		if [ $CURRENT_API_VERSION -lt $CONFIGURED_API_VERSION ];then
-			log "BREAKING API CHANGE DETECTED"
-			log "return 1"
-			return 1
-		fi
-	fi
-	log "return 0"
-	return 0
-}
-
 check_network() {
 	if [[ $(docker-compose -f ${SCRIPTPATH}/configurations/common.yaml ps -q) ]]; then
 		# docker running
@@ -94,23 +58,76 @@ check_network() {
 	return 1
 }
 
+status(){
+	if check_network; then
+		log "Stacks Blockchain services are running"
+		docker-compose -f ${SCRIPTPATH}/configurations/common.yaml ps
+	else
+		exit_error "Stacks Blockchain services are not running"
+	fi
+}
+
+check_device() {
+    if [[ `uname -m` == 'arm64' ]]; then
+		echo
+        log "⚠️  WARNING"
+        log "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
+        log "⚠️  see README for details"
+        log "⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
+        # read -p "Press enter to continue anyway or Ctrl+C to exit"
+		confirm "Continue Anyway?" || exit_error "Exiting"
+    fi
+}
+
+check_api_breaking_change(){
+	CURRENT_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | cut -f 1 -d "." | head -1)
+	CONFIGURED_API_VERSION=$( echo $STACKS_BLOCKCHAIN_API_VERSION | cut -f 1 -d ".")
+	if [ "$CURRENT_API_VERSION" != "" ]; then
+		if [ $CURRENT_API_VERSION -lt $CONFIGURED_API_VERSION ];then
+			echo
+			log "*** stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} ) ***"
+			return 1
+		fi
+	fi
+	log "return 0"
+	return 0
+}
+
 event_replay(){
 	EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-import-events.yaml"
 	PROFILE="event-replay"
 	docker_up
-	log " ** This operation can take a long while - check logs for completion **"
-	log "    $0 $NETWORK logs"
-	log "Once the operation is complete, restart the service with: $0 $NETWORK restart"
+	echo
+	log "*** This operation can take a long while ***"
+	log "    check logs for completion: $0 $NETWORK logs "
+	log "  Once the operation is complete, restart the service with: $0 $NETWORK restart"
+	echo
+	exit 0
 }
 
 download_bns_data() {
-	log "Downloading and extracting V1 bns-data"
-	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml up"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml up
-	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml down"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml down
-	usage
-	exit 0
+	if [ "$BNS_IMPORT_DIR" != "" ]; then
+		if ! check_network; then
+			echo
+			log "Downloading and extracting V1 bns-data"
+			log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml up"
+			docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml --profile bns up
+			log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml down"
+			docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bns.yaml --profile bns down
+			echo
+			log "Download Operation is complete, start the service with: $0 mainnet up"
+			echo
+			exit 0
+		else
+			echo
+			log "Can't download BNS data while services are running"
+			status
+			exit_error ""
+		fi
+	else
+		echo
+		exit_error "Undefined or commented BNS_IMPORT_DIR variable in $ENV_FILE"
+	fi
 }
 
 reset_data() {
@@ -120,7 +137,8 @@ reset_data() {
 			log "Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}
 		else
-			exit_error "Can't reset while services are running\n	Run: $0 ${NETWORK} down\n	And try again"
+			log "Can't reset while services are running"
+			exit_error "    Run: $0 ${NETWORK} down and try again"
 		fi
 	fi
 	exit 0
@@ -154,6 +172,22 @@ docker_down () {
 }
 
 docker_up() {
+	if ! check_api_breaking_change; then
+		log "    Required to perform a stacks-blockchain-api event-replay:"
+		log "        https://github.com/hirosystems/stacks-blockchain-api#event-replay "
+		log "    Or downgrade the API version in ${ENV_FILE}: STACKS_BLOCKCHAIN_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | head -1)"
+		if confirm "Run event-replay now?"; then
+			log "*** RUNNING EVENT REPLAY ***"
+			if check_network; then
+				docker_down
+			fi
+			ACTION="pull"
+			run_docker
+			EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-import-events.yaml"
+			event_replay
+		fi
+		exit_error "Exiting - event replay is required"
+	fi
 	ACTION="up"
 	if check_network; then
 		exit_error "*** stacks-blockchain network is already running ***"
@@ -174,23 +208,7 @@ docker_up() {
 }
 
 run_docker() {
-	if ! check_api_breaking_change; then
-		echo "Action: $ACTION"
-		if [ $ACTION != "pull" ]; then
-			log "*** stacks-blockchain-api contains a breaking schema change ***"
-			log " Recommended to perform a stacks-blockchain-api event-replay:"
-			log "    https://github.com/hirosystems/stacks-blockchain-api#event-replay "
-			if confirm "Run event-replay now?"; then
-				log "*** RUNNING EVENT REPLAY ***"
-				if check_network; then
-					docker_down
-				fi
-				EVENT_REPLAY="-f ${SCRIPTPATH}/configurations/api-import-events.yaml"
-				event_replay
-			fi
-		fi
-	fi
-	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
+	# echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		log "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
@@ -259,6 +277,9 @@ case ${ACTION} in
 	upgrade|pull)
 		ACTION="pull"
 		run_docker
+		;;
+	status)
+		status
 		;;
 	reset)
 		reset_data
