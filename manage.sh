@@ -27,8 +27,8 @@ usage() {
 	echo "  $0 <network> <action> <optional flags>"
 	echo "      network: [ mainnet | testnet | mocknet | bns ]"
 	echo "      action: [ up | down | logs | reset | upgrade | import | export ]"
-	echo "		optional flags: [ proxy | bitcoin ]"
-	echo "      ex: $0 mainnet up"
+	echo "      optional flags: [ proxy | bitcoin ]"
+	echo "      example: $0 mainnet up"
 	echo
 	exit 0
 }
@@ -91,8 +91,18 @@ reset_data() {
 
 ordered_stop() {
 	echo "Stopping stacks-blockchain first to prevent database errors"
-	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml stop stacks-blockchain"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
+	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain"
+	               docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
+	# Check if bitcoin blockchain is also running. If it is, stop it.
+	if [[ $(docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml ps -q bitcoin-core) ]]; then
+		echo "Bitcoin blockchain is currently running. Stopping..."
+		# "Not Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} down" because it would also remove the Stacks network
+		# Instead I need to first stop and then remove only the container (so the network stays on)
+		echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core"
+		               docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core
+		echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} rm -f bitcoin-core"
+			           docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} rm -f bitcoin-core
+	fi
 }
 
 docker_logs(){
@@ -144,10 +154,16 @@ docker_up() {
 
 run_docker() {
 	# case will run if word bitcoin in contained in flag1 or flag2
+	# If bitcoin flag is detected, I should run bitcoin node before anything else
 	case ${FLAG}${FLAG2} in
 		*bitcoin*)
 			# echo "BITCOIN FLAG IN ON!"
-			run_bitcoin_node
+			if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
+				run_bitcoin_node
+			else
+				echo "UNSUPPORTED OPTION: You can only run the bitcoin node on mainnet or testnet, not on ${NETWORK}."
+				usage
+			fi			
 			;;
 	esac
 	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
@@ -243,4 +259,4 @@ case ${ACTION} in
 		usage
 		;;
 esac
-exit
+exit 0
