@@ -136,7 +136,12 @@ run_bitcoin_node() {
 	log "Running bitcoin node. Performing sync..."
 	log "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
 	log "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
-	docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
+	# docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
+	sleep 5
+	until docker logs bitcoin-core | grep -q " progress=1.000000 cache=";
+	do
+		sleep 5
+	done
 	log "Bitcoin node sync complete. Bitcoin node is fully operational."
 }
 
