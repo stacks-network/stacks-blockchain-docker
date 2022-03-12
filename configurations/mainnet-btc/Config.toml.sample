@@ -12,7 +12,7 @@ events_keys = ["*"]
 [burnchain]
 chain = "bitcoin"
 mode = "mainnet"
-peer_host = "bitcoin.mainnet.stacks.org"
+peer_host = "bitcoin-core"
 username = "stacks"
 password = "foundation"
 rpc_port = 8332

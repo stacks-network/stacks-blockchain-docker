@@ -135,7 +135,7 @@ run_bitcoin_node() {
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
 	log "Running bitcoin node. Performing sync..."
 	log "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
-	log "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER".
+	log "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to {$BITCOIN_BLOCKCHAIN_FOLDER}".
 	docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
 	log "Bitcoin node sync complete. Bitcoin node is fully operational."
 }
@@ -218,7 +218,21 @@ docker_up() {
 			mkdir -p ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay
 		fi
 	fi
-	[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml
+
+	#Create Config.toml from sample if it doesn't exist.
+	#If bitcoin flag is on when using mainet or testnet then use the Config.toml in `${NETWORK}-btc` instead, so the stacks node uses the local bitcoin node instead of the remote one. 
+	case ${FLAG}${FLAG2} in
+			*bitcoin*)
+				# BITCOIN FLAG IN ON
+				if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
+					[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml
+				fi			
+				;;
+			*) # BITCOIN FLAG IS NOT ON
+				[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml
+				;;
+	esac
+	
 	if [[ ${NETWORK} == "private-testnet" ]]; then
 		[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml
 		[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf.sample ${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf
@@ -232,17 +246,20 @@ run_docker() {
 	# If bitcoin flag is detected, I should run bitcoin node before anything else
 	case ${FLAG}${FLAG2} in
 		*bitcoin*)
-			# echo "BITCOIN FLAG IN ON!"
+			# "BITCOIN FLAG IN ON!"
 			if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
 				run_bitcoin_node
+				docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}-btc.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
+
 			else
 				log "UNSUPPORTED OPTION: You can only run the bitcoin node on mainnet or testnet, not on ${NETWORK}."
 				usage
 			fi			
 			;;
+		*)
+			docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
+			;;
 	esac
-	# echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		log "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
 	fi

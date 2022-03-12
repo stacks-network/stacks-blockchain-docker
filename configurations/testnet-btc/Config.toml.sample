@@ -7,7 +7,7 @@ bootstrap_node="047435c194e9b01b3d7f7a2802d6684a3af68d05bbf4ec8f17021980d777691f
 [burnchain]
 chain = "bitcoin"
 mode = "xenon"
-peer_host = "bitcoin.testnet.stacks.org"
+peer_host = "bitcoin-core"
 username = "stacks"
 password = "foundation"
 rpc_port = 18332

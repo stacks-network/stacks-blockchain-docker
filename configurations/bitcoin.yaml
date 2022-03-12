@@ -9,10 +9,8 @@ services:
     environment:
       - BITCOIN_DATA=/var/lib/bitcoin-core-data
     volumes:
-      - "/mnt/blockchain-bitcoin:/var/lib/bitcoin-core-data"
-#      - "${SCRIPTPATH}/persistent-data/blockchain-bitcoin:/var/lib/bitcoin-core-data"
-#      - "${SCRIPTPATH}/configurations/bitcoin.conf:/var/lib/bitcoin-core-data/bitcoin.conf"
-      - "./bitcoin.conf:/var/lib/bitcoin-core-data/bitcoin.conf"
+      - "${BITCOIN_BLOCKCHAIN_FOLDER}:/var/lib/bitcoin-core-data"
+      - "${BITCOIN_CONFIG_FILE}:/var/lib/bitcoin-core-data/bitcoin.conf"
     networks:
       - stacks-blockchain
 
