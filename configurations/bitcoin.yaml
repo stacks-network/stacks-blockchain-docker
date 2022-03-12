@@ -14,20 +14,6 @@ services:
     networks:
       - stacks-blockchain
 
-#  stacks-node:
-#    image: blockstack/stacks-blockchain
-#    container_name: stacks-node
-#    depends_on:
-#      - bitcoin-core
-#    volumes:
-#      - "./stacks-node/persistent-data/stacks-blockchain/mainnet:/root/stacks-node/data"  
-#      - "./stacks-node/config/mainnet:/src/stacks-node"
-#    ports:
-#      - 20443:20443
-#      - 20444:20444
-#    networks:
-#      - net_blockchains
-
 networks:
   stacks-blockchain:
     driver: bridge
