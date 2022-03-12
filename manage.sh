@@ -135,7 +135,7 @@ run_bitcoin_node() {
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
 	log "Running bitcoin node. Performing sync..."
 	log "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
-	log "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to {$BITCOIN_BLOCKCHAIN_FOLDER}".
+	log "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
 	docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
 	log "Bitcoin node sync complete. Bitcoin node is fully operational."
 }
@@ -249,8 +249,8 @@ run_docker() {
 			# "BITCOIN FLAG IN ON!"
 			if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
 				run_bitcoin_node
+				echo "Running docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}-btc.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
 				docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}-btc.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
-
 			else
 				log "UNSUPPORTED OPTION: You can only run the bitcoin node on mainnet or testnet, not on ${NETWORK}."
 				usage
