@@ -351,7 +351,7 @@ _**API Missing Parent Block Error**_:
 - If the Stacks blockchain is no longer syncing blocks, and the API reports an error similar to this:\
   `Error processing core node block message DB does not contain a parent block at height 1970 with index_hash 0x3367f1abe0ee35b10e77fbcaa00d3ca452355478068a0662ec492bb30ee0f13e"`,\
   The API (and by extension the DB) is out of sync with the blockchain. \
-  The only known method to recover is to resync from genesis (**event-replay _may_ work, but in all likliehood will restore data to the same broken state**).
+  The only known method to recover is to resync from genesis (**event-replay _may_ work, but in all likelihood will restore data to the same broken state**).
 
 - To attempt the event-replay
 
