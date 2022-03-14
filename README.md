@@ -29,7 +29,7 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
 - VM with at a minimum:
   - 4GB memory
   - 1 Vcpu
-  - 50GB storage (600GB if you optionaly also run the bitcoin node)
+  - 50GB storage (600GB if you optionaly also run the bitcoin mainnet node)
 
 ### **Install/Update docker-compose**
 
@@ -187,7 +187,8 @@ The disadvantage of running your own Bitcoin node is that you need the extra spa
 
 You can run easily run your Stacks node with your own Bitcoin node by adding the flag `bitcoin`. This is available only for testnet and mainnet.
 
-Example: `./manage.sh mainnet up bitcoin`
+Example: `./manage.sh mainnet up bitcoin` or `./manage.sh testnet up bitcoin`
+
 
 ## **Accessing the services**
 

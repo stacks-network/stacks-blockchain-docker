@@ -131,16 +131,25 @@ download_bns_data() {
 }
 
 run_bitcoin_node() {
+	# Activate the correct bitcoin.conf file I will use depending if its mainnet or testnet
+	if [[ ${NETWORK} == "mainnet" ]]; then
+		export BITCOIN_CONFIG_FILE="${BITCOIN_MAINNET_CONFIG_FILE}"
+	fi
+	if [[ ${NETWORK} == "testnet" ]]; then
+		export BITCOIN_CONFIG_FILE="${BITCOIN_TESTNET_CONFIG_FILE}"
+	fi
+	log "Bitcoin config file to use: ${BITCOIN_CONFIG_FILE}"
 	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up"
 	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
 	log "Running bitcoin node. Performing sync..."
 	log "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
-	log "Bitcoin blockchain is quite large (around 500GB and growing), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
+	log "Bitcoin blockchain is quite large (around 500GB for mainnet and 15GB for testnet), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
 	# docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
 	sleep 5
 	until docker logs bitcoin-core | grep -q " progress=1.000000 cache=";
 	do
-		sleep 5
+		sleep 1
+		echo -n -e $(docker logs --tail 1 bitcoin-core | grep -o 'progress=\<0.......\>')'\r'                                                                                                                                                                                                    
 	done
 	log "Bitcoin node sync complete. Bitcoin node is fully operational."
 }
@@ -231,7 +240,7 @@ docker_up() {
 				# BITCOIN FLAG IN ON
 				if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
 					[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml
-				fi			
+				fi
 				;;
 			*) # BITCOIN FLAG IS NOT ON
 				[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml
