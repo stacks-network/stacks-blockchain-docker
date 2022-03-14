@@ -146,9 +146,10 @@ run_bitcoin_node() {
 	log "Bitcoin blockchain is quite large (around 500GB for mainnet and 15GB for testnet), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
 	# docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
 	sleep 5
+	echo "The following progress value will be updated every 5 minutes: "
 	until docker logs bitcoin-core | grep -q " progress=1.000000 cache=";
 	do
-		sleep 1
+		sleep 5m
 		echo -n -e $(docker logs --tail 1 bitcoin-core | grep -o 'progress=\<0.......\>')'\r'                                                                                                                                                                                                    
 	done
 	log "Bitcoin node sync complete. Bitcoin node is fully operational."
