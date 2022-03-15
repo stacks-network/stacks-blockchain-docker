@@ -176,13 +176,6 @@ ordered_stop() {
 	# Check if bitcoin blockchain is also running. If it is, stop it.
 	if [[ $(docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml ps -q bitcoin-core) ]]; then
 		log "Bitcoin blockchain is currently running. Stopping..."
-		# Activate the correct bitcoin.conf file I will use depending if its mainnet or testnet
-		if [[ ${NETWORK} == "mainnet" ]]; then
-			export BITCOIN_CONFIG_FILE="${BITCOIN_MAINNET_CONFIG_FILE}"
-		fi
-		if [[ ${NETWORK} == "testnet" ]]; then
-			export BITCOIN_CONFIG_FILE="${BITCOIN_TESTNET_CONFIG_FILE}"
-		fi
 		# "Not Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} down" because it would also remove the Stacks network
 		# Instead I need to first stop and then remove only the container (so the network stays on)
 		log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core"
@@ -206,6 +199,10 @@ docker_down () {
 	if ! check_network; then
 		log "*** stacks-blockchain network is not running ***"
 		return
+	fi
+	if [[ "${FLAG}${FLAG2}" == *bitcoin* ]]; then
+		log "If you want to stop the service simply type: $0 ${NETWORK} down"
+		exit_error "Exiting - bitcoin flag can't be used for a down action."
 	fi
 	if [[ ${NETWORK} == "mainnet" || ${NETWORK} == "testnet" ]];then
 		ordered_stop
