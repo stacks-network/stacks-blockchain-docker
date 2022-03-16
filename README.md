@@ -29,7 +29,7 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
 - VM with at a minimum:
   - 4GB memory
   - 1 Vcpu
-  - 50GB storage
+  - 50GB storage (600GB if you optionaly also run the bitcoin mainnet node)
 
 ### **Install/Update docker-compose**
 
@@ -64,6 +64,13 @@ sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/dock
 sudo chmod 755 $DESTINATION
 ```
 
+### Security note on docker
+
+The Docker daemon always runs as the root user so by default you will need root privileges to interact with it.
+
+The script `manage.sh` uses docker, so to avoid the requirement of needing to run the script with root privileges it is prefered to be able to *manage Docker as a non-root user*, following [these simple tests](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
+
+
 ### **Env Vars**
 
 All variables used in the [`sample.env`](sample.env) file can be modified, but generally most of them should be left as-is.
@@ -84,7 +91,7 @@ Directories will be created on first start that will store persistent data under
 1. Clone the repo locally:
 
 ```bash
-git clone https://github.com/stacks-network/stacks-blockchain-docker && cd ./stacks-blockchain-docker
+git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stacks-blockchain-docker
 ```
 
 2. Create/Copy `.env` file
@@ -95,9 +102,9 @@ cp sample.env .env
 
 _You may also use a symlink as an alternative to copying: `ln -s sample.env .env`_
 
-Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L21) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`
+Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L25) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`.
 
-3. Ensure all images are up to date
+3. Ensure all images are up to date. Change *<network>* for the appropiate network you would like to use, *mainnet*, *testnet* or *mocknet*.
 
 ```bash
 ./manage.sh <network> pull
@@ -160,6 +167,28 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 # check logs for completion
 ./manage.sh <network> restart
 ```
+
+## **Running also a bitcoin node (Optional)**
+
+Stacks needs to use a Bitcoin node, and by default when you run a Stacks node you will be using a public Bitcoin node, which is configured in the `.env` file. Default values is `BITCOIN_NODE=bitcoin.mainnet.stacks.org`.
+
+However, you can optionaly run both nodes together and configured in a way that you Stacks node will use your own Bitcoin node instead of a public one.
+
+### Why run Stacks node with your own Bitcoin node?
+
+Because running your own Bitcoin node will give you higher security and improved perfomance.
+
+* **Improved perfomance**: The Bitcoin node will serve you blocks faster, as well as UTXOs for your miner (if you run one).
+* **Higher security**: The Bitcoin node will also have validated all bitcoin transactions the Stacks node consumes. If you don't run your own Bitcoin node, you're relying on the SPV headers to vouch for the validity of Bitcoin blocks.
+
+The disadvantage of running your own Bitcoin node is that you need the extra space to store the Bitcoin blockchain (about 500GB) and the initial time it will take to download this data the first time.
+
+### Example
+
+You can run easily run your Stacks node with your own Bitcoin node by adding the flag `bitcoin`. This is available only for testnet and mainnet.
+
+Example: `./manage.sh mainnet up bitcoin` or `./manage.sh testnet up bitcoin`
+
 
 ## **Accessing the services**
 
@@ -322,7 +351,7 @@ _**API Missing Parent Block Error**_:
 - If the Stacks blockchain is no longer syncing blocks, and the API reports an error similar to this:\
   `Error processing core node block message DB does not contain a parent block at height 1970 with index_hash 0x3367f1abe0ee35b10e77fbcaa00d3ca452355478068a0662ec492bb30ee0f13e"`,\
   The API (and by extension the DB) is out of sync with the blockchain. \
-  The only known method to recover is to resync from genesis (**event-replay _may_ work, but in all likliehood will restore data to the same broken state**).
+  The only known method to recover is to resync from genesis (**event-replay _may_ work, but in all likelihood will restore data to the same broken state**).
 
 - To attempt the event-replay
 

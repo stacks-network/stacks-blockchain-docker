@@ -3,6 +3,7 @@
 NETWORK=$1
 ACTION=$2
 FLAG=$3
+FLAG2=$4
 PARAM=""
 PROFILE="stacks-blockchain"
 EVENT_REPLAY=""
@@ -10,7 +11,6 @@ FLAGS=""
 export SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENV_FILE="${SCRIPTPATH}/.env"
 source ${ENV_FILE}
-
 
 exit_error() {
    printf "%s\n" "$1" >&2
@@ -33,8 +33,8 @@ usage() {
 	log "  $0 <network> <action> <optional flags>"
 	log "      network: [ mainnet | testnet | mocknet | bns ]"
 	log "      action: [ up | down | logs | reset | upgrade | import | export ]"
-	log "		optional flags: [ proxy ]"
-	log "      ex: $0 mainnet up"
+	log "      optional flags: [ proxy | bitcoin ]"
+	log "      example: $0 mainnet up"
 	exit_error ""
 }
 
@@ -46,7 +46,7 @@ confirm() {
       [nN]) echo ; return 1 ;;
       *) printf " \033[31m %s \n\033[0m" "invalid input"
     esac 
-  done  
+  done
 }
 
 check_network() {
@@ -130,6 +130,31 @@ download_bns_data() {
 	fi
 }
 
+run_bitcoin_node() {
+	# Activate the correct bitcoin.conf file I will use depending if its mainnet or testnet
+	if [[ ${NETWORK} == "mainnet" ]]; then
+		export BITCOIN_CONFIG_FILE="${BITCOIN_MAINNET_CONFIG_FILE}"
+	fi
+	if [[ ${NETWORK} == "testnet" ]]; then
+		export BITCOIN_CONFIG_FILE="${BITCOIN_TESTNET_CONFIG_FILE}"
+	fi
+	log "Bitcoin config file to use: ${BITCOIN_CONFIG_FILE}"
+	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up"
+	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
+	log "Running bitcoin node. Performing sync..."
+	log "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
+	log "Bitcoin blockchain is quite large (around 500GB for mainnet and 15GB for testnet), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
+	# docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
+	sleep 5
+	echo "The following progress value will be updated every 5 minutes: "
+	until docker logs bitcoin-core | grep -q " progress=1.000000 cache=";
+	do
+		sleep 5m
+		echo -n -e $(docker logs --tail 1 bitcoin-core | grep -o 'progress=\<0.......\>')'\r'                                                                                                                                                                                                    
+	done
+	log "Bitcoin node sync complete. Bitcoin node is fully operational."
+}
+
 reset_data() {
 	if [ -d ${SCRIPTPATH}/persistent-data/${NETWORK} ]; then
 		if ! check_network; then
@@ -146,8 +171,18 @@ reset_data() {
 
 ordered_stop() {
 	log "Stopping stacks-blockchain first to prevent database errors"
-	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml stop stacks-blockchain"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
+	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain"
+	              docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop stacks-blockchain
+	# Check if bitcoin blockchain is also running. If it is, stop it.
+	if [[ $(docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml ps -q bitcoin-core) ]]; then
+		log "Bitcoin blockchain is currently running. Stopping..."
+		# "Not Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} down" because it would also remove the Stacks network
+		# Instead I need to first stop and then remove only the container (so the network stays on)
+		log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core"
+		              docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core
+		log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} rm -f bitcoin-core"
+			          docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} rm -f bitcoin-core
+	fi
 }
 
 docker_logs(){
@@ -164,6 +199,10 @@ docker_down () {
 	if ! check_network; then
 		log "*** stacks-blockchain network is not running ***"
 		return
+	fi
+	if [[ "${FLAG}${FLAG2}" == *bitcoin* ]]; then
+		log "If you want to stop the service simply type: $0 ${NETWORK} down"
+		exit_error "Exiting - bitcoin flag can't be used for a down action."
 	fi
 	if [[ ${NETWORK} == "mainnet" || ${NETWORK} == "testnet" ]];then
 		ordered_stop
@@ -198,7 +237,21 @@ docker_up() {
 			mkdir -p ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay
 		fi
 	fi
-	[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml
+
+	#Create Config.toml from sample if it doesn't exist.
+	#If bitcoin flag is on when using mainet or testnet then use the Config.toml in `${NETWORK}-btc` instead, so the stacks node uses the local bitcoin node instead of the remote one. 
+	case ${FLAG}${FLAG2} in
+			*bitcoin*)
+				# BITCOIN FLAG IN ON
+				if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
+					[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}-btc/Config.toml
+				fi
+				;;
+			*) # BITCOIN FLAG IS NOT ON
+				[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/Config.toml
+				;;
+	esac
+	
 	if [[ ${NETWORK} == "private-testnet" ]]; then
 		[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml.sample ${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml
 		[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf" ]] && cp ${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf.sample ${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf
@@ -208,24 +261,40 @@ docker_up() {
 }
 
 run_docker() {
-	# echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
+	# case will run if word bitcoin in contained in flag1 or flag2
+	# If bitcoin flag is detected, I should run bitcoin node before anything else
+	case ${FLAG}${FLAG2} in
+		*bitcoin*)
+			# "BITCOIN FLAG IN ON!"
+			if [[ ${NETWORK} == "mainnet" ||  ${NETWORK} == "testnet"  ]]; then 
+				run_bitcoin_node
+				echo "Running docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}-btc.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}"
+				docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}-btc.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
+			else
+				log "UNSUPPORTED OPTION: You can only run the bitcoin node on mainnet or testnet, not on ${NETWORK}."
+				usage
+			fi			
+			;;
+		*)
+			docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${EVENT_REPLAY} ${FLAGS} --profile ${PROFILE} ${ACTION} ${PARAM}
+			;;
+	esac
 	if [[ $? -eq 0 && ${ACTION} == "up" ]]; then
 		log "Brought up ${NETWORK}, use '$0 ${NETWORK} logs' to follow log files."
 	fi
 }
 
-
 case ${ACTION} in
 	# ensure we also act on any proxy containers based on ACTION
     down|stop|logs|upgrade|pull|export|import)
-        FLAGS="-f ${SCRIPTPATH}/configurations/proxy.yaml" 
+        FLAGS="${FLAGS}-f ${SCRIPTPATH}/configurations/proxy.yaml" 
         ;;
     *)
-		# set the FLAG regardless of ACTION if defined 
-        case ${FLAG} in
-            proxy|nginx)
-                FLAGS="-f ${SCRIPTPATH}/configurations/proxy.yaml"
+		# set the FLAG regardless of ACTION if defined
+		# case will run if word proxy or nginx is contained in flag1 or flag2
+        case ${FLAG}${FLAG2} in
+            *proxy*|*nginx*)
+                FLAGS="${FLAGS}-f ${SCRIPTPATH}/configurations/proxy.yaml"
                 ;;
         esac
         ;;
