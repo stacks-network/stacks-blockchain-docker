@@ -26,7 +26,13 @@ services:
       - stacks-blockchain-api
     profiles:
       - stacks-blockchain
-    command: /bin/stacks-node start --config /src/stacks-blockchain/Config.toml
+    command:
+      [
+        "/bin/stacks-node",
+        "start",
+        "--config",
+        "/src/stacks-blockchain/Config.toml",
+      ]
   stacks-blockchain-api:
     image: blockstack/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
@@ -46,7 +52,7 @@ services:
     profiles:
       - event-replay
       - stacks-blockchain
-    command: npm run start
+    command: ["npm", "run", "start"]
 networks:
   stacks-blockchain:
     driver: bridge
