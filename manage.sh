@@ -195,7 +195,7 @@ set_flags() {
 		if check_flags SUPPORTED_FLAGS "$item"; then
 			# add to local flags if found in SUPPORTED_FLAGS array *and* the file exists in the expected path
 			if [ -f "${SCRIPTPATH}/configurations/${item}.yaml" ]; then
-				flags="${flags} -f \"${SCRIPTPATH}/configurations/${item}.yaml\""
+				flags="${flags} -f ${SCRIPTPATH}/configurations/${item}.yaml"
 			fi
 		fi
 	done
