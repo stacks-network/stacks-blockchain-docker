@@ -34,7 +34,7 @@ services:
         "/src/stacks-blockchain/Config.toml",
       ]
   stacks-blockchain-api:
-    image: blockstack/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
+    image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
     restart: always
     volumes:

@@ -7,8 +7,7 @@ set -Eo functrace
 NETWORK="mainnet"
 ACTION="up"
 PROFILE="stacks-blockchain"
-# export SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
+export SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENV_FILE="${SCRIPTPATH}/.env"
 if [ ! -f "$ENV_FILE" ];then
 	cp -a "${SCRIPTPATH}/sample.env" "${ENV_FILE}"
@@ -196,7 +195,7 @@ set_flags() {
 		if check_flags SUPPORTED_FLAGS "$item"; then
 			# add to local flags if found in SUPPORTED_FLAGS array *and* the file exists in the expected path
 			if [ -f "${SCRIPTPATH}/configurations/${item}.yaml" ]; then
-				flags="${flags} -f ${SCRIPTPATH}/configurations/${item}.yaml"
+				flags="${flags} -f \"${SCRIPTPATH}/configurations/${item}.yaml\""
 			fi
 		fi
 	done
@@ -332,7 +331,7 @@ run_docker() {
 	echo "    ** local optional_flags: $optional_flags"
 	echo 
 	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
-	docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" "${optional_flags}" --profile "${profile}" "${action}" "${param}"
+	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}
 	if [[ "$?" -eq 0 && "${action}" == "up" ]]; then
 		log "Brought up ${NETWORK}"
 		log "  run '$0 -n ${NETWORK} -a logs' to follow log files."
