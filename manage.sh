@@ -189,7 +189,7 @@ fi
 set_flags() {
 	# loop through supplied flags and set FLAGS for the yaml files to load
 	# silently fail if a flag isn't supported or a yaml doesn't exist
-	local array="${@}"
+	local array="${*}"
 	local flags=""
 	for item in ${!array}; do
 		if check_flags SUPPORTED_FLAGS "$item"; then
@@ -203,14 +203,12 @@ set_flags() {
 }
 
 ordered_stop() {
-	echo "* FUNC: ordered_stop()"
 	log "Stopping stacks-blockchain first to prevent database errors"
 	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml stop stacks-blockchain"
 	docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" --profile "${PROFILE}" stop -t 60 stacks-blockchain
 }
 
 docker_up() {
-	echo "* FUNC: docker_up()"
 	local param="-d"
 	if ! check_api_breaking_change; then
 		log "    Required to perform a stacks-blockchain-api event-replay:"
@@ -244,7 +242,6 @@ docker_up() {
 }
 
 docker_down() {
-	echo "* FUNC: docker_down()"
 	if ! check_network; then
 		log "Stacks Blockchain services are not running"
 		return
@@ -256,22 +253,19 @@ docker_down() {
 }
 
 docker_logs(){
-	echo "* FUNC: docker_logs()"
 	local param="-f"
 	if ! check_network; then
 		usage "[ ERROR ] - No ${NETWORK} services running"
 	fi
-	run_docker "logs" SUPPORTED_FLAGS "$param"
+	run_docker "logs" SUPPORTED_FLAGS "$PROFILE" "$param"
 }
 
 docker_pull() {
-	echo "* FUNC: docker_pull()"
 	local action="pull"
 	run_docker "pull" SUPPORTED_FLAGS "$PROFILE"
 }
 
 status() {
-	echo "* FUNC: status()"
 	if check_network; then
 		log "Stacks Blockchain services are running"
 	else
@@ -280,7 +274,6 @@ status() {
 }
 
 reset_data() {
-	echo "* FUNC: reset_data()"
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		if ! check_network; then
 			log "Resetting Persistent data for ${NETWORK}"
@@ -294,15 +287,33 @@ reset_data() {
 }
 
 download_bns_data() {
-	echo "* FUNC: download_bns_data()"
 	local profile="bns"
-	SUPPORTED_FLAGS+=("bns")
-	FLAGS_ARRAY=(bns)
-	run_docker "up" FLAGS_ARRAY "$profile" "-d"
+	if [ "$BNS_IMPORT_DIR" != "" ]; then
+		if ! check_network; then
+			SUPPORTED_FLAGS+=("bns")
+			FLAGS_ARRAY=(bns)
+			log "Downloading and extracting V1 bns-data"
+			# run_docker "up" FLAGS_ARRAY "$profile" "-d"
+			run_docker "up" FLAGS_ARRAY "$profile"
+			run_docker "down" FLAGS_ARRAY "$profile"
+			echo
+			log "Download Operation is complete, start the service with: $0 mainnet up"
+			echo
+		else
+			echo
+			log "Can't download BNS data while services are running"
+			status
+			exit_error ""
+		fi
+	else
+		echo
+		exit_error "Undefined or commented BNS_IMPORT_DIR variable in $ENV_FILE"
+	fi
+	exit 0
+
 }
 
 event_replay(){
-	echo "* FUNC: event_replay()"
 	PROFILE="event-replay"
 	local action="$1"
 	SUPPORTED_FLAGS+=("api-${action}-events")
@@ -317,21 +328,15 @@ event_replay(){
 }
 
 run_docker() {
-	echo "* FUNC: run_docker()"
 	local action="$1"
 	local flags="${2}[@]"
 	local profile="$3"
 	local param="$4"
 	local optional_flags=""
 	optional_flags=$(set_flags "$flags")
-	echo "    ** local action: $action"
-	echo "    ** local flags: ${!flags}"
-	echo "    ** local profile: $profile"
-	echo "    ** local param: $param"
-	echo "    ** local optional_flags: $optional_flags"
-	echo 
-	echo "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
-	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}
+	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
+	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
+	eval "${cmd}"
 	if [[ "$?" -eq 0 && "${action}" == "up" ]]; then
 		log "Brought up ${NETWORK}"
 		log "  run '$0 -n ${NETWORK} -a logs' to follow log files."
@@ -379,15 +384,5 @@ case ${ACTION} in
 		usage
 		;;
 esac
-
-echo
-echo "*** Final ARGS ***"
-echo "    Network: ${NETWORK}"
-echo "    Action: ${ACTION}"
-echo "    FLAGS: ${FLAGS}"
-echo "        FLAGSARRAY: ${FLAGS_ARRAY[@]}"
-echo 
-echo
-
 
 exit 0
