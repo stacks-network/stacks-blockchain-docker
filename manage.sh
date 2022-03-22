@@ -3,10 +3,12 @@
 set -eo pipefail
 set -Eo functrace
 
-
+## The following values can be overridden in the .env file. adding some defaults here
 NETWORK="mainnet"
 ACTION="up"
 PROFILE="stacks-blockchain"
+STACKS_SHUTDOWN_TIMEOUT=600
+
 export SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENV_FILE="${SCRIPTPATH}/.env"
 if [ ! -f "$ENV_FILE" ];then
@@ -55,15 +57,16 @@ log() {
 }
 
 exit_error() {
-	printf "%s\n" "$1" >&2
+	printf "%s\n\n" "$1" >&2
 	exit 1
 }
 
 usage() {
 	if [ "$1" ]; then
+		log
 		log "$1"
 	fi
-	echo
+	log
 	log "Usage:"
 	log "  $0"
 	log "    -n|--network - [ mainnet | testnet | mocknet | bns ]"
@@ -99,7 +102,7 @@ check_flags() {
 
 check_device() {
 	if [[ $(uname -m) == "arm64" ]]; then
-		echo
+		log
 		log "⚠️  WARNING"
 		log "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
 		log "⚠️  see README for details"
@@ -114,7 +117,7 @@ check_api_breaking_change(){
 		CONFIGURED_API_VERSION=$( echo "$STACKS_BLOCKCHAIN_API_VERSION" | cut -f 1 -d ".")
 		if [ "$CURRENT_API_VERSION" != "" ]; then
 			if [ "$CURRENT_API_VERSION" -lt "$CONFIGURED_API_VERSION" ];then
-				echo
+				log
 				log "*** stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} ) ***"
 				return 1
 			fi
@@ -169,10 +172,10 @@ do
 		shift
 		;;
 	(-*) 
-		usage
+		usage "[ Error ] - Unknown arg supplied ($1)"
 		;;
 	(*) 
-		usage
+		usage "[ Error ] - Malformed arguments"
 		;;
 	esac
 	shift
@@ -203,9 +206,16 @@ set_flags() {
 }
 
 ordered_stop() {
-	log "Stopping stacks-blockchain first to prevent database errors"
-	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml stop stacks-blockchain"
-	docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" --profile "${PROFILE}" stop -t 60 stacks-blockchain
+	log
+	log "*** Stopping stacks-blockchain first to prevent database errors"
+	log "  Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the chainstate time to complete all operations"
+	log
+	# log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
+	# docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" --profile "${PROFILE}" stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain
+	cmd="docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" --profile "${PROFILE}" stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
+	log "Running: ${cmd}"
+	eval "${cmd}"
+
 }
 
 docker_up() {
@@ -225,7 +235,8 @@ docker_up() {
 		exit_error "[ ERROR ] - event-replay is required"
 	fi
 	if check_network; then
-		exit_error "*** Network 'stacks-blockchain' is already running ***"
+		log
+		exit_error "*** Stacks Blockchain services are already running"
 	fi
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
@@ -243,7 +254,7 @@ docker_up() {
 
 docker_down() {
 	if ! check_network; then
-		log "Stacks Blockchain services are not running"
+		log "*** Stacks Blockchain services are not running"
 		return
 	fi
 	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]];then
@@ -267,9 +278,12 @@ docker_pull() {
 
 status() {
 	if check_network; then
-		log "Stacks Blockchain services are running"
+		log
+		log "*** Stacks Blockchain services are running"
+		log
 	else
-		exit_error "Stacks Blockchain services are not running"
+		log
+		exit_error "*** Stacks Blockchain services are not running"
 	fi
 }
 
@@ -279,9 +293,13 @@ reset_data() {
 			log "Resetting Persistent data for ${NETWORK}"
 			log "Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"
+			log
+			log "If you see messages about 'permission denied'"
+			log "    Re-run the command with 'sudo': sudo $0 -n $NETWORK -a reset"
+			log
 		else
-			log "Can't reset while services are running"
-			exit_error "    Run: $0 ${NETWORK} down and try again"
+			log "[ Error ] - Can't reset while services are running"
+			exit_error "    Try again after running: $0 -n ${NETWORK} -a stop"
 		fi
 	fi
 }
@@ -296,17 +314,17 @@ download_bns_data() {
 			# run_docker "up" FLAGS_ARRAY "$profile" "-d"
 			run_docker "up" FLAGS_ARRAY "$profile"
 			run_docker "down" FLAGS_ARRAY "$profile"
-			echo
-			log "Download Operation is complete, start the service with: $0 mainnet up"
-			echo
+			log
+			log "Download Operation is complete, start the service with: $0 -n $NETWORK -a start"
+			log
 		else
-			echo
-			log "Can't download BNS data while services are running"
+			log
 			status
+			log "Can't download BNS data"
 			exit_error ""
 		fi
 	else
-		echo
+		log
 		exit_error "Undefined or commented BNS_IMPORT_DIR variable in $ENV_FILE"
 	fi
 	exit 0
@@ -319,11 +337,11 @@ event_replay(){
 	SUPPORTED_FLAGS+=("api-${action}-events")
 	FLAGS_ARRAY=("api-${action}-events")
 	docker_up
-	echo
+	log
 	log "*** This operation can take a long while ***"
-	log "    check logs for completion: $0 $NETWORK logs "
-	log "    Once the operation is complete, restart the service with: $0 $NETWORK restart"
-	echo
+	log "    check logs for completion: $0 -n $NETWORK -a logs "
+	log "    Once the operation is complete, restart the service with: $0 -n $NETWORK -a restart"
+	log
 	exit
 }
 
@@ -334,12 +352,13 @@ run_docker() {
 	local param="$4"
 	local optional_flags=""
 	optional_flags=$(set_flags "$flags")
-	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
+	log "Running: ${cmd}"
 	eval "${cmd}"
 	if [[ "$?" -eq 0 && "${action}" == "up" ]]; then
 		log "Brought up ${NETWORK}"
 		log "  run '$0 -n ${NETWORK} -a logs' to follow log files."
+		log
 	fi
 }
 
@@ -364,7 +383,8 @@ case ${ACTION} in
 			docker_down
 		fi
 		if [ ! -f "${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml" ]; then
-			exit_error "*** Missing events file: ${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml"
+			log
+			exit_error "[ Error ] - Missing events file: ${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml"
 		fi
 		event_replay "$ACTION"
 		;;
