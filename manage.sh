@@ -289,18 +289,23 @@ status() {
 
 reset_data() {
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
+		log
 		if ! check_network; then
 			log "Resetting Persistent data for ${NETWORK}"
 			log "Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
-			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"
-			log
-			log "If you see messages about 'permission denied'"
-			log "    Re-run the command with 'sudo': sudo $0 -n $NETWORK -a reset"
+			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
+				log
+				log "[ Error ] - Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
+				exit_error "    Re-run the command with sudo: 'sudo $0 -n $NETWORK -a reset'"
+			}
+			log "   *** Persistent data deleted"
 			log
 		else
 			log "[ Error ] - Can't reset while services are running"
 			exit_error "    Try again after running: $0 -n ${NETWORK} -a stop"
 		fi
+	else
+		usage "[ Error ] - No data exists for ${NETWORK}"
 	fi
 }
 
