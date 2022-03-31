@@ -6,6 +6,8 @@ services:
     restart: on-failure
     env_file:
       - ${SCRIPTPATH}/.env
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
     networks:
       - stacks-blockchain
     profiles:

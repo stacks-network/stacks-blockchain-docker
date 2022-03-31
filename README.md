@@ -6,10 +6,10 @@
 ⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
 
 ```bash
-./manage.sh <network> export
-./manage.sh <network> stop
-./manage.sh <network> import
-./manage.sh <network> restart
+./manage.sh -n <network> -a export
+./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a import
+./manage.sh -n <network> -a restart
 ```
 
 Note: repo has been renamed from `stacks-local-dev` to `stacks-blockchain-docker` and moved from github org `blockstack` to `stacks-network`\
@@ -100,71 +100,77 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 3. Ensure all images are up to date
 
 ```bash
-./manage.sh <network> pull
+./manage.sh -n <network> -a pull
 ```
 
 4. Start the Services:
 
 ```bash
-./manage.sh <network> up
+./manage.sh -n <network> -a up
 ```
 
 - Optional (with a proxy):
 
 ```bash
-./manage.sh <network> up proxy
+./manage.sh -n <network> -a up -f proxy
 ```
 
 5. Stop the Services:
 
 ```bash
-./manage.sh <network> down
+./manage.sh -n <network> -a down
 ```
 
 6. Retrieve Service Logs
 
 ```bash
-./manage.sh <network> logs
+./manage.sh -n <network> -a logs
 ```
 
 7. Restart all services:
 
 ```bash
-./manage.sh <network> restart
+./manage.sh -n <network> -a restart
 ```
 
 - Optional (with a proxy):
 
 ```bash
-./manage.sh <network> restart proxy
+./manage.sh -n <network> -a restart -f proxy
 ```
 
 7. Delete all data in `./persistent-data/<network>`:
 
 ```bash
-./manage.sh <network> reset
+./manage.sh -n <network> -a reset
 ```
 
-8. export stacks-blockchain-api events (Not applicable for mocknet)
+8. Download BNS data to `./persistent-data/bns-data`:
 
 ```bash
-./manage.sh <network> export
-# check logs for completion
-./manage.sh <network> restart
+./manage.sh -n <network> -a bns
 ```
 
-9. replay stacks-blockchain-api events (Not applicable for mocknet)
+9. export stacks-blockchain-api events (Not applicable for mocknet)
 
 ```bash
-./manage.sh <network> import
+./manage.sh -n <network> -a export
 # check logs for completion
-./manage.sh <network> restart
+./manage.sh -n <network> -a restart
+```
+
+10. replay stacks-blockchain-api events (Not applicable for mocknet)
+
+```bash
+./manage.sh -n <network> -a import
+# check logs for completion
+./manage.sh -n <network> -a restart
 ```
 
 ## **Accessing the services**
 
 _Note_: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data.
-Use the command `./manage.sh <network> logs` to check the sync progress.
+Use the command `./manage.sh -n <network> -a logs` to check the sync progress.
 
 **stacks-blockchain**:
 
@@ -313,8 +319,8 @@ _**Database Issues**_:
 - For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated.
 
 ```bash
-./manage.sh <network> reset
-./manage.sh <network> restart
+./manage.sh -n <network> -a reset
+./manage.sh -n <network> -a restart
 ```
 
 _**API Missing Parent Block Error**_:
@@ -327,14 +333,14 @@ _**API Missing Parent Block Error**_:
 - To attempt the event-replay
 
 ```bash
-./manage.sh <network> import
+./manage.sh -n <network> -a import
 # check logs for completion
-./manage.sh <network> restart
+./manage.sh -n <network> -a restart
 ```
 
 - To wipe data and re-sync from genesis
 
 ```bash
-./manage.sh <network> reset
-./manage.sh <network> restart
+./manage.sh -n <network> -a reset
+./manage.sh -n <network> -a restart
 ```

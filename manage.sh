@@ -3,23 +3,23 @@
 set -eo pipefail
 set -Eo functrace
 
-## The following values can be overridden in the .env file. adding some defaults here
+# The following values can be overridden in the .env file. adding some defaults here
 NETWORK="mainnet"
 ACTION="up"
 PROFILE="stacks-blockchain"
-STACKS_SHUTDOWN_TIMEOUT=600
+STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
+LOG_TAIL="100"
+FLAGS="proxy"
 
+# Use .env in the local dir
 export SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENV_FILE="${SCRIPTPATH}/.env"
+
+# if no .env exists, copy the sample env
 if [ ! -f "$ENV_FILE" ];then
 	cp -a "${SCRIPTPATH}/sample.env" "${ENV_FILE}"
 fi
 source "${ENV_FILE}"
-
-for cmd in docker-compose docker; do
-	command -v $cmd >/dev/null 2>&1 || exit_error "Missing command: $cmd"
-done
-
 set -eo pipefail
 set -Eo functrace
 
@@ -53,11 +53,11 @@ SUPPORTED_ACTIONS=(
 
 
 log() {
-	printf >&2 "%s\n" "$1"
+	printf >&2 "%s\\n" "$1"
 }
 
 exit_error() {
-	printf "%s\n\n" "$1" >&2
+	printf "%s\\n\\n" "$1" >&2
 	exit 1
 }
 
@@ -79,17 +79,19 @@ usage() {
 }
 
 confirm() {
+	# y/n confirmation to do something. loop until valid response is received
 	while true; do
 		read -r -n 1 -p "${1:-Continue?} [y/n]: " REPLY
 		case $REPLY in
 			[yY]) echo ; return 0 ;;
 			[nN]) echo ; return 1 ;;
-			*) printf " \033[31m %s \n\033[0m" "invalid input"
+			*) printf "\\033[31m %s \\n\\033[0m" "invalid input"
 		esac 
 	done  
 }
 
 check_flags() {
+	# function to check for a valid flag (exists in provided array)
 	local array="${1}[@]"
 	local element="${2}"
 	for i in ${!array}; do
@@ -101,6 +103,7 @@ check_flags() {
 }
 
 check_device() {
+	# check if we're on a M1 Mac - Disk IO is not ideal on this platform
 	if [[ $(uname -m) == "arm64" ]]; then
 		log
 		log "⚠️  WARNING"
@@ -112,6 +115,7 @@ check_device() {
 }
 
 check_api_breaking_change(){
+	# Try to detect if there is a breaking API change based on major version change
 	if [ $PROFILE != "event-replay" ]; then
 		CURRENT_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | cut -f 1 -d "." | head -1)
 		CONFIGURED_API_VERSION=$( echo "$STACKS_BLOCKCHAIN_API_VERSION" | cut -f 1 -d ".")
@@ -127,67 +131,14 @@ check_api_breaking_change(){
 }
 
 check_network() {
+	# check if the services are already running
 	if [[ $(docker-compose -f "${SCRIPTPATH}/configurations/common.yaml" ps -q) ]]; then
-		# docker running
+		# docker is running
 		return 0
 	fi
 	# docker is not running
 	return 1
 }
-
-if [[ ${#} -eq 0 ]]; then
-	usage
-fi
-
-while [ $# -gt 0 ]
-do
-	case $1 in
-	-n|--network) 
-		if [ "$2" == "" ]; then 
-			usage "[ Error ] - Missing required value for $1"
-		fi
-		NETWORK=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
-		if ! check_flags SUPPORTED_NETWORKS "$NETWORK"; then
-			usage "[ Error ] - Network (${NETWORK}) not supported"
-		fi
-		shift
-		;;
-	-a|--action) 
-		if [ "$2" == "" ]; then 
-			usage "[ Error ] - Missing required value for $1"
-		fi
-		ACTION=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
-		if ! check_flags SUPPORTED_ACTIONS "$ACTION"; then
-			usage "[ Error ] -Action (${ACTION}) not supported"
-		fi
-		shift
-		;;
-	-f|--flags)
-		if [ "$2" == "" ]; then 
-			usage "[ Error ] - Missing required value for $1"
-		fi
-		FLAGS=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
-		set -f; IFS=','
-		FLAGS_ARRAY=("$FLAGS")
-		shift
-		;;
-	(-*) 
-		usage "[ Error ] - Unknown arg supplied ($1)"
-		;;
-	(*) 
-		usage "[ Error ] - Malformed arguments"
-		;;
-	esac
-	shift
-done
-
-if [ ! "$NETWORK" ]; then
-	usage "[ Error ] - Missing '-n|--network' Arg";
-fi
-if [ ! "$ACTION" ]; then
-	usage "[ Error ] - Missing '-a|--action' Arg";
-fi
-
 
 set_flags() {
 	# loop through supplied flags and set FLAGS for the yaml files to load
@@ -206,19 +157,18 @@ set_flags() {
 }
 
 ordered_stop() {
+	# stop the stacks-blockchain first, wait for the runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 	log
 	log "*** Stopping stacks-blockchain first to prevent database errors"
 	log "  Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the chainstate time to complete all operations"
 	log
-	# log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
-	# docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" --profile "${PROFILE}" stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain
-	cmd="docker-compose --env-file "${ENV_FILE}" -f "${SCRIPTPATH}/configurations/common.yaml" -f "${SCRIPTPATH}/configurations/${NETWORK}.yaml" --profile "${PROFILE}" stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
+	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
 	log "Running: ${cmd}"
 	eval "${cmd}"
-
 }
 
 docker_up() {
+	# sanity checks before starting services
 	local param="-d"
 	if ! check_api_breaking_change; then
 		log "    Required to perform a stacks-blockchain-api event-replay:"
@@ -253,30 +203,37 @@ docker_up() {
 }
 
 docker_down() {
+	# sanity checks before stopping services
 	if ! check_network; then
 		log "*** Stacks Blockchain services are not running"
 		return
 	fi
 	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]];then
+		# if this is mainnet/testnet - stop the blockchain service first
 		ordered_stop
 	fi
+	# stop the rest of the services after the blockchain has been stopped
 	run_docker "down" SUPPORTED_FLAGS "$PROFILE"
 }
 
 docker_logs(){
-	local param="-f"
+	# tail docker logs for the last 100 lines via LOG_TAIL
+	local param="$1"
 	if ! check_network; then
 		usage "[ ERROR ] - No ${NETWORK} services running"
 	fi
 	run_docker "logs" SUPPORTED_FLAGS "$PROFILE" "$param"
+
 }
 
 docker_pull() {
+	# pull any newly published images 
 	local action="pull"
 	run_docker "pull" SUPPORTED_FLAGS "$PROFILE"
 }
 
 status() {
+	# simple print if the services are running
 	if check_network; then
 		log
 		log "*** Stacks Blockchain services are running"
@@ -288,9 +245,12 @@ status() {
 }
 
 reset_data() {
+	# delete data for NETWORK based on demand
+	# exit if operation isn't confirmed
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		log
 		if ! check_network; then
+			confirm "Delete Persistent data for ${NETWORK}?" || exit_error "Delete Cancelled"
 			log "Resetting Persistent data for ${NETWORK}"
 			log "Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
@@ -310,13 +270,13 @@ reset_data() {
 }
 
 download_bns_data() {
+	# Download V1 BNS data to import via .env file BNS_IMPORT_DIR
 	local profile="bns"
 	if [ "$BNS_IMPORT_DIR" != "" ]; then
 		if ! check_network; then
 			SUPPORTED_FLAGS+=("bns")
 			FLAGS_ARRAY=(bns)
 			log "Downloading and extracting V1 bns-data"
-			# run_docker "up" FLAGS_ARRAY "$profile" "-d"
 			run_docker "up" FLAGS_ARRAY "$profile"
 			run_docker "down" FLAGS_ARRAY "$profile"
 			log
@@ -337,10 +297,17 @@ download_bns_data() {
 }
 
 event_replay(){
+	#
+	# TODO: run a test that there is data to export/import before starting this process?
+	#    else, containers have to be manually removed
+	# perform the API event-replay to either restore or save DB state
 	PROFILE="event-replay"
 	local action="$1"
 	SUPPORTED_FLAGS+=("api-${action}-events")
 	FLAGS_ARRAY=("api-${action}-events")
+	if ! check_network; then
+		usage "[ ERROR ] - No ${NETWORK} services running"
+	fi
 	docker_up
 	log
 	log "*** This operation can take a long while ***"
@@ -351,6 +318,7 @@ event_replay(){
 }
 
 run_docker() {
+	# execute the docker command using eval
 	local action="$1"
 	local flags="${2}[@]"
 	local profile="$3"
@@ -360,14 +328,101 @@ run_docker() {
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	log "Running: ${cmd}"
 	eval "${cmd}"
-	if [[ "$?" -eq 0 && "${action}" == "up" ]]; then
+	local ret="${?}"
+	if [[ "$ret" -eq 0 && "${action}" == "up" ]]; then
 		log "Brought up ${NETWORK}"
 		log "  run '$0 -n ${NETWORK} -a logs' to follow log files."
 		log
 	fi
 }
 
+# check for required binaries, exit if missing
+for cmd in docker-compose docker; do
+	command -v $cmd >/dev/null 2>&1 || exit_error "Missing command: $cmd"
+done
 
+# if not args are provided, print usage
+if [[ ${#} -eq 0 ]]; then
+	usage
+fi
+
+# loop through the args and try to determine what options we have
+# simple check for logs/status/upgrade since these are not network dependent
+while [ $# -gt 0 ]
+do
+	case $1 in
+	-n|--network) 
+		if [ "$2" == "" ]; then 
+			usage "[ Error ] - Missing required value for $1"
+		fi
+		NETWORK=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
+		if ! check_flags SUPPORTED_NETWORKS "$NETWORK"; then
+			usage "[ Error ] - Network (${NETWORK}) not supported"
+		fi
+		shift
+		;;
+	-a|--action) 
+		if [ "$2" == "" ]; then 
+			usage "[ Error ] - Missing required value for $1"
+		fi
+		ACTION=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
+		if ! check_flags SUPPORTED_ACTIONS "$ACTION"; then
+			usage "[ Error ] -Action (${ACTION}) not supported"
+		fi
+		shift
+		;;
+	-f|--flags)
+		if [ "$2" == "" ]; then 
+			usage "[ Error ] - Missing required value for $1"
+		fi
+		FLAGS=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
+		set -f; IFS=','
+		FLAGS_ARRAY=("$FLAGS")
+		shift
+		;;
+	upgrade)
+		if [ "$ACTION" == "status" ]; then
+			break
+		fi
+		docker_pull
+		exit 0
+		;;
+	logs)
+		if [ "$ACTION" == "status" ]; then
+			break
+		fi
+		log_opts="-f --tail $LOG_TAIL"
+		docker_logs "$log_opts"
+		exit 0
+		;;
+	status)
+		if [ "$ACTION" == "logs" ]; then
+			break
+		fi
+		status
+		exit 0
+		;;		
+	(-*) 
+		usage "[ Error ] - Unknown arg supplied ($1)"
+		;;
+	(*)
+		usage "[ Error ] - Malformed arguments"
+		;;
+	esac
+	shift
+done
+
+# if NETWORK is not set (either cmd line or default of mainnet), exit
+if [ ! "$NETWORK" ]; then
+	usage "[ Error ] - Missing '-n|--network' Arg";
+fi
+
+if [ ! "$ACTION" ]; then
+# if ACTION is not set, exit
+	usage "[ Error ] - Missing '-a|--action' Arg";
+fi
+
+# call relevant function based on ACTION
 case ${ACTION} in
 	up|start)
 		check_device
@@ -381,7 +436,8 @@ case ${ACTION} in
 		docker_up
 		;;
 	logs)
-		docker_logs
+		log_opts="-f --tail $LOG_TAIL"
+		docker_logs "$log_opts"
 		;;
 	import|export)
 		if check_network; then
@@ -410,4 +466,5 @@ case ${ACTION} in
 		;;
 esac
 
+# finally, exit successfully
 exit 0
