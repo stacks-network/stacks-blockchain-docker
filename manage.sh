@@ -158,13 +158,18 @@ set_flags() {
 
 ordered_stop() {
 	# stop the stacks-blockchain first, wait for the runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
-	log
-	log "*** Stopping stacks-blockchain first to prevent database errors"
-	log "  Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the chainstate time to complete all operations"
-	log
-	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
-	log "Running: ${cmd}"
-	eval "${cmd}"
+	if eval "docker-compose -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/mainnet.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
+		log
+		log "*** Stopping stacks-blockchain first to prevent database errors"
+		log "  Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the blockchain time to complete the current run loop"
+		log
+		cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
+		log "Running: ${cmd}"
+		eval "${cmd}"
+	else
+		log
+		log "*** Stacks Blockchain not running. Continuing"
+	fi
 }
 
 docker_up() {
@@ -285,7 +290,7 @@ download_bns_data() {
 		else
 			log
 			status
-			log "Can't download BNS data"
+			log "Can't download BNS data - services need to be stopped first: $0 -n $NETWORK -a stop"
 			exit_error ""
 		fi
 	else
@@ -301,17 +306,23 @@ event_replay(){
 	# TODO: run a test that there is data to export/import before starting this process?
 	#    else, containers have to be manually removed
 	# perform the API event-replay to either restore or save DB state
+	if check_network; then
+		docker_down
+	fi
 	PROFILE="event-replay"
 	local action="$1"
 	SUPPORTED_FLAGS+=("api-${action}-events")
 	FLAGS_ARRAY=("api-${action}-events")
-	if ! check_network; then
-		usage "[ ERROR ] - No ${NETWORK} services running"
-	fi
 	docker_up
 	log
 	log "*** This operation can take a long while ***"
 	log "    check logs for completion: $0 -n $NETWORK -a logs "
+	if [ "$action" == "export" ]; then
+		log "        - Look for a log entry: \"Export successful.\""
+	fi
+	if [ "$action" == "import" ]; then
+		log "        - Look for a log entry: \"Event import and playback successful.\""
+	fi
 	log "    Once the operation is complete, restart the service with: $0 -n $NETWORK -a restart"
 	log
 	exit
@@ -329,7 +340,8 @@ run_docker() {
 	log "Running: ${cmd}"
 	eval "${cmd}"
 	local ret="${?}"
-	if [[ "$ret" -eq 0 && "${action}" == "up" ]]; then
+	if [[ "$ret" -eq 0 && "${action}" == "up" && "${profile}" != "bns" ]]; then
+		log
 		log "Brought up ${NETWORK}"
 		log "  run '$0 -n ${NETWORK} -a logs' to follow log files."
 		log
@@ -440,9 +452,6 @@ case ${ACTION} in
 		docker_logs "$log_opts"
 		;;
 	import|export)
-		if check_network; then
-			docker_down
-		fi
 		if [ ! -f "${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml" ]; then
 			log
 			exit_error "[ Error ] - Missing events file: ${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml"
