@@ -12,22 +12,24 @@ LOG_TAIL="100"
 FLAGS="proxy"
 
 # Use .env in the local dir
+# this var is also used in the docker-compose yaml files
 export SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 ENV_FILE="${SCRIPTPATH}/.env"
 
-# if no .env exists, copy the sample env
+# if no .env exists, copy the sample env and export the vars
 if [ ! -f "$ENV_FILE" ];then
 	cp -a "${SCRIPTPATH}/sample.env" "${ENV_FILE}"
 fi
 source "${ENV_FILE}"
-set -eo pipefail
-set -Eo functrace
 
+# hardcode some valid flags we can use
+# this has to be hardcoded so we know what to shutdown
 SUPPORTED_FLAGS=(
 	bitcoin
 	proxy
 )
 
+# static list of blockchain networks we support
 SUPPORTED_NETWORKS=(
 	mainnet
 	testnet
@@ -35,6 +37,7 @@ SUPPORTED_NETWORKS=(
 	private-testnet
 )
 
+# list of supported actions this script accepts
 SUPPORTED_ACTIONS=(
 	up
 	start
@@ -52,15 +55,18 @@ SUPPORTED_ACTIONS=(
 )
 
 
+# log output
 log() {
 	printf >&2 "%s\\n" "$1"
 }
 
+# log output and exit with an error
 exit_error() {
 	printf "%s\\n\\n" "$1" >&2
 	exit 1
 }
 
+# print usage with some examples
 usage() {
 	if [ "$1" ]; then
 		log
@@ -78,8 +84,9 @@ usage() {
 	exit_error ""
 }
 
+# ask for confirmation, loop until valid input is received
 confirm() {
-	# y/n confirmation to do something. loop until valid response is received
+	# y/n confirmation. loop until valid response is received
 	while true; do
 		read -r -n 1 -p "${1:-Continue?} [y/n]: " REPLY
 		case $REPLY in
@@ -90,8 +97,9 @@ confirm() {
 	done  
 }
 
+# function to check for a valid flag (exists in provided arg of array)
+# arrays to be used are defined previously
 check_flags() {
-	# function to check for a valid flag (exists in provided array)
 	local array="${1}[@]"
 	local element="${2}"
 	for i in ${!array}; do
@@ -102,6 +110,8 @@ check_flags() {
 	return 1
 }
 
+# check if we're on a Mac M1 - Docker IO is not ideal yet, and we're IO heavy
+# confirm if user really wants to run this on an M1
 check_device() {
 	# check if we're on a M1 Mac - Disk IO is not ideal on this platform
 	if [[ $(uname -m) == "arm64" ]]; then
@@ -114,6 +124,8 @@ check_device() {
 	fi
 }
 
+# Try to detect a breaking (major version change) in the API by comparing local version to .env definition
+# return non-zero if a breaking change is detected
 check_api_breaking_change(){
 	# Try to detect if there is a breaking API change based on major version change
 	if [ $PROFILE != "event-replay" ]; then
@@ -130,6 +142,7 @@ check_api_breaking_change(){
 	return 0
 }
 
+# Check if services are running
 check_network() {
 	# check if the services are already running
 	if [[ $(docker-compose -f "${SCRIPTPATH}/configurations/common.yaml" ps -q) ]]; then
@@ -140,14 +153,15 @@ check_network() {
 	return 1
 }
 
+# loop through supplied flags and set FLAGS for the yaml files to load
+# silently fail if a flag isn't supported or a yaml doesn't exist
 set_flags() {
-	# loop through supplied flags and set FLAGS for the yaml files to load
-	# silently fail if a flag isn't supported or a yaml doesn't exist
 	local array="${*}"
 	local flags=""
 	for item in ${!array}; do
 		if check_flags SUPPORTED_FLAGS "$item"; then
 			# add to local flags if found in SUPPORTED_FLAGS array *and* the file exists in the expected path
+			# if no file exists, silently fail
 			if [ -f "${SCRIPTPATH}/configurations/${item}.yaml" ]; then
 				flags="${flags} -f ${SCRIPTPATH}/configurations/${item}.yaml"
 			fi
@@ -156,8 +170,9 @@ set_flags() {
 	echo "$flags"
 }
 
+# stop the stacks-blockchain first
+# wait for the runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 ordered_stop() {
-	# stop the stacks-blockchain first, wait for the runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 	if eval "docker-compose -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/mainnet.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
 		log
 		log "*** Stopping stacks-blockchain first to prevent database errors"
@@ -172,6 +187,7 @@ ordered_stop() {
 	fi
 }
 
+# Configure options to bring services up
 docker_up() {
 	# sanity checks before starting services
 	local param="-d"
@@ -179,7 +195,7 @@ docker_up() {
 		log "    Required to perform a stacks-blockchain-api event-replay:"
 		log "        https://github.com/hirosystems/stacks-blockchain-api#event-replay "
 		# log "    Or downgrade the API version in ${ENV_FILE}: STACKS_BLOCKCHAIN_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | head -1)"
-		if confirm "241 Run event-replay now?"; then
+		if confirm "Run event-replay now?"; then
 			## docker_down
 			docker_down
 			## pull new images
@@ -207,6 +223,7 @@ docker_up() {
 	run_docker "up" FLAGS_ARRAY "$PROFILE" "$param"
 }
 
+# Configure options to bring services down
 docker_down() {
 	# sanity checks before stopping services
 	if ! check_network; then
@@ -221,6 +238,7 @@ docker_down() {
 	run_docker "down" SUPPORTED_FLAGS "$PROFILE"
 }
 
+# output the service logs
 docker_logs(){
 	# tail docker logs for the last 100 lines via LOG_TAIL
 	local param="$1"
@@ -231,14 +249,15 @@ docker_logs(){
 
 }
 
+# Pull any updated images that may have been published
 docker_pull() {
 	# pull any newly published images 
 	local action="pull"
 	run_docker "pull" SUPPORTED_FLAGS "$PROFILE"
 }
 
+# Check if the services are running
 status() {
-	# simple print if the services are running
 	if check_network; then
 		log
 		log "*** Stacks Blockchain services are running"
@@ -249,16 +268,18 @@ status() {
 	fi
 }
 
+# Delete data for NETWORK
+# does not delete BNS data
 reset_data() {
-	# delete data for NETWORK based on demand
-	# exit if operation isn't confirmed
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		log
 		if ! check_network; then
+			# exit if operation isn't confirmed
 			confirm "Delete Persistent data for ${NETWORK}?" || exit_error "Delete Cancelled"
 			log "Resetting Persistent data for ${NETWORK}"
 			log "Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
+				# log error and exit if data wasn't deleted (permission denied etc)
 				log
 				log "[ Error ] - Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
 				exit_error "    Re-run the command with sudo: 'sudo $0 -n $NETWORK -a reset'"
@@ -266,16 +287,18 @@ reset_data() {
 			log "   *** Persistent data deleted"
 			log
 		else
+			# log error and exit if services are already running
 			log "[ Error ] - Can't reset while services are running"
 			exit_error "    Try again after running: $0 -n ${NETWORK} -a stop"
 		fi
 	else
+		# no data exists, log error and move on
 		usage "[ Error ] - No data exists for ${NETWORK}"
 	fi
 }
 
+# Download V1 BNS data to import via .env file BNS_IMPORT_DIR
 download_bns_data() {
-	# Download V1 BNS data to import via .env file BNS_IMPORT_DIR
 	local profile="bns"
 	if [ "$BNS_IMPORT_DIR" != "" ]; then
 		if ! check_network; then
@@ -301,6 +324,7 @@ download_bns_data() {
 
 }
 
+# Perform the Hiro API event-replay
 event_replay(){
 	#
 	# TODO: run a test that there is data to export/import before starting this process?
@@ -328,6 +352,8 @@ event_replay(){
 	exit
 }
 
+# Finally, execute the docker-compose command
+# the args we send here are what makes this work
 run_docker() {
 	# execute the docker command using eval
 	local action="$1"
@@ -337,9 +363,11 @@ run_docker() {
 	local optional_flags=""
 	optional_flags=$(set_flags "$flags")
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
+	# log the command we'll be running for verbosity
 	log "Running: ${cmd}"
 	eval "${cmd}"
 	local ret="${?}"
+	# if return is not zero, it should be apparent. if it worked, print how to see the logs
 	if [[ "$ret" -eq 0 && "${action}" == "up" && "${profile}" != "bns" ]]; then
 		log
 		log "Brought up ${NETWORK}"
@@ -353,13 +381,13 @@ for cmd in docker-compose docker; do
 	command -v $cmd >/dev/null 2>&1 || exit_error "Missing command: $cmd"
 done
 
-# if not args are provided, print usage
+# if no args are provided, print usage
 if [[ ${#} -eq 0 ]]; then
 	usage
 fi
 
 # loop through the args and try to determine what options we have
-# simple check for logs/status/upgrade since these are not network dependent
+#   - simple check for logs/status/upgrade since these are not network dependent
 while [ $# -gt 0 ]
 do
 	case $1 in
@@ -434,7 +462,7 @@ if [ ! "$ACTION" ]; then
 	usage "[ Error ] - Missing '-a|--action' Arg";
 fi
 
-# call relevant function based on ACTION
+# call relevant function based on ACTION arg
 case ${ACTION} in
 	up|start)
 		check_device
@@ -475,5 +503,5 @@ case ${ACTION} in
 		;;
 esac
 
-# finally, exit successfully
+# finally, exit successfully if we get to this point
 exit 0
