@@ -1,0 +1,37 @@
+version: "3"
+services:
+  stacks-blockchain:
+    image: blockstack/stacks-blockchain:feat-miner-control
+    volumes:
+      - ${SCRIPTPATH}/conf/private-testnet:/src/stacks-blockchain
+    command: sh -c "until nc -vz bitcoin.stacks-blockchain 18443; do echo \"Waiting for bitcoin\"; sleep 2; done; /bin/stacks-node start --config /src/stacks-blockchain/Config.toml"
+  explorer:
+    image: blockstack/explorer:latest
+    container_name: explorer
+    environment:
+      - NEXT_PUBLIC_MAINNET_API_SERVER=http://stacks-blockchain-api.stacks-blockhain:3999
+      - NEXT_PUBLIC_TESTNET_API_SERVER=http://stacks-blockchain-api.stacks-blockchain:3399
+      - MOCKNET_API_SERVER=http://localhost:3999
+      - TESTNET_API_SERVER=http://localhost:3999
+    ports:
+      - 3000:3000
+    networks:
+      - stacks-blockchain
+    profiles:
+      - stacks-blockchain
+  bitcoin:
+    image: blockstack/bitcoind:puppet-chain
+    container_name: bitcoin
+    restart: on-failure
+    volumes:
+      - ${SCRIPTPATH}/conf/private-testnet:/etc/bitcoin
+    expose:
+      - 18443
+      - 28444
+    environment:
+      - DYNAMIC_GENESIS_TIMESTAMP=1
+      - RUST_BACKTRACE=1
+    networks:
+      - stacks-blockchain
+    profiles:
+      - stacks-blockchain

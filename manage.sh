@@ -3,7 +3,7 @@
 set -eo pipefail
 set -Eo functrace
 
-# The following values can be overridden in the .env file. adding some defaults here
+# The following values can be overridden in the .env file or cmd line. adding some defaults here
 NETWORK="mainnet"
 ACTION="up"
 PROFILE="stacks-blockchain"
@@ -22,22 +22,36 @@ if [ ! -f "$ENV_FILE" ];then
 fi
 source "${ENV_FILE}"
 
-# hardcode some valid flags we can use
-# this has to be hardcoded so we know what to shutdown
-SUPPORTED_FLAGS=(
-	bitcoin
-	proxy
-)
+# # hardcode some valid flags we can use
+# # this has to be hardcoded so we know what to shutdown
+# SUPPORTED_FLAGS=(
+# 	bitcoin
+# 	proxy
+# )
 
-# static list of blockchain networks we support
-SUPPORTED_NETWORKS=(
-	mainnet
-	testnet
-	mocknet
-	private-testnet
-)
+# # static list of blockchain networks we support
+# SUPPORTED_NETWORKS=(
+# 	mainnet
+# 	testnet
+# 	mocknet
+# 	private-testnet
+# )
 
-# list of supported actions this script accepts
+# populate list of supported flags based on files in ./compose-files/extra-services
+SUPPORTED_FLAGS=()
+for i in `ls ./compose-files/extra-services`; do
+	flag=$(echo $i | sed 's|.yaml||')
+	SUPPORTED_FLAGS+=($flag)
+done
+
+# populate list of supported networks based on files in ./compose-files/networks
+SUPPORTED_NETWORKS=()
+for i in `ls ./compose-files/networks`; do
+	network=$(echo $i | sed 's|.yaml||')
+	SUPPORTED_NETWORKS+=($flag)
+done
+
+# hardcoded list of supported actions this script accepts
 SUPPORTED_ACTIONS=(
 	up
 	start
@@ -145,7 +159,7 @@ check_api_breaking_change(){
 # Check if services are running
 check_network() {
 	# check if the services are already running
-	if [[ $(docker-compose -f "${SCRIPTPATH}/configurations/common.yaml" ps -q) ]]; then
+	if [[ $(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" ps -q) ]]; then
 		# docker is running
 		return 0
 	fi
@@ -162,8 +176,8 @@ set_flags() {
 		if check_flags SUPPORTED_FLAGS "$item"; then
 			# add to local flags if found in SUPPORTED_FLAGS array *and* the file exists in the expected path
 			# if no file exists, silently fail
-			if [ -f "${SCRIPTPATH}/configurations/${item}.yaml" ]; then
-				flags="${flags} -f ${SCRIPTPATH}/configurations/${item}.yaml"
+			if [ -f "${SCRIPTPATH}/compose-files/extra-services/${item}.yaml" ]; then
+				flags="${flags} -f ${SCRIPTPATH}/compose-files/extra-services/${item}.yaml"
 			fi
 		fi
 	done
@@ -173,12 +187,12 @@ set_flags() {
 # stop the stacks-blockchain first
 # wait for the runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 ordered_stop() {
-	if eval "docker-compose -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/mainnet.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
+	if eval "docker-compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/mainnet.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
 		log
 		log "*** Stopping stacks-blockchain first to prevent database errors"
 		log "  Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the blockchain time to complete the current run loop"
 		log
-		cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
+		cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
 		log "Running: ${cmd}"
 		eval "${cmd}"
 	else
@@ -215,10 +229,10 @@ docker_up() {
 			mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
 		fi
 	fi
-	[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/configurations/${NETWORK}/Config.toml"
+	[[ ! -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/compose-files/networks/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/compose-files/networks/${NETWORK}/Config.toml"
 	if [[ "${NETWORK}" == "private-testnet" ]]; then
-		[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/configurations/${NETWORK}/puppet-chain.toml"
-		[[ ! -f "${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/configurations/${NETWORK}/bitcoin.conf"
+		[[ ! -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/compose-files/networks/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/compose-files/networks/${NETWORK}/puppet-chain.toml"
+		[[ ! -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/compose-files/networks/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/compose-files/networks/${NETWORK}/bitcoin.conf"
 	fi
 	run_docker "up" FLAGS_ARRAY "$PROFILE" "$param"
 }
@@ -362,7 +376,7 @@ run_docker() {
 	local param="$4"
 	local optional_flags=""
 	optional_flags=$(set_flags "$flags")
-	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/common.yaml -f ${SCRIPTPATH}/configurations/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
+	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	# log the command we'll be running for verbosity
 	log "Running: ${cmd}"
 	eval "${cmd}"
@@ -454,7 +468,22 @@ done
 
 # if NETWORK is not set (either cmd line or default of mainnet), exit
 if [ ! "$NETWORK" ]; then
-	usage "[ Error ] - Missing '-n|--network' Arg";
+	usage "[ Error ] - Missing '-n|--network' Arg"
+else
+	case ${NETWORK} in
+		mainnet)
+			# set chain id to mainnet
+			STACKS_CHAIN_ID="0x00000001"
+			;;
+		testnet)
+			# set chain id to testnet
+			STACKS_CHAIN_ID="0x80000000"
+			;;
+		*)
+			# Default the chain id to mocknet
+			STACKS_CHAIN_ID="2147483648"
+			;;
+	esac
 fi
 
 if [ ! "$ACTION" ]; then
@@ -480,9 +509,9 @@ case ${ACTION} in
 		docker_logs "$log_opts"
 		;;
 	import|export)
-		if [ ! -f "${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml" ]; then
+		if [ ! -f "${SCRIPTPATH}/compose-files/event-replay/api-${ACTION}-events.yaml" ]; then
 			log
-			exit_error "[ Error ] - Missing events file: ${SCRIPTPATH}/configurations/api-${ACTION}-events.yaml"
+			exit_error "[ Error ] - Missing events file: ${SCRIPTPATH}/compose-files/event-replay/api-${ACTION}-events.yaml"
 		fi
 		event_replay "$ACTION"
 		;;

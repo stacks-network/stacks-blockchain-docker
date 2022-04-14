@@ -1,0 +1,61 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:${POSTGRES_VERSION:-13}-alpine
+    container_name: postgres
+    restart: on-failure
+    env_file:
+      - ${SCRIPTPATH}/.env
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
+    networks:
+      - stacks-blockchain
+    profiles:
+      - event-replay
+      - stacks-blockchain
+  stacks-blockchain:
+    image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}
+    container_name: stacks-blockchain
+    restart: on-failure
+    ports:
+      - ${STACKS_FOLLOWER_RPC_PORT_LOCAL:-20443}:20443
+      - ${STACKS_FOLLOWER_P2P_PORT_LOCAL:-20444}:20444
+    env_file:
+      - ${SCRIPTPATH}/.env
+    networks:
+      - stacks-blockchain
+    depends_on:
+      - stacks-blockchain-api
+    profiles:
+      - stacks-blockchain
+    command:
+      [
+        "/bin/stacks-node",
+        "start",
+        "--config",
+        "/src/stacks-blockchain/Config.toml",
+      ]
+  stacks-blockchain-api:
+    image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
+    container_name: stacks-blockchain-api
+    restart: always
+    # volumes:
+    #   - ${SCRIPTPATH}/persistent-data/bns-data:/bns-data
+    #   - ${SCRIPTPATH}/scripts:/scripts
+    #   - ${SCRIPTPATH}/persistent-data/mainnet/event-replay:/tmp/event-replay
+    ports:
+      - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL:-3999}:${API_STACKS_BLOCKCHAIN_API_PORT:-3999}
+    env_file:
+      - ${SCRIPTPATH}/.env
+    networks:
+      - stacks-blockchain
+    depends_on:
+      - postgres
+    profiles:
+      - event-replay
+      - stacks-blockchain
+    command: ["npm", "run", "start"]
+networks:
+  stacks-blockchain:
+    driver: bridge
+    name: stacks

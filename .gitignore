@@ -32,6 +32,10 @@ configurations/*/Config.toml
 configurations/private-testnet/*.toml
 configurations/private-testnet/*.conf
 
+conf/*/Config.toml
+conf/private-testnet/*.toml
+conf/private-testnet/*.conf
+
 .env
 persistent-data/
 packer/vars.json

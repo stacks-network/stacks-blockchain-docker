@@ -1,0 +1,24 @@
+[network]
+rpc_bind = "0.0.0.0:18443"
+block_time = 7000
+miner_address = "mtFzK54XtpktHj7fKonFExEPEGkUMsiXdy"
+faucet_address = "n2pGfZaAVztWqFzuy8iLS3VSuHB2SimWUR"
+bitcoind_rpc_host = "localhost:28443"
+bitcoind_rpc_user = "blockstack"
+bitcoind_rpc_pass = "blockstacksystem"
+genesis_timestamp = 1588615296
+whitelisted_rpc_calls = [
+    "listunspent",
+    "listwallets",
+    "createwallet",
+    "importaddress",
+    "sendrawtransaction",
+    "getrawtransaction",
+    "scantxoutset",
+    "getrawmempool",
+    "getblockhash",
+]
+[[blocks]]
+count = 1
+block_time = 10000
+ignore_txs = false
