@@ -29,5 +29,4 @@ RUN apt-get update && apt-get install -y \
     netcat \
     && /sbin/ldconfig /usr/lib /lib \
     && sh /make_binary_dist.sh
-CMD ["/bin/sh", "-c", "/usr/local/bin/bitcoind -conf=/etc/bitcoin/bitcoin.conf -nodebuglogfile -pid=/run/bitcoind.pid -datadir=/root/.bitcoin"]
-
+CMD ["/usr/local/bin/bitcoind", "-conf=/etc/bitcoin/bitcoin.conf", "-nodebuglogfile", "-pid=/run/bitcoind.pid", "-datadir=/root/.bitcoin"]

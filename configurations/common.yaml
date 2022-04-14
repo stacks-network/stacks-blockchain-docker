@@ -6,6 +6,8 @@ services:
     restart: on-failure
     env_file:
       - ${SCRIPTPATH}/.env
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
     networks:
       - stacks-blockchain
     profiles:
@@ -26,9 +28,15 @@ services:
       - stacks-blockchain-api
     profiles:
       - stacks-blockchain
-    command: /bin/stacks-node start --config /src/stacks-blockchain/Config.toml
+    command:
+      [
+        "/bin/stacks-node",
+        "start",
+        "--config",
+        "/src/stacks-blockchain/Config.toml",
+      ]
   stacks-blockchain-api:
-    image: blockstack/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
+    image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
     restart: always
     volumes:
@@ -46,7 +54,7 @@ services:
     profiles:
       - event-replay
       - stacks-blockchain
-    command: npm run start
+    command: ["npm", "run", "start"]
 networks:
   stacks-blockchain:
     driver: bridge
