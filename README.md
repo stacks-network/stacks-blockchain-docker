@@ -26,7 +26,7 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
-- VM with at a minimum:
+- Machine with (at a minimum):
   - 4GB memory
   - 1 Vcpu
   - 50GB storage
@@ -68,6 +68,16 @@ sudo chmod 755 $DESTINATION
 
 All variables used in the [`sample.env`](sample.env) file can be modified, but generally most of them should be left as-is.
 
+By default:
+
+- BNS data is **not** enabled/imported
+  - To enable, uncomment `# BNS_IMPORT_DIR=/bns-data` in `./env`
+    - Download BNS data: `./manage.sh -a bns`
+- Fungible token metadata is **not** enabled
+  - To enable, uncomment `# STACKS_API_ENABLE_FT_METADATA=1` in `./env`
+- Non-Fungible token metadata is **not** enabled
+  - To enable, uncomment `# STACKS_API_ENABLE_NFT_METADATA=1` in `./env`
+
 ### Local Data Dirs
 
 Directories will be created on first start that will store persistent data under `./persistent-data/<network>`
@@ -95,8 +105,6 @@ cp sample.env .env
 
 _You may also use a symlink as an alternative to copying: `ln -s sample.env .env`_
 
-Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data, [uncomment this line](sample.env#L21) in your `.env` file: `BNS_IMPORT_DIR=/bns-data`
-
 3. Ensure all images are up to date
 
 ```bash
@@ -109,7 +117,7 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 ./manage.sh -n <network> -a up
 ```
 
-- Optional (with a proxy):
+- With optional proxy:
 
 ```bash
 ./manage.sh -n <network> -a up -f proxy
@@ -133,7 +141,7 @@ Note: V1 BNS data is **not** imported by default. If you'd like to use BNS data,
 ./manage.sh -n <network> -a restart
 ```
 
-- Optional (with a proxy):
+- With optional proxy:
 
 ```bash
 ./manage.sh -n <network> -a restart -f proxy
@@ -182,7 +190,7 @@ curl localhost:20443/v2/info | jq
 
 **stacks-blockchain-api**:
 
-- Ports `3999` are exposed to `localhost`
+- Port `3999` are exposed to `localhost`
 
 ```bash
 curl localhost:3999/v2/info | jq
@@ -328,7 +336,7 @@ _**API Missing Parent Block Error**_:
 - If the Stacks blockchain is no longer syncing blocks, and the API reports an error similar to this:\
   `Error processing core node block message DB does not contain a parent block at height 1970 with index_hash 0x3367f1abe0ee35b10e77fbcaa00d3ca452355478068a0662ec492bb30ee0f13e"`,\
   The API (and by extension the DB) is out of sync with the blockchain. \
-  The only known method to recover is to resync from genesis (**event-replay _may_ work, but in all likliehood will restore data to the same broken state**).
+  The only known method to recover is to resync from genesis (**event-replay _may_ work, but in all likelihood will restore data to the same broken state**).
 
 - To attempt the event-replay
 
