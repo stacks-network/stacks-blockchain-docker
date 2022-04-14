@@ -39,16 +39,16 @@ source "${ENV_FILE}"
 
 # populate list of supported flags based on files in ./compose-files/extra-services
 SUPPORTED_FLAGS=()
-for i in `ls ./compose-files/extra-services`; do
+for i in `ls ${SCRIPTPATH}/compose-files/extra-services`; do
 	flag=$(echo $i | sed 's|.yaml||')
 	SUPPORTED_FLAGS+=($flag)
 done
 
 # populate list of supported networks based on files in ./compose-files/networks
 SUPPORTED_NETWORKS=()
-for i in `ls ./compose-files/networks`; do
+for i in `ls ${SCRIPTPATH}/compose-files/networks`; do
 	network=$(echo $i | sed 's|.yaml||')
-	SUPPORTED_NETWORKS+=($flag)
+	SUPPORTED_NETWORKS+=($network)
 done
 
 # hardcoded list of supported actions this script accepts
@@ -485,6 +485,10 @@ else
 			;;
 	esac
 fi
+
+# explicitly export these vars since we use them in compose files
+export STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
+export NETWORK=${NETWORK}
 
 if [ ! "$ACTION" ]; then
 # if ACTION is not set, exit
