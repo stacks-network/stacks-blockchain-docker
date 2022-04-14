@@ -1,5 +1,0 @@
-version: "3"
-services:
-  stacks-blockchain:
-    volumes:
-      - ${SCRIPTPATH}/configurations/mocknet:/src/stacks-blockchain
