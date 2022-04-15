@@ -229,10 +229,10 @@ docker_up() {
 			mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
 		fi
 	fi
-	[[ ! -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/compose-files/networks/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/compose-files/networks/${NETWORK}/Config.toml"
+	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
 	if [[ "${NETWORK}" == "private-testnet" ]]; then
-		[[ ! -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/compose-files/networks/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/compose-files/networks/${NETWORK}/puppet-chain.toml"
-		[[ ! -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/compose-files/networks/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/compose-files/networks/${NETWORK}/bitcoin.conf"
+		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml"
+		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
 	fi
 	run_docker "up" FLAGS_ARRAY "$PROFILE" "$param"
 }
