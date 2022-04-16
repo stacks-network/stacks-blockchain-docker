@@ -84,18 +84,18 @@ exit_error() {
 usage() {
 	if [ "$1" ]; then
 		log
-		log "$1"
+		log "${LINENO} $1"
 	fi
 	log
-	log "Usage:"
-	log "  $0"
-	log "    -n|--network - [ mainnet | testnet | mocknet | bns ]"
-	log "    -a|--action - [ up | down | logs | reset | upgrade | import | export | bns]"
-	log "    optional args:"
-	log "      -f|--flags - [ proxy,bitcoin ]"
-	log "  ex: $0 -n mainnet -a up -f proxy,bitcoin"
-	log "  ex: $0 --network mainnet --action up --flags proxy"
-	exit_error ""
+	log "${LINENO} Usage:"
+	log "${LINENO}   $0"
+	log "${LINENO}     -n|--network - [ mainnet | testnet | mocknet | bns ]"
+	log "${LINENO}     -a|--action - [ up | down | logs | reset | upgrade | import | export | bns]"
+	log "${LINENO}     optional args:"
+	log "${LINENO}       -f|--flags - [ proxy,bitcoin ]"
+	log "${LINENO}   ex: $0 -n mainnet -a up -f proxy,bitcoin"
+	log "${LINENO}   ex: $0 --network mainnet --action up --flags proxy"
+	exit_error "${LINENO} "
 }
 
 # ask for confirmation, loop until valid input is received
@@ -130,11 +130,11 @@ check_device() {
 	# check if we're on a M1 Mac - Disk IO is not ideal on this platform
 	if [[ $(uname -m) == "arm64" ]]; then
 		log
-		log "⚠️  WARNING"
-		log "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
-		log "⚠️  see README for details"
-		log "⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
-		confirm "Continue Anyway?" || exit_error "Exiting"
+		log "${LINENO} ⚠️  WARNING"
+		log "${LINENO} ⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
+		log "${LINENO} ⚠️  see README for details"
+		log "${LINENO} ⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
+		confirm "Continue Anyway?" || exit_error "${LINENO} Exiting"
 	fi
 }
 
@@ -148,7 +148,7 @@ check_api_breaking_change(){
 		if [ "$CURRENT_API_VERSION" != "" ]; then
 			if [ "$CURRENT_API_VERSION" -lt "$CONFIGURED_API_VERSION" ];then
 				log
-				log "*** stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} ) ***"
+				log "${LINENO} *** stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} ) ***"
 				return 1
 			fi
 		fi
@@ -172,12 +172,25 @@ check_network() {
 set_flags() {
 	local array="${*}"
 	local flags=""
+	local flag_path=""
+	case ${profile} in
+		event-replay)
+			flag_path="event-replay"
+			;;
+		*)
+			flag_path="extra-services"
+			;;
+	esac
 	for item in ${!array}; do
 		if check_flags SUPPORTED_FLAGS "$item"; then
 			# add to local flags if found in SUPPORTED_FLAGS array *and* the file exists in the expected path
 			# if no file exists, silently fail
-			if [ -f "${SCRIPTPATH}/compose-files/extra-services/${item}.yaml" ]; then
-				flags="${flags} -f ${SCRIPTPATH}/compose-files/extra-services/${item}.yaml"
+			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
+				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
+			else
+				if [ "$profile" != "stacks-blockchain" ];then
+					usage "[ Error ] - missing compose file: ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
+				fi
 			fi
 		fi
 	done
@@ -189,15 +202,15 @@ set_flags() {
 ordered_stop() {
 	if eval "docker-compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/mainnet.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
 		log
-		log "*** Stopping stacks-blockchain first to prevent database errors"
-		log "  Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the blockchain time to complete the current run loop"
+		log "${LINENO} *** Stopping stacks-blockchain first to prevent database errors"
+		log "${LINENO}   Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the blockchain time to complete the current run loop"
 		log
 		cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
-		log "Running: ${cmd}"
+		log "${LINENO} Running: ${cmd}"
 		eval "${cmd}"
 	else
 		log
-		log "*** Stacks Blockchain not running. Continuing"
+		log "${LINENO} *** Stacks Blockchain not running. Continuing"
 	fi
 }
 
@@ -206,9 +219,9 @@ docker_up() {
 	# sanity checks before starting services
 	local param="-d"
 	if ! check_api_breaking_change; then
-		log "    Required to perform a stacks-blockchain-api event-replay:"
-		log "        https://github.com/hirosystems/stacks-blockchain-api#event-replay "
-		# log "    Or downgrade the API version in ${ENV_FILE}: STACKS_BLOCKCHAIN_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | head -1)"
+		log "${LINENO}     Required to perform a stacks-blockchain-api event-replay:"
+		log "${LINENO}         https://github.com/hirosystems/stacks-blockchain-api#event-replay "
+		# log "${LINENO}     Or downgrade the API version in ${ENV_FILE}: STACKS_BLOCKCHAIN_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | head -1)"
 		if confirm "Run event-replay now?"; then
 			## docker_down
 			docker_down
@@ -217,15 +230,15 @@ docker_up() {
 			## run event_replay
 			event_replay "import"
 		fi
-		exit_error "[ ERROR ] - event-replay is required"
+		exit_error "${LINENO} [ ERROR ] - event-replay is required"
 	fi
 	if check_network; then
 		log
-		exit_error "*** Stacks Blockchain services are already running"
+		exit_error "${LINENO} *** Stacks Blockchain services are already running"
 	fi
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
-			log "Creating persistent-data for ${NETWORK}"
+			log "${LINENO} Creating persistent-data for ${NETWORK}"
 			mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
 		fi
 	fi
@@ -241,7 +254,7 @@ docker_up() {
 docker_down() {
 	# sanity checks before stopping services
 	if ! check_network; then
-		log "*** Stacks Blockchain services are not running"
+		log "${LINENO} *** Stacks Blockchain services are not running"
 		return
 	fi
 	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]];then
@@ -274,11 +287,11 @@ docker_pull() {
 status() {
 	if check_network; then
 		log
-		log "*** Stacks Blockchain services are running"
+		log "${LINENO} *** Stacks Blockchain services are running"
 		log
 	else
 		log
-		exit_error "*** Stacks Blockchain services are not running"
+		exit_error "${LINENO} *** Stacks Blockchain services are not running"
 	fi
 }
 
@@ -289,21 +302,21 @@ reset_data() {
 		log
 		if ! check_network; then
 			# exit if operation isn't confirmed
-			confirm "Delete Persistent data for ${NETWORK}?" || exit_error "Delete Cancelled"
-			log "Resetting Persistent data for ${NETWORK}"
-			log "Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
+			confirm "Delete Persistent data for ${NETWORK}?" || exit_error "${LINENO} Delete Cancelled"
+			log "${LINENO} Resetting Persistent data for ${NETWORK}"
+			log "${LINENO} Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
 				# log error and exit if data wasn't deleted (permission denied etc)
 				log
-				log "[ Error ] - Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
-				exit_error "    Re-run the command with sudo: 'sudo $0 -n $NETWORK -a reset'"
+				log "${LINENO} [ Error ] - Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
+				exit_error "${LINENO}     Re-run the command with sudo: 'sudo $0 -n $NETWORK -a reset'"
 			}
-			log "   *** Persistent data deleted"
+			log "${LINENO}    *** Persistent data deleted"
 			log
 		else
 			# log error and exit if services are already running
-			log "[ Error ] - Can't reset while services are running"
-			exit_error "    Try again after running: $0 -n ${NETWORK} -a stop"
+			log "${LINENO} [ Error ] - Can't reset while services are running"
+			exit_error "${LINENO}     Try again after running: $0 -n ${NETWORK} -a stop"
 		fi
 	else
 		# no data exists, log error and move on
@@ -318,21 +331,21 @@ download_bns_data() {
 		if ! check_network; then
 			SUPPORTED_FLAGS+=("bns")
 			FLAGS_ARRAY=(bns)
-			log "Downloading and extracting V1 bns-data"
+			log "${LINENO} Downloading and extracting V1 bns-data"
 			run_docker "up" FLAGS_ARRAY "$profile"
 			run_docker "down" FLAGS_ARRAY "$profile"
 			log
-			log "Download Operation is complete, start the service with: $0 -n $NETWORK -a start"
+			log "${LINENO} Download Operation is complete, start the service with: $0 -n $NETWORK -a start"
 			log
 		else
 			log
 			status
-			log "Can't download BNS data - services need to be stopped first: $0 -n $NETWORK -a stop"
-			exit_error ""
+			log "${LINENO} Can't download BNS data - services need to be stopped first: $0 -n $NETWORK -a stop"
+			exit_error "${LINENO} "
 		fi
 	else
 		log
-		exit_error "Undefined or commented BNS_IMPORT_DIR variable in $ENV_FILE"
+		exit_error "${LINENO} Undefined or commented BNS_IMPORT_DIR variable in $ENV_FILE"
 	fi
 	exit 0
 
@@ -353,17 +366,17 @@ event_replay(){
 	FLAGS_ARRAY=("api-${action}-events")
 	docker_up
 	log
-	log "*** This operation can take a long while ***"
-	log "    check logs for completion: $0 -n $NETWORK -a logs "
+	log "${LINENO} *** This operation can take a long while ***"
+	log "${LINENO}     check logs for completion: $0 -n $NETWORK -a logs "
 	if [ "$action" == "export" ]; then
-		log "        - Look for a log entry: \"Export successful.\""
+		log "${LINENO}         - Look for a log entry: \"Export successful.\""
 	fi
 	if [ "$action" == "import" ]; then
-		log "        - Look for a log entry: \"Event import and playback successful.\""
+		log "${LINENO}         - Look for a log entry: \"Event import and playback successful.\""
 	fi
-	log "    Once the operation is complete, restart the service with: $0 -n $NETWORK -a restart"
+	log "${LINENO}     Once the operation is complete, restart the service with: $0 -n $NETWORK -a restart"
 	log
-	exit
+	exit 0
 }
 
 # Finally, execute the docker-compose command
@@ -378,21 +391,21 @@ run_docker() {
 	optional_flags=$(set_flags "$flags")
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	# log the command we'll be running for verbosity
-	log "Running: ${cmd}"
+	log "${LINENO} Running: ${cmd}"
 	eval "${cmd}"
 	local ret="${?}"
 	# if return is not zero, it should be apparent. if it worked, print how to see the logs
 	if [[ "$ret" -eq 0 && "${action}" == "up" && "${profile}" != "bns" ]]; then
 		log
-		log "Brought up ${NETWORK}"
-		log "  run '$0 -n ${NETWORK} -a logs' to follow log files."
+		log "${LINENO} Brought up ${NETWORK}"
+		log "${LINENO}   run '$0 -n ${NETWORK} -a logs' to follow log files."
 		log
 	fi
 }
 
 # check for required binaries, exit if missing
 for cmd in docker-compose docker; do
-	command -v $cmd >/dev/null 2>&1 || exit_error "Missing command: $cmd"
+	command -v $cmd >/dev/null 2>&1 || exit_error "${LINENO} Missing command: $cmd"
 done
 
 # if no args are provided, print usage
@@ -432,6 +445,17 @@ do
 		FLAGS=$(echo "$2" | tr -d ' ' | awk '{print tolower($0)}')
 		set -f; IFS=','
 		FLAGS_ARRAY=("$FLAGS")
+		if check_flags FLAGS_ARRAY "bns" && [ "$ACTION" != "bns" ]; then
+			usage "[ Error ] - bns is not a valid flag"
+		fi
+
+		# check_for_bns_flag=check_flags FLAGS_ARRAY "bns"
+		# echo "check_for_bns_flag: $check_for_bns_flag"
+		# if [[ "$(check_flags FLAGS_ARRAY \"bns\")" -ne "0" ]]; then
+		# 	#"${profile}" != "bns"
+		# 	log
+		# 	exit_error "${LINENO} ** bns is not a valid flag"	
+		# fi
 		shift
 		;;
 	upgrade)
@@ -515,7 +539,7 @@ case ${ACTION} in
 	import|export)
 		if [ ! -f "${SCRIPTPATH}/compose-files/event-replay/api-${ACTION}-events.yaml" ]; then
 			log
-			exit_error "[ Error ] - Missing events file: ${SCRIPTPATH}/compose-files/event-replay/api-${ACTION}-events.yaml"
+			exit_error "${LINENO} [ Error ] - Missing events file: ${SCRIPTPATH}/compose-files/event-replay/api-${ACTION}-events.yaml"
 		fi
 		event_replay "$ACTION"
 		;;

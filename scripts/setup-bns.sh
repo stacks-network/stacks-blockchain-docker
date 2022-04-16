@@ -32,7 +32,6 @@ check_sha256(){
     local file_256_path="${BNS_IMPORT_DIR}/${file_256}" # full path to sha256 file
     # if both files exist, compare sha1sum
     if [ -f "${file_path}" -a -f "${file_256_path}" ]; then
-        echo "Checking sha256 of ${file}"
         # retrieve/calculate the sha1sum
         local sha256=$(cat ${file_256_path})
         local sha256sum=$(sha256sum ${file_path} | awk {'print $1'})
@@ -50,7 +49,7 @@ check_sha256(){
             fi            
         else
             # matched the sha1sum, move on to the next file in the list
-            echo "  - Matched sha256 of ${file} and $file_256"
+            printf "  - %-25s: %-20s Matched sha256 with %s\n" "$file" "$sha256sum" "$file_256" 
             return 0
         fi 
     else
