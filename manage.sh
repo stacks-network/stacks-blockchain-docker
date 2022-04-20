@@ -170,100 +170,60 @@ check_network() {
 
 # Check if there is an event-replay operation in progress
 check_event_replay(){
-	if ! check_network; then
-		return 1
-	fi
+	# if ! check_network; then
+	# 	return 1
+	# fi
 	log "${LINENO}  Checking event replay"
-
-	##
-	log "${LINENO}  ***********************************"
-	log "${LINENO}  check_import_started running: docker logs stacks-blockchain-api 2>&1 | head -n20 | grep 'Importing raw event requests'"
-	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Importing raw event requests'"
+	## Check if improt has started
+	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Importing raw event requests'" || test $? -eq 141
 	check_import_started="${?}"
-	log "${LINENO}  check_import_started returned: $check_import_started"
-	
-	##
-	log "${LINENO}  ***********************************"
-	log "${LINENO}  check_import_finished running: docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep 'Event import and playback successful'"
-	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Event import and playback successful'"
-	check_import_finished="${?}"
-	log "${LINENO}  check_import_finished returned: $check_import_finished"
-	
-	##
-	log "${LINENO}  **********************************"
-	log "${LINENO}  check_export_started running: docker logs stacks-blockchain-api 2>&1 | head -n20 | grep 'Export started'"
-	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Export started'"
+	## Check if import has completed
+	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Event import and playback successful'" || test $? -eq 141
+	check_import_finished="${?}"	
+	## Check if export has started
+	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Export started'" || test $? -eq 141
 	check_export_started="${?}"
-	log "${LINENO}  check_export_started returned: $check_export_started"
-	
-	##
-	log "${LINENO}  **********************************"
-	log "${LINENO}  check_export_finished running: docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep 'Export successful'"
-	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Export successful'"
+	## Check if export has completed
+	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Export successful'" || test $? -eq 141
 	check_export_finished="${?}"
-	log "${LINENO}  check_export_finished returned: $check_export_finished"
-	log "${LINENO}  **********************************"
-	log "${LINENO}  **********************************"
-	
-	# check_import_started=$(docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q "Importing raw event requests"; echo $?)
-	# check_import_finished=$(docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q "Event import and playback successful"; echo $?)
-	# check_export_started=$(docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q "Export started"; echo $?)
-	# check_export_finished=$(docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q "Export successful"; echo $?)
-	log
 	log "${LINENO} check_import_started:$check_import_started"
 	log "${LINENO} check_import_finished:$check_import_finished"
 	log "${LINENO} check_export_started:$check_export_started"
 	log "${LINENO} check_export_finished:$check_export_finished"
-
-
 	if [ "$check_import_started" -eq "0" ]; then
-        # import is started
-	    if [ "$check_import_finished" -eq "0" ]; then
-            # import is finished
-            log "${LINENO} *** Event import and playback has finished"
+		# import is started
+		if [ "$check_import_finished" -eq "0" ]; then
+			# import is finished
+			log "${LINENO} *** Event import and playback has finished"
 			exit_error "${LINENO} return 0"
 			exit
-            return 0
-        fi
+			return 0
+		fi
 		# import isn't finished, return 1
-        log "${LINENO} *** Event import and playback is in progress"
+		log "${LINENO} *** Event import and playback is in progress"
 		exit_error "${LINENO} return 1"
 		exit
-        return 1
-    fi
-    if [ "$check_export_started" -eq "0" ]; then
-        # export is started
-        if [ "$check_export_finished" -eq "0" ]; then
-            # export is finished
-            log "${LINENO} *** Event export has finished"
+		return 1
+	fi
+	if [ "$check_export_started" -eq "0" ]; then
+		# export is started
+		if [ "$check_export_finished" -eq "0" ]; then
+			# export is finished
+			log "${LINENO} *** Event export has finished"
 			exit_error "${LINENO} return 0"
 			exit
-            return 0
-        fi
+			return 0
+		fi
 		# export isn't finished, return 1
-        log "${LINENO} *** Event export is in progress"
+		log "${LINENO} *** Event export is in progress"
 		exit_error "${LINENO} return 1"
 		exit
-        return 1
-    fi
-    # default to non-successful
+		return 1
+	fi
+	# default to non-successful
 	exit_error "${LINENO} return 1"
 	exit
 	return 1
-
-	# # TODO: if action is import, and we have a zero check_export_finished, we should return 0 so process continues
-	# # TODO: if action is anything *and* both (check_import_started, check_import_started) are zero, we should return 0 so process continues
- 
-	# if [[ "$check_import_started" -eq "0" || "$check_export_started" -eq "0" ]]; then
-	# 	# event replay is running
-	# 	log "${LINENO} event replay running"
-	# 	exit
-	# 	return 0
-	# fi
-	# # event replay is not running
-	# log "${LINENO} event replay not running"
-	# exit
-	# return 1
 }
 
 # loop through supplied flags and set FLAGS for the yaml files to load
@@ -316,6 +276,10 @@ ordered_stop() {
 # Configure options to bring services up
 docker_up() {
 	log "${LINENO}   docker_up"
+	if check_network; then
+		log
+		exit_error "${LINENO} *** Stacks Blockchain services are already running"
+	fi
 	if ! check_event_replay; then
 		exit_error "${LINENO} [ Error ] - Event Replay in progress. Refusing to start services"
 	fi
@@ -335,10 +299,6 @@ docker_up() {
 		fi
 		exit_error "${LINENO} [ ERROR ] - event-replay is required"
 	fi
-	if check_network; then
-		log
-		exit_error "${LINENO} *** Stacks Blockchain services are already running"
-	fi
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
 			log "${LINENO} Creating persistent-data for ${NETWORK}"
@@ -356,16 +316,17 @@ docker_up() {
 # Configure options to bring services down
 docker_down() {
 	log "${LINENO}   docker_down"
-	# sanity checks before stopping services
-	if ! check_event_replay;then
-		exit_error "${LINENO} [ Error ] - Event Replay in progress. Refusing to stop services"
-	fi
 	if ! check_network; then
 		log "${LINENO} *** Stacks Blockchain services are not running"
 		return
 	fi
-	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]];then
-		# if this is mainnet/testnet - stop the blockchain service first
+	# sanity checks before stopping services
+	if ! check_event_replay;then
+		exit_error "${LINENO} [ Error ] - Event Replay in progress. Refusing to stop services"
+	fi
+	# if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]];then
+	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [ "${PROFILE}" != "bns" ]; then
+		# if this is mainnet/testnet and the profile is not bns, stop the blockchain service first
 		ordered_stop
 	fi
 	# stop the rest of the services after the blockchain has been stopped
@@ -436,14 +397,17 @@ reset_data() {
 
 # Download V1 BNS data to import via .env file BNS_IMPORT_DIR
 download_bns_data() {
-	local profile="bns"
+	# local profile="bns"
 	if [ "$BNS_IMPORT_DIR" != "" ]; then
 		if ! check_network; then
 			SUPPORTED_FLAGS+=("bns")
 			FLAGS_ARRAY=(bns)
+			PROFILE="bns"
 			log "${LINENO} Downloading and extracting V1 bns-data"
-			run_docker "up" FLAGS_ARRAY "$profile"
-			run_docker "down" FLAGS_ARRAY "$profile"
+			docker_up
+			docker_down
+			# run_docker "up" FLAGS_ARRAY "$profile"
+			# run_docker "down" FLAGS_ARRAY "$profile"
 			log
 			log "${LINENO} Download Operation is complete, start the service with: $0 -n $NETWORK -a start"
 			log
