@@ -170,39 +170,33 @@ check_network() {
 
 # Check if there is an event-replay operation in progress
 check_event_replay(){
-	# if ! check_network; then
-	# 	return 1
-	# fi
 	log "${LINENO}  Checking event replay"
-	## Check if improt has started
+	##
+	## Check if improt has started and save return code
 	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Importing raw event requests'" || test $? -eq 141
 	check_import_started="${?}"
-	## Check if import has completed
+	##
+	## Check if import has completed and save return code
 	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Event import and playback successful'" || test $? -eq 141
 	check_import_finished="${?}"	
-	## Check if export has started
+	##
+	## Check if export has started and save return code
 	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Export started'" || test $? -eq 141
 	check_export_started="${?}"
-	## Check if export has completed
+	##
+	## Check if export has completed and save return code
 	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Export successful'" || test $? -eq 141
 	check_export_finished="${?}"
-	log "${LINENO} check_import_started:$check_import_started"
-	log "${LINENO} check_import_finished:$check_import_finished"
-	log "${LINENO} check_export_started:$check_export_started"
-	log "${LINENO} check_export_finished:$check_export_finished"
+
 	if [ "$check_import_started" -eq "0" ]; then
 		# import is started
 		if [ "$check_import_finished" -eq "0" ]; then
 			# import is finished
 			log "${LINENO} *** Event import and playback has finished"
-			exit_error "${LINENO} return 0"
-			exit
 			return 0
 		fi
 		# import isn't finished, return 1
 		log "${LINENO} *** Event import and playback is in progress"
-		exit_error "${LINENO} return 1"
-		exit
 		return 1
 	fi
 	if [ "$check_export_started" -eq "0" ]; then
@@ -210,20 +204,14 @@ check_event_replay(){
 		if [ "$check_export_finished" -eq "0" ]; then
 			# export is finished
 			log "${LINENO} *** Event export has finished"
-			exit_error "${LINENO} return 0"
-			exit
 			return 0
 		fi
 		# export isn't finished, return 1
 		log "${LINENO} *** Event export is in progress"
-		exit_error "${LINENO} return 1"
-		exit
 		return 1
 	fi
-	# default to non-successful
-	exit_error "${LINENO} return 1"
-	exit
-	return 1
+	# default return event replay not running
+	return 0
 }
 
 # loop through supplied flags and set FLAGS for the yaml files to load
@@ -259,17 +247,32 @@ set_flags() {
 # stop the stacks-blockchain first
 # wait for the runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 ordered_stop() {
-	if eval "docker-compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/mainnet.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
-		log
-		log "${LINENO} *** Stopping stacks-blockchain first to prevent database errors"
-		log "${LINENO}   Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the blockchain time to complete the current run loop"
-		log
-		cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
-		log "${LINENO} Running: ${cmd}"
-		eval "${cmd}"
-	else
-		log
-		log "${LINENO} *** Stacks Blockchain not running. Continuing"
+	if [[ -f "${SCRIPTPATH}/compose-files/common.yaml" && -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml" ]]; then
+		if eval "docker-compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
+			SERVICES=(
+				stacks-blockchain
+				stacks-blockchain-api
+			)
+			for service in ${SERVICES[@]}; do
+				log
+				log "${LINENO} *** Stopping $service"
+				log "${LINENO}   Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds"
+				log
+				cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} ${service}"
+				log "${LINENO} Running: ${cmd}"
+				eval "${cmd}"
+			done
+			# log
+			# log "${LINENO} *** Stopping stacks-blockchain"
+			# log "${LINENO}   Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds to give the blockchain time to complete the current run loop"
+			# log
+			# cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop -t ${STACKS_SHUTDOWN_TIMEOUT} stacks-blockchain"
+			# log "${LINENO} Running: ${cmd}"
+			# eval "${cmd}"
+		else
+			log
+			log "${LINENO} *** Stacks Blockchain not running. Continuing"
+		fi
 	fi
 }
 
