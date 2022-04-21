@@ -39,3 +39,4 @@ conf/private-testnet/*.conf
 .env
 persistent-data/
 packer/vars.json
+exported-logs/
