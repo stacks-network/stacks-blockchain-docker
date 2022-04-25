@@ -2,6 +2,7 @@
 
 set -eo pipefail
 set -Eo functrace
+shopt -s expand_aliases
 
 # The following values can be overridden in the .env file or cmd line. adding some defaults here
 export NETWORK="mainnet"
@@ -11,10 +12,32 @@ STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a 
 LOG_TAIL="100"
 FLAGS="proxy"
 LOG_OPTS="-f --tail ${LOG_TAIL}"
+VERBOSE=false
+
+COLRED=$'\033[31m' # Red
+COLGREEN=$'\033[32m' # Green
+COLYELLOW=$'\033[33m' # Yellow
+COLLTBLUE=$'\033[36m' # Light Blue
+# COLBLUE=$'\033[34m' # Blue
+# COLPURPLE=$'\033[35m' # Purple
+# COLBLACK=$'\033[30m' # Black
+# COLGRAY=$'\033[2m' # Gray
+# COLITALIC=$'\033[3m' # Italic
+# COLUNDERLINE=$'\033[4m' # underline
+# COLBOLD=$'\033[7m' # block text
+COLRESET=$'\033[0m' # reset color
+
+ERROR="${COLRED}[ Error ]${COLRESET} "
+WARN="${COLYELLOW}[ Warn ]${COLRESET} "
+INFO="${COLGREEN}[ Success ]${COLRESET} "
+EXIT_MSG="${COLRED}[ Exit Error ]${COLRESET} "
+
 
 # Use .env in the local dir
 #     - This var is also used in the docker-compose yaml files
-export SCRIPTPATH="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )"
+FULL_PATH="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )"
+# export SCRIPTPATH="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )"
+export SCRIPTPATH=${FULL_PATH}
 ENV_FILE="${SCRIPTPATH}/.env"
 
 # If no .env file exists, copy the sample env and export the vars
@@ -62,34 +85,64 @@ SUPPORTED_ACTIONS=(
 )
 
 
-# Print log output
-log() {
-	printf >&2 "%s\\n" "${1}"
+# # Print log output
+# log() {
+# 	printf >&2 "%b\\n" "${1}"
+# }
+
+# # Print log output and exit with an error
+# exit_error() {
+# 	printf "%b\\n\\n" "${1}" >&2
+# 	exit 1
+# }
+
+alias log="logger"
+alias log_error='logger "${ERROR}"'
+alias log_warn='logger "${WARN}"'
+alias log_info='logger "${INFO}"'
+alias log_exit='exit_error "${EXIT_MSG}"'
+if $VERBOSE; then
+	alias log='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}"' 
+	alias log_info='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${INFO}"' 
+	alias log_warn='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${WARN}"' 
+	alias log_error='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${ERROR}"'
+	alias log_exit='exit_error  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${EXIT_MSG}"' 
+fi
+
+logger() {
+    if $VERBOSE;then
+        printf "%s %-25s %-10s %-25s %s\\n" "$1" "$2" "$3" "$4" "$5"
+    else
+        printf "%-25s %s\\n" "$1" "$2"
+    fi
 }
 
-# Print log output and exit with an error
 exit_error() {
-	printf "%s\\n\\n" "${1}" >&2
-	exit 1
+    if $VERBOSE;then
+        printf "%s %-25s %-10s %-25s %s\\n\\n" "$1" "$2" "$3" "$4" "$5"
+	else
+        printf "%-25s %s\\n\\n" "$1" "$2"
+    fi
+    exit 1
 }
 
 # Print usage with some examples
 usage() {
 	if [ "${1}" ]; then
 		log
-		log "${LINENO} ${1}"
+		log "${1}"
 	fi
 	log
-	log "${LINENO}  Usage:"
-	log "${LINENO}     ${0} -n <network> -a <action> <optional args>"
-	log "${LINENO}         -n|--network: [ mainnet | testnet | mocknet | bns ]"
-	log "${LINENO}         -a|--action: [ up | down | logs | reset | upgrade | import | export | bns]"
-	log "${LINENO}     optional args:"
-	log "${LINENO}         -f|--flags: [ proxy,bitcoin ]"
-	log "${LINENO}         export: combined with 'logs' action, exports logs to a text file"
-	log "${LINENO}     ex: ${0} -n mainnet -a up -f proxy,bitcoin"
-	log "${LINENO}     ex: ${0} --network mainnet --action up --flags proxy"
-	log "${LINENO}     ex: ${0} -n mainnet -a logs export"
+	log "Usage:"
+	log "    ${0} -n <network> -a <action> <optional args>"
+	log "        -n|--network: [ mainnet | testnet | mocknet | bns ]"
+	log "        -a|--action: [ up | down | logs | reset | upgrade | import | export | bns]"
+	log "    optional args:"
+	log "        -f|--flags: [ proxy,bitcoin ]"
+	log "        export: combined with 'logs' action, exports logs to a text file"
+	log "    ex: ${COLLTBLUE}${0} -n mainnet -a up -f proxy,bitcoin${COLRESET}"
+	log "    ex: ${COLLTBLUE}${0} --network mainnet --action up --flags proxy${COLRESET}"
+	log "    ex: ${COLLTBLUE}${0} -n mainnet -a logs export${COLRESET}"
 	exit 0
 }
 
@@ -125,17 +178,17 @@ check_device() {
 	# Check if we're on a M1 Mac - Disk IO is not ideal on this platform
 	if [[ $(uname -m) == "arm64" ]]; then
 		log
-		log "${LINENO} ⚠️  WARNING"
-		log "${LINENO} ⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
-		log "${LINENO} ⚠️  see README for details"
-		log "${LINENO} ⚠️  https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
-		confirm "Continue Anyway?" || exit_error "${LINENO} Exiting"
+		log_warn "⚠️  ${COLYELLOW}WARNING${COLRESET}"
+		log_warn "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
+		log_warn "⚠️  see README for details"
+		log_warn "⚠️      https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
+		confirm "Continue Anyway?" || exit_error "${COLRED}Exiting${COLRESET}"
 	fi
 }
 
 # Try to detect a breaking (major version change) in the API by comparing local version to .env definition
 # Return non-zero if a breaking change is detected (this logic is suspect, but should be ok)
-check_api_breaking_change(){
+check_api(){
 	# Try to detect if there is a breaking API change based on major version change
 	if [ "${PROFILE}" != "event-replay" ]; then
 		CURRENT_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | cut -f 1 -d "." | head -1)
@@ -143,7 +196,7 @@ check_api_breaking_change(){
 		if [ "${CURRENT_API_VERSION}" != "" ]; then
 			if [ "${CURRENT_API_VERSION}" -lt "${CONFIGURED_API_VERSION}" ];then
 				log
-				log "${LINENO} *** stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} ) ***"
+				log_warn "stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} )"
 				return 0
 			fi
 		fi
@@ -185,22 +238,22 @@ check_event_replay(){
 		# Import has started
 		if [ "${check_import_finished}" -eq "0" ]; then
 			# Import has finished
-			log "${LINENO} *** Event import and playback has finished"
+			log_info "Event import and playback has finished"
 			return 0
 		fi
 		# Import hasn't finished, return 1
-		log "${LINENO} *** Event import and playback is in progress"
+		log_warn "Event import and playback is in progress"
 		return 1
 	fi
 	if [ "${check_export_started}" -eq "0" ]; then
 		# Export has started
 		if [ "${check_export_finished}" -eq "0" ]; then
 			# Export has finished
-			log "${LINENO} *** Event export has finished"
+			log_info "Event export has finished"
 			return 0
 		fi
 		# Export hasn't finished, return 1
-		log "${LINENO} *** Event export is in progress"
+		log_warn "Event export is in progress"
 		return 1
 	fi
 	# Default return success - event replay is not running
@@ -208,7 +261,7 @@ check_event_replay(){
 }
 
 # Determine if a supplied container name is running
-check_container_running() {
+check_container() {
 	local container="${1}"
     if [ "$(docker ps -f name="^${container}"$ -q)" ]; then
         # Container is running, return success
@@ -241,7 +294,8 @@ set_flags() {
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
-					usage "[ Error ] Missing compose file: ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
+					log_error "Missing compose file: ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
+					usage
 				fi
 			fi
 		fi
@@ -254,24 +308,24 @@ ordered_stop() {
 	if [[ -f "${SCRIPTPATH}/compose-files/common.yaml" && -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml" ]]; then
 		if eval "docker-compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
 			for service in "${DEFAULT_SERVICES[@]}"; do
-				if check_container_running "${service}"; then
+				if check_container "${service}"; then
 					local timeout=""
-                    log "${LINENO} *** Stopping ${service}"
+                    log "Stopping ${service}"
 					if [ "${service}" == "stacks-blockchain" ]; then
                         #  Wait for the stacks blockchain runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 						timeout="-t ${STACKS_SHUTDOWN_TIMEOUT}"
-                        log "${LINENO}     Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds"
+                        log "    Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds"
 					fi
                     # Compose a command to run using provided vars
 					cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop ${timeout} ${service}"
-					log "${LINENO} Running: ${cmd}"
+					log "Running: ${cmd}"
 					eval "${cmd}"
 				fi
 			done
 		else
             # stacks-blockchain isn't running, so order of stop isn't important and we just run docker_down
 			log
-			log "${LINENO} *** Stacks Blockchain not running. Continuing"
+			log "Stacks Blockchain not running. Continuing"
 		fi
 	fi
 }
@@ -280,10 +334,10 @@ ordered_stop() {
 docker_up() {
 	if check_network; then
 		log
-		exit_error "${LINENO} *** Stacks Blockchain services are already running"
+		log_exit "Stacks Blockchain services are already running"
 	fi
 	if ! check_event_replay; then
-		exit_error "${LINENO} [ ERROR ] Event Replay in progress. Refusing to start services"
+		log_exit "Event Replay in progress. Refusing to start services"
 	fi
 	# Sanity checks before starting services
 	local param="-d"
@@ -294,7 +348,7 @@ docker_up() {
     # Create requirted config files and directories
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
-			log "${LINENO} Creating persistent-data for ${NETWORK}"
+			log "Creating persistent-data for ${NETWORK}"
 			mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
 		fi
 	fi
@@ -305,9 +359,9 @@ docker_up() {
 	fi
 
     # See if we can detect a Hiro API major version change requiring an event-replay import
-	if check_api_breaking_change; then
-		log "${LINENO}     Required to perform a stacks-blockchain-api event-replay:"
-		log "${LINENO}         https://github.com/hirosystems/stacks-blockchain-api#event-replay "
+	if check_api; then
+		log_warn "    Required to perform a stacks-blockchain-api event-replay:"
+		log_warn "        https://github.com/hirosystems/stacks-blockchain-api#event-replay "
 		if confirm "Run event-replay now?"; then
 			## Bring running services down
 			docker_down
@@ -316,7 +370,7 @@ docker_up() {
 			## Run the event replay import
 			event_replay "import"
 		fi
-		exit_error "${LINENO} [ ERROR ] Event Replay is required"
+		log_exit "Event Replay is required"
 	fi
 	run_docker "up" FLAGS_ARRAY "${PROFILE}" "${param}"
 }
@@ -324,12 +378,12 @@ docker_up() {
 # Configure options to bring services down
 docker_down() {
 	if ! check_network; then
-		log "${LINENO} *** Stacks Blockchain services are not running"
+		log "Stacks Blockchain services are not running"
 		return
 	fi
 	# sanity checks before stopping services
 	if ! check_event_replay;then
-		exit_error "${LINENO} [ ERROR ] Event Replay in progress. Refusing to stop services"
+		log_exit "Event Replay in progress. Refusing to stop services"
 	fi
 	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [ "${PROFILE}" != "bns" ]; then
 		# if this is mainnet/testnet and the profile is not bns, stop the blockchain service first
@@ -344,7 +398,8 @@ docker_logs(){
 	# Tail docker logs for the last 100 lines via LOG_TAIL
 	local param="${1}"
 	if ! check_network; then
-		usage "[ ERROR ] No ${NETWORK} services running"
+		log_error "No ${NETWORK} services running"
+		usage
 	fi
 	run_docker "logs" SUPPORTED_FLAGS "${PROFILE}" "${param}"
 }
@@ -352,24 +407,25 @@ docker_logs(){
 # Export docker logs for the main services to files in ./exported-logs
 docker_logs_export(){
 	if ! check_network; then
-		usage "[ ERROR ] No ${NETWORK} services running"
+		log_error "No ${NETWORK} services running"
+		usage
 	fi
-	log "${LINENO} Exporting log data to text file"
+	log "Exporting log data to text file"
 	# create exported-logs if it doesn't exist
     if [[ ! -d "${SCRIPTPATH}/exported-logs" ]];then
-        log "${LINENO}     - Creating ${SCRIPTPATH}/exported-logs dir"
+        log "    - Creating ${SCRIPTPATH}/exported-logs dir"
         mkdir -p "${SCRIPTPATH}/exported-logs"
     fi
 	# loop through main services, storing the logs as a text file
     for service in "${DEFAULT_SERVICES[@]}"; do
-		if check_container_running "${service}"; then
-			log "${LINENO}     - Exporting logs for ${service} to ${SCRIPTPATH}/exported-logs/${service}.log"
+		if check_container "${service}"; then
+			log "    - Exporting logs for ${service} to ${SCRIPTPATH}/exported-logs/${service}.log"
     	    eval "docker logs ${service} > ${SCRIPTPATH}/exported-logs/${service}.log 2>&1"
 		else
-			log "${LINENO}     - Skipping export for non-running service ${service}"
+			log "    - Skipping export for non-running service ${service}"
 		fi
     done
-	log "${LINENO} *** Log export complete"
+	log_info "Log export complete"
     exit
 }
 
@@ -383,11 +439,11 @@ docker_pull() {
 status() {
 	if check_network; then
 		log
-		log "${LINENO} *** Stacks Blockchain services are running"
+		log_info "Stacks Blockchain services are running"
 		log
 	else
 		log
-		exit_error "${LINENO} *** Stacks Blockchain services are not running"
+		log_exit "Stacks Blockchain services are not running"
 	fi
 }
 
@@ -398,25 +454,26 @@ reset_data() {
 		log
 		if ! check_network; then
 			# Exit if operation isn't confirmed
-			confirm "Delete Persistent data for ${NETWORK}?" || exit_error "${LINENO} Delete Cancelled"
-			log "${LINENO}     Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
+			confirm "Delete Persistent data for ${NETWORK}?" || log_exit "Delete Cancelled"
+			log "    Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
 				# Log error and exit if data wasn't deleted (permission denied etc)
 				log
-				log "${LINENO}     [ Error ] Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
-				exit_error "${LINENO}         Re-run the command with sudo: 'sudo ${0} -n ${NETWORK} -a reset'"
+				log_error "Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
+				log_exit "  Re-run the command with sudo: ${COLLTBLUE}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
 			}
-			log "${LINENO} *** Persistent data deleted"
+			log_info "Persistent data deleted"
 			log
 			exit 0
 		else
 			# Log error and exit if services are already running
-			log "${LINENO} [ Error ] Can't reset while services are running"
-			exit_error "${LINENO}     Try again after running: ${0} -n ${NETWORK} -a stop"
+			log_error "Can't reset while services are running"
+			log_exit "  Try again after running: ${COLLTBLUE}${0} -n ${NETWORK} -a stop${COLRESET}"
 		fi
 	else
 		# No data exists, log error and move on
-		usage "[ Error ] No data exists for ${NETWORK}"
+		log_error "No data exists for ${NETWORK}"
+		usage
 	fi
 }
 
@@ -429,24 +486,24 @@ download_bns_data() {
 			PROFILE="bns"
 			if [ ! -f "${SCRIPTPATH}/compose-files/extra-services/bns.yaml" ]; then
 				log
-				exit_error "[ Error ] Missing bns compose file: {SCRIPTPATH}/compose-files/extra-services/bns.yaml"
+				log_error "Missing bns compose file: ${COLLTBLUE}{SCRIPTPATH}/compose-files/extra-services/bns.yaml${COLRESET}"
 			fi
-			log "${LINENO} Downloading and extracting V1 bns-data"
+			log "Downloading and extracting V1 bns-data"
 			docker_up
 			docker_down
 			log
-			log "${LINENO} Download Operation is complete, start the service with: ${0} -n ${NETWORK} -a start"
+			log_info "Download Operation is complete"
+			log "  Start the services with: ${COLLTBLUE}${0} -n ${NETWORK} -a start${COLRESET}"
 			log
 		else
 			log
 			status
-			log "${LINENO} [ ERROR ] Can't download BNS data - services need to be stopped first"
-            log "     ${0} -n ${NETWORK} -a stop"
-			exit_error "${LINENO} "
+			log_error "Can't download BNS data - services need to be stopped"
+            log_exit "  Stop the services with: ${COLLTBLUE}${0} -n ${NETWORK} -a stop${COLRESET}"
 		fi
 	else
 		log
-		exit_error "${LINENO} [ ERROR ] Undefined or commented BNS_IMPORT_DIR variable in ${ENV_FILE}"
+		log_error "Undefined or commented ${COLYELLOW}BNS_IMPORT_DIR${COLRESET} variable in ${COLLTBLUE}${ENV_FILE}${COLRESET}"
 	fi
 	exit 0
 }
@@ -454,9 +511,10 @@ download_bns_data() {
 # Perform the Hiro API event-replay
 event_replay(){
 	# Check if the event replay file exists first
-	local tsv_file="${SCRIPTPATH}/persistent-data/mainnet/event-replay"/$(basename "${STACKS_EXPORT_EVENTS_FILE}")
+	local tsv_file
+	tsv_file="${SCRIPTPATH}/persistent-data/mainnet/event-replay"/$(basename "${STACKS_EXPORT_EVENTS_FILE}")
 	if [ ! -f "${tsv_file}" ]; then
-		exit_error "${LINENO} [ ERROR ] Missing event replay file: ${tsv_file}"
+		log_error "Missing event replay file: ${COLLTBLUE}${tsv_file}${COLRESET}"
 	fi
 	if check_network; then
 		docker_down
@@ -467,19 +525,19 @@ event_replay(){
 	FLAGS_ARRAY=("api-${action}-events")
 	if [ ! -f "${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml" ]; then
 		log
-		exit_error "[ Error ] Missing events compose file: ${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml"
+		log_errpr "Missing events compose file: ${COLLTBLUE}${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml${COLRESET}"
 	fi
 	docker_up
 	log
-	log "${LINENO} *** This operation can take a long while ***"
-	log "${LINENO}     check logs for completion: ${0} -n ${NETWORK} -a logs "
+	log "${COLRED}This operation can take a long while${COLRESET}"
+	log "Check logs for completion: ${COLLTBLUE}${0} -n ${NETWORK} -a logs${COLRESET}"
 	if [ "${action}" == "export" ]; then
-		log "${LINENO}         - Look for a log entry: \"Export successful.\""
+		log "    - Look for a export log entry: ${COLYELLOW}\"Export successful.\"${COLRESET}"
 	fi
 	if [ "${action}" == "import" ]; then
-		log "${LINENO}         - Look for a log entry: \"Event import and playback successful.\""
+		log "    - Look for a import log entry: ${COLYELLOW}\"Event import and playback successful.\"${COLRESET}"
 	fi
-	log "${LINENO}     Once the operation is complete, restart the service with: ${0} -n ${NETWORK} -a restart"
+	log "Once the operation is complete, restart the service with: ${COLLTBLUE}${0} -n ${NETWORK} -a restart${COLRESET}"
 	log
 	exit 0
 }
@@ -494,21 +552,21 @@ run_docker() {
 	optional_flags=$(set_flags "${flags}")
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	# Log the command we'll be running for verbosity
-	log "${LINENO} Running: ${cmd}"
+	log "Running: ${cmd}"
 	eval "${cmd}"
 	local ret="${?}"
 	# If return is not zero, it should be apparent. if it worked, print how to see the logs
 	if [[ "$ret" -eq 0 && "${action}" == "up" && "${profile}" != "bns" ]]; then
 		log
-		log "${LINENO} Brought up ${NETWORK}"
-		log "${LINENO}     Follow logs: ${0} -n ${NETWORK} -a logs"
+		log_info "Brought up ${NETWORK}"
+		log "    Follow logs: ${COLLTBLUE}${0} -n ${NETWORK} -a logs${COLRESET}"
 		log
 	fi
 }
 
 # Check for required binaries, exit if missing
 for cmd in docker-compose docker; do
-	command -v "${cmd}" >/dev/null 2>&1 || exit_error "${LINENO} Missing command: ${cmd}"
+	command -v "${cmd}" >/dev/null 2>&1 || log_exit "Missing command: ${cmd}"
 done
 
 # If no args are provided, print usage
@@ -524,22 +582,26 @@ do
 	-n|--network)
 		# Retrieve the network arg, converted to lowercase
 		if [ "${2}" == "" ]; then 
-			usage "[ Error ] Missing required value for ${1}"
+			log_error "Missing required value for ${1}"
+			usage
 		fi
 		NETWORK=$(echo "${2}" | tr -d ' ' | awk '{print tolower($0)}')
 		if ! check_flags SUPPORTED_NETWORKS "${NETWORK}"; then
-			usage "[ Error ] Network (${NETWORK}) not supported"
+			log_error "Network (${NETWORK}) not supported"
+			usage
 		fi
 		shift
 		;;
 	-a|--action) 
 		# Retrieve the action arg, converted to lowercase
 		if [ "${2}" == "" ]; then 
-			usage "[ Error ] Missing required value for ${1}"
+			log_error "Missing required value for ${1}"
+			usage
 		fi
 		ACTION=$(echo "${2}" | tr -d ' ' | awk '{print tolower($0)}')
 		if ! check_flags SUPPORTED_ACTIONS "${ACTION}"; then
-			usage "[ Error ] Action (${ACTION}) not supported"
+			log_error "Action (${ACTION}) not supported"
+			usage
 		fi
 		# If the action is log/logs, we also accept a second option 'export' to save the log output to file
 		if [[ "${ACTION}" =~ ^(log|logs)$ && "${3}" == "export" ]]; then
@@ -551,13 +613,15 @@ do
 		# Retrieve the flags arg as a comma separated list, converted to lowercase
 		# Check against the dynamic list 'FLAGS_ARRAY' which validates against folder contents 
 		if [ "${2}" == "" ]; then 
-			usage "[ Error ] Missing required value for ${1}"
+			log_error "Missing required value for ${1}"
+			usage
 		fi
 		FLAGS=$(echo "${2}" | tr -d ' ' | awk '{print tolower($0)}')
 		set -f; IFS=','
 		FLAGS_ARRAY=("${FLAGS}")
 		if check_flags FLAGS_ARRAY "bns" && [ "${ACTION}" != "bns" ]; then
-			usage "[ Error ] bns is not a valid flag"
+			log_error "bns is not a valid flag"
+			usage
 		fi
 		shift
 		;;
@@ -595,16 +659,21 @@ do
 	bns)
 		download_bns_data
 		;;
+	-v|--verbose)
+		VERBOSE=true
+		;;		
 	-h|--help)
 		usage
 		;;	
 	(-*)
 		# If any unknown args are provided, fail here
-		usage "[ Error ] Unknown arg supplied (${1})"
+		log_error "Unknown arg supplied (${1})"
+		usage
 		;;
 	(*)
 		# Catchall error
-		usage "[ Error ] Malformed arguments"
+		log_error "Malformed arguments"
+		usage
 		;;
 	esac
 	shift
@@ -612,7 +681,7 @@ done
 
 # If NETWORK is not set (either cmd line or default of mainnet), exit
 if [ ! "${NETWORK}" ]; then
-	usage "[ Error ] Missing '-n|--network' Arg"
+	usage "${COLRED}[ Error ]${COLRESET} Missing '-n|--network' Arg"
 else
 	case ${NETWORK} in
 		mainnet)
@@ -636,7 +705,8 @@ export NETWORK=${NETWORK}
 
 # If ACTION is not set, exit
 if [ ! "${ACTION}" ]; then
-	usage "[ Error ] Missing '-a|--action' Arg";
+	log_error "Missing '-a|--action' Arg";
+	usage
 fi
 
 # Call function based on ACTION arg
