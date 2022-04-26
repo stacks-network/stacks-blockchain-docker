@@ -129,10 +129,10 @@ exit_error() {
 # Print usage with some examples
 usage() {
 	if [ "${1}" ]; then
-		log
+		echo
 		log "${1}"
 	fi
-	log
+	echo
 	log "Usage:"
 	log "    ${0} -n <network> -a <action> <optional args>"
 	log "        -n|--network: [ mainnet | testnet | mocknet | bns ]"
@@ -177,7 +177,7 @@ check_flags() {
 check_device() {
 	# Check if we're on a M1 Mac - Disk IO is not ideal on this platform
 	if [[ $(uname -m) == "arm64" ]]; then
-		log
+		echo
 		log_warn "⚠️  ${COLYELLOW}WARNING${COLRESET}"
 		log_warn "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
 		log_warn "⚠️  see README for details"
@@ -195,7 +195,7 @@ check_api(){
 		CONFIGURED_API_VERSION=$( echo "${STACKS_BLOCKCHAIN_API_VERSION}" | cut -f 1 -d ".")
 		if [ "${CURRENT_API_VERSION}" != "" ]; then
 			if [ "${CURRENT_API_VERSION}" -lt "${CONFIGURED_API_VERSION}" ];then
-				log
+				echo
 				log_warn "stacks-blockchain-api contains a breaking schema change ( Version: ${STACKS_BLOCKCHAIN_API_VERSION} )"
 				return 0
 			fi
@@ -324,7 +324,7 @@ ordered_stop() {
 			done
 		else
             # stacks-blockchain isn't running, so order of stop isn't important and we just run docker_down
-			log
+			echo
 			log "Stacks Blockchain not running. Continuing"
 		fi
 	fi
@@ -333,7 +333,7 @@ ordered_stop() {
 # Configure options to bring services up
 docker_up() {
 	if check_network; then
-		log
+		echo
 		log_exit "Stacks Blockchain services are already running"
 	fi
 	if ! check_event_replay; then
@@ -438,9 +438,9 @@ docker_pull() {
 # Check if the services are running
 status() {
 	if check_network; then
-		log
+		echo
 		log_info "Stacks Blockchain services are running"
-		log
+		echo
 	else
 		log
 		log_exit "Stacks Blockchain services are not running"
@@ -458,12 +458,12 @@ reset_data() {
 			log "    Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
 			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
 				# Log error and exit if data wasn't deleted (permission denied etc)
-				log
+				echo
 				log_error "Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
 				log_exit "  Re-run the command with sudo: ${COLLTBLUE}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
 			}
 			log_info "Persistent data deleted"
-			log
+			echo
 			exit 0
 		else
 			# Log error and exit if services are already running
@@ -485,24 +485,24 @@ download_bns_data() {
 			FLAGS_ARRAY=(bns)
 			PROFILE="bns"
 			if [ ! -f "${SCRIPTPATH}/compose-files/extra-services/bns.yaml" ]; then
-				log
+				echo
 				log_error "Missing bns compose file: ${COLLTBLUE}{SCRIPTPATH}/compose-files/extra-services/bns.yaml${COLRESET}"
 			fi
 			log "Downloading and extracting V1 bns-data"
 			docker_up
 			docker_down
-			log
+			echo
 			log_info "Download Operation is complete"
 			log "  Start the services with: ${COLLTBLUE}${0} -n ${NETWORK} -a start${COLRESET}"
-			log
+			echo
 		else
-			log
+			echo
 			status
 			log_error "Can't download BNS data - services need to be stopped"
             log_exit "  Stop the services with: ${COLLTBLUE}${0} -n ${NETWORK} -a stop${COLRESET}"
 		fi
 	else
-		log
+		echo
 		log_error "Undefined or commented ${COLYELLOW}BNS_IMPORT_DIR${COLRESET} variable in ${COLLTBLUE}${ENV_FILE}${COLRESET}"
 	fi
 	exit 0
@@ -524,11 +524,11 @@ event_replay(){
 	SUPPORTED_FLAGS+=("api-${action}-events")
 	FLAGS_ARRAY=("api-${action}-events")
 	if [ ! -f "${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml" ]; then
-		log
+		echo
 		log_errpr "Missing events compose file: ${COLLTBLUE}${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml${COLRESET}"
 	fi
 	docker_up
-	log
+	echo
 	log "${COLRED}This operation can take a long while${COLRESET}"
 	log "Check logs for completion: ${COLLTBLUE}${0} -n ${NETWORK} -a logs${COLRESET}"
 	if [ "${action}" == "export" ]; then
@@ -538,7 +538,7 @@ event_replay(){
 		log "    - Look for a import log entry: ${COLYELLOW}\"Event import and playback successful.\"${COLRESET}"
 	fi
 	log "Once the operation is complete, restart the service with: ${COLLTBLUE}${0} -n ${NETWORK} -a restart${COLRESET}"
-	log
+	echo
 	exit 0
 }
 
@@ -557,10 +557,10 @@ run_docker() {
 	local ret="${?}"
 	# If return is not zero, it should be apparent. if it worked, print how to see the logs
 	if [[ "$ret" -eq 0 && "${action}" == "up" && "${profile}" != "bns" ]]; then
-		log
+		echo
 		log_info "Brought up ${NETWORK}"
 		log "    Follow logs: ${COLLTBLUE}${0} -n ${NETWORK} -a logs${COLRESET}"
-		log
+		echo
 	fi
 }
 
