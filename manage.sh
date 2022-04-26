@@ -14,18 +14,35 @@ FLAGS="proxy"
 LOG_OPTS="-f --tail ${LOG_TAIL}"
 VERBOSE=false
 
+# # Base colors
+# COLBLACK=$'\033[30m' # Black
 COLRED=$'\033[31m' # Red
 COLGREEN=$'\033[32m' # Green
 COLYELLOW=$'\033[33m' # Yellow
-COLLTBLUE=$'\033[36m' # Light Blue
 # COLBLUE=$'\033[34m' # Blue
-# COLPURPLE=$'\033[35m' # Purple
-# COLBLACK=$'\033[30m' # Black
-# COLGRAY=$'\033[2m' # Gray
+# COLMAGENTA=$'\033[35m' # Magenta
+COLCYAN=$'\033[36m' # Cyan
+# COLWHITE=$'\033[37m' # White
+
+# # Bright colors
+# COLBRRED=$'\033[91m' # Bright Green
+# COLBRGREEN=$'\033[92m' # Bright Green
+# COLBRYELLOW=$'\033[93m' # Bright Yellow
+# COLBRBLUE=$'\033[94m' # Bright Blue
+# COLBRMAGENTA=$'\033[95m' # Bright Magenta
+# COLBRCYAN=$'\033[96m' # Bright Cyan
+COLBRWHITE=$'\033[97m' # Bright White
+
+# # Text formatting
 # COLITALIC=$'\033[3m' # Italic
 # COLUNDERLINE=$'\033[4m' # underline
-# COLBOLD=$'\033[7m' # block text
+# COLBOLD=$'\033[1m' # block text
+# COLITALIC=$'\033[3m' # italic
+# COLUNDERLINE=$'\033[4m' # underline
+
+# Text rest to default
 COLRESET=$'\033[0m' # reset color
+
 
 ERROR="${COLRED}[ Error ]${COLRESET} "
 WARN="${COLYELLOW}[ Warn ]${COLRESET} "
@@ -140,9 +157,9 @@ usage() {
 	log "    optional args:"
 	log "        -f|--flags: [ proxy,bitcoin ]"
 	log "        export: combined with 'logs' action, exports logs to a text file"
-	log "    ex: ${COLLTBLUE}${0} -n mainnet -a up -f proxy,bitcoin${COLRESET}"
-	log "    ex: ${COLLTBLUE}${0} --network mainnet --action up --flags proxy${COLRESET}"
-	log "    ex: ${COLLTBLUE}${0} -n mainnet -a logs export${COLRESET}"
+	log "    ex: ${COLCYAN}${0} -n mainnet -a up -f proxy,bitcoin${COLRESET}"
+	log "    ex: ${COLCYAN}${0} --network mainnet --action up --flags proxy${COLRESET}"
+	log "    ex: ${COLCYAN}${0} -n mainnet -a logs export${COLRESET}"
 	exit 0
 }
 
@@ -238,7 +255,7 @@ check_event_replay(){
 		# Import has started
 		if [ "${check_import_finished}" -eq "0" ]; then
 			# Import has finished
-			log_info "Event import and playback has finished"
+			log "Event import and playback has finished"
 			return 0
 		fi
 		# Import hasn't finished, return 1
@@ -249,7 +266,7 @@ check_event_replay(){
 		# Export has started
 		if [ "${check_export_finished}" -eq "0" ]; then
 			# Export has finished
-			log_info "Event export has finished"
+			log "Event export has finished"
 			return 0
 		fi
 		# Export hasn't finished, return 1
@@ -310,11 +327,11 @@ ordered_stop() {
 			for service in "${DEFAULT_SERVICES[@]}"; do
 				if check_container "${service}"; then
 					local timeout=""
-                    log "Stopping ${service}"
+                    log "${COLBRWHITE}Stopping ${service}${COLRESET}"
 					if [ "${service}" == "stacks-blockchain" ]; then
                         #  Wait for the stacks blockchain runloop to end by waiting for STACKS_SHUTDOWN_TIMEOUT
 						timeout="-t ${STACKS_SHUTDOWN_TIMEOUT}"
-                        log "    Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds"
+                        log "    Timeout is set for: ${COLBRWHITE}${STACKS_SHUTDOWN_TIMEOUT}${COLRESET} seconds"
 					fi
                     # Compose a command to run using provided vars
 					cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop ${timeout} ${service}"
@@ -419,10 +436,10 @@ docker_logs_export(){
 	# loop through main services, storing the logs as a text file
     for service in "${DEFAULT_SERVICES[@]}"; do
 		if check_container "${service}"; then
-			log "    - Exporting logs for ${service} to ${SCRIPTPATH}/exported-logs/${service}.log"
+			log "    - Exporting logs for ${COLYELLOW}${service}${COLRESET} -> ${COLCYAN}${SCRIPTPATH}/exported-logs/${service}.log${COLRESET}"
     	    eval "docker logs ${service} > ${SCRIPTPATH}/exported-logs/${service}.log 2>&1"
 		else
-			log "    - Skipping export for non-running service ${service}"
+			log "    - Skipping export for non-running service ${COLYELLOW}${service}${COLRESET}"
 		fi
     done
 	log_info "Log export complete"
@@ -439,11 +456,11 @@ docker_pull() {
 status() {
 	if check_network; then
 		echo
-		log_info "Stacks Blockchain services are running"
+		log_info "${COLBRWHITE}Stacks Blockchain services are running${COLRESET}"
 		echo
 	else
 		log
-		log_exit "Stacks Blockchain services are not running"
+		log_exit "${COLBRWHITE}Stacks Blockchain services are not running${COLRESET}"
 	fi
 }
 
@@ -460,7 +477,7 @@ reset_data() {
 				# Log error and exit if data wasn't deleted (permission denied etc)
 				echo
 				log_error "Failed to remove ${SCRIPTPATH}/persistent-data/${NETWORK}"
-				log_exit "  Re-run the command with sudo: ${COLLTBLUE}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
+				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
 			}
 			log_info "Persistent data deleted"
 			echo
@@ -468,7 +485,7 @@ reset_data() {
 		else
 			# Log error and exit if services are already running
 			log_error "Can't reset while services are running"
-			log_exit "  Try again after running: ${COLLTBLUE}${0} -n ${NETWORK} -a stop${COLRESET}"
+			log_exit "  Try again after running: ${COLCYAN}${0} -n ${NETWORK} -a stop${COLRESET}"
 		fi
 	else
 		# No data exists, log error and move on
@@ -486,24 +503,24 @@ download_bns_data() {
 			PROFILE="bns"
 			if [ ! -f "${SCRIPTPATH}/compose-files/extra-services/bns.yaml" ]; then
 				echo
-				log_error "Missing bns compose file: ${COLLTBLUE}{SCRIPTPATH}/compose-files/extra-services/bns.yaml${COLRESET}"
+				log_error "Missing bns compose file: ${COLCYAN}{SCRIPTPATH}/compose-files/extra-services/bns.yaml${COLRESET}"
 			fi
 			log "Downloading and extracting V1 bns-data"
 			docker_up
 			docker_down
 			echo
 			log_info "Download Operation is complete"
-			log "  Start the services with: ${COLLTBLUE}${0} -n ${NETWORK} -a start${COLRESET}"
+			log "    Start the services with: ${COLCYAN}${0} -n ${NETWORK} -a start${COLRESET}"
 			echo
 		else
 			echo
 			status
 			log_error "Can't download BNS data - services need to be stopped"
-            log_exit "  Stop the services with: ${COLLTBLUE}${0} -n ${NETWORK} -a stop${COLRESET}"
+            log_exit "    Stop the services with: ${COLCYAN}${0} -n ${NETWORK} -a stop${COLRESET}"
 		fi
 	else
 		echo
-		log_error "Undefined or commented ${COLYELLOW}BNS_IMPORT_DIR${COLRESET} variable in ${COLLTBLUE}${ENV_FILE}${COLRESET}"
+		log_error "Undefined or commented ${COLYELLOW}BNS_IMPORT_DIR${COLRESET} variable in ${COLCYAN}${ENV_FILE}${COLRESET}"
 	fi
 	exit 0
 }
@@ -514,7 +531,7 @@ event_replay(){
 	local tsv_file
 	tsv_file="${SCRIPTPATH}/persistent-data/mainnet/event-replay"/$(basename "${STACKS_EXPORT_EVENTS_FILE}")
 	if [ ! -f "${tsv_file}" ]; then
-		log_error "Missing event replay file: ${COLLTBLUE}${tsv_file}${COLRESET}"
+		log_error "Missing event replay file: ${COLCYAN}${tsv_file}${COLRESET}"
 	fi
 	if check_network; then
 		docker_down
@@ -525,19 +542,19 @@ event_replay(){
 	FLAGS_ARRAY=("api-${action}-events")
 	if [ ! -f "${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml" ]; then
 		echo
-		log_errpr "Missing events compose file: ${COLLTBLUE}${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml${COLRESET}"
+		log_errpr "Missing events compose file: ${COLCYAN}${SCRIPTPATH}/compose-files/event-replay/api-${action}-events.yaml${COLRESET}"
 	fi
 	docker_up
 	echo
 	log "${COLRED}This operation can take a long while${COLRESET}"
-	log "Check logs for completion: ${COLLTBLUE}${0} -n ${NETWORK} -a logs${COLRESET}"
+	log "Check logs for completion: ${COLCYAN}${0} -n ${NETWORK} -a logs${COLRESET}"
 	if [ "${action}" == "export" ]; then
 		log "    - Look for a export log entry: ${COLYELLOW}\"Export successful.\"${COLRESET}"
 	fi
 	if [ "${action}" == "import" ]; then
 		log "    - Look for a import log entry: ${COLYELLOW}\"Event import and playback successful.\"${COLRESET}"
 	fi
-	log "Once the operation is complete, restart the service with: ${COLLTBLUE}${0} -n ${NETWORK} -a restart${COLRESET}"
+	log "${COLBOLD}Once the operation is complete${COLRESET}, restart the service with: ${COLCYAN}${0} -n ${NETWORK} -a restart${COLRESET}"
 	echo
 	exit 0
 }
@@ -559,7 +576,7 @@ run_docker() {
 	if [[ "$ret" -eq 0 && "${action}" == "up" && "${profile}" != "bns" ]]; then
 		echo
 		log_info "Brought up ${NETWORK}"
-		log "    Follow logs: ${COLLTBLUE}${0} -n ${NETWORK} -a logs${COLRESET}"
+		log "    Follow logs: ${COLCYAN}${0} -n ${NETWORK} -a logs${COLRESET}"
 		echo
 	fi
 }
@@ -620,7 +637,7 @@ do
 		set -f; IFS=','
 		FLAGS_ARRAY=("${FLAGS}")
 		if check_flags FLAGS_ARRAY "bns" && [ "${ACTION}" != "bns" ]; then
-			log_error "bns is not a valid flag"
+			log_error "${COLBRWHITE}bns${COLRESET} is not a valid flag"
 			usage
 		fi
 		shift
