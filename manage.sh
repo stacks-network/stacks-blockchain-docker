@@ -318,7 +318,7 @@ ordered_stop() {
 					fi
                     # Compose a command to run using provided vars
 					cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop ${timeout} ${service}"
-					log "Running: ${cmd}"
+					$VERBOSE && log "Running: ${cmd}"
 					eval "${cmd}"
 				fi
 			done
@@ -552,7 +552,7 @@ run_docker() {
 	optional_flags=$(set_flags "${flags}")
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	# Log the command we'll be running for verbosity
-	log "Running: ${cmd}"
+	$VERBOSE && log "Running: ${cmd}"
 	eval "${cmd}"
 	local ret="${?}"
 	# If return is not zero, it should be apparent. if it worked, print how to see the logs
