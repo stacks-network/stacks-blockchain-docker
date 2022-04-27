@@ -6,6 +6,7 @@ set -Eo functrace
 # The following values can be overridden in the .env file. adding some defaults here
 NETWORK="mainnet"
 ACTION="up"
+PARAM=""
 PROFILE="stacks-blockchain"
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
@@ -53,7 +54,6 @@ SUPPORTED_ACTIONS=(
 	reset
 	bns
 )
-
 
 # log output
 log() {
@@ -185,6 +185,18 @@ ordered_stop() {
 		log
 		log "*** Stacks Blockchain not running. Continuing"
 	fi
+  
+  # WARNING! This if will require more changes as it was working for the older design of manage.sh
+  # Check if bitcoin blockchain is also running. If it is, stop it. 
+	if [[ $(docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml ps -q bitcoin-core) ]]; then
+		log "Bitcoin blockchain is currently running. Stopping..."
+		# "Not Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} down" because it would also remove the Stacks network
+		# Instead I need to first stop and then remove only the container (so the network stays on)
+		log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core"
+		              docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} stop bitcoin-core
+		log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} rm -f bitcoin-core"
+			          docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml --profile ${PROFILE} rm -f bitcoin-core
+	fi
 }
 
 # Configure options to bring services up
@@ -266,8 +278,8 @@ status() {
 		log
 		exit_error "*** Stacks Blockchain services are not running"
 	fi
-}
-
+  }
+  
 # Delete data for NETWORK
 # does not delete BNS data
 reset_data() {
@@ -350,6 +362,31 @@ event_replay(){
 	log "    Once the operation is complete, restart the service with: $0 -n $NETWORK -a restart"
 	log
 	exit
+}
+
+run_bitcoin_node() {
+	# Activate the correct bitcoin.conf file I will use depending if its mainnet or testnet
+	if [[ ${NETWORK} == "mainnet" ]]; then
+		export BITCOIN_CONFIG_FILE="${BITCOIN_MAINNET_CONFIG_FILE}"
+	fi
+	if [[ ${NETWORK} == "testnet" ]]; then
+		export BITCOIN_CONFIG_FILE="${BITCOIN_TESTNET_CONFIG_FILE}"
+	fi
+	log "Bitcoin config file to use: ${BITCOIN_CONFIG_FILE}"
+	log "Running: docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up"
+	docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/configurations/bitcoin.yaml up -d
+	log "Running bitcoin node. Performing sync..."
+	log "Process will wait to fully sync the bitcoin node before it continues. Please be patient. First sync could take several hours or even days to complete."
+	log "Bitcoin blockchain is quite large (around 500GB for mainnet and 15GB for testnet), so you can optionaly choose where this data is stored in the .env file, by changing the variable BITCOIN_BLOCKCHAIN_FOLDER which is currently set to ${BITCOIN_BLOCKCHAIN_FOLDER}".
+	# docker logs -f bitcoin-core 2>&1 | grep -m 1 " progress=1.000000 cache="
+	sleep 5
+	echo "The following progress value will be updated every 5 minutes: "
+	until docker logs bitcoin-core | grep -q " progress=1.000000 cache=";
+	do
+		sleep 5m
+		echo -n -e $(docker logs --tail 1 bitcoin-core | grep -o 'progress=\<0.......\>')'\r'                                                                                                                                                                                                    
+	done
+	log "Bitcoin node sync complete. Bitcoin node is fully operational."
 }
 
 # Finally, execute the docker-compose command
