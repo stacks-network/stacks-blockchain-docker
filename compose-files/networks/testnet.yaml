@@ -4,8 +4,6 @@ services:
     volumes:
       - ${SCRIPTPATH}/persistent-data/${NETWORK}/postgres:/var/lib/postgresql/data
   stacks-blockchain:
-    environment:
-      - STACKS_LOG_DEBUG=1
     volumes:
       - ${SCRIPTPATH}/conf/${NETWORK}:/src/stacks-blockchain
       - ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain:/root/stacks-blockchain/data

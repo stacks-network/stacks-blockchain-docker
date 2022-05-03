@@ -9,6 +9,8 @@ services:
       - ${SCRIPTPATH}/scripts:/scripts
     env_file:
       - ${SCRIPTPATH}/.env
+    environment:
+      - USER_ID=${USER_ID}
     networks:
       - stacks-blockchain
     profiles:
