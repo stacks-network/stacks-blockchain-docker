@@ -1,0 +1,15 @@
+version: "3"
+services:
+  postgres:
+    volumes:
+      - ${SCRIPTPATH}/persistent-data/${NETWORK}/postgres:/var/lib/postgresql/data
+  stacks-blockchain:
+    volumes:
+      - ${SCRIPTPATH}/conf/${NETWORK}:/src/stacks-blockchain
+      - ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain:/root/stacks-blockchain/data
+  stacks-blockchain-api:
+    environment:
+      - STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
+    volumes:
+      - ${SCRIPTPATH}/persistent-data/bns-data:/bns-data
+      - ${SCRIPTPATH}/persistent-data/mainnet/event-replay:/tmp/event-replay

@@ -1,4 +1,13 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -x
+# list of files needed to import BNS names
+BNS_FILES=(
+    chainstate.txt
+    name_zonefiles.txt 
+    subdomain_zonefiles.txt 
+    subdomains.csv
+)
+
 echo ""
 echo "*********************************"
 echo "Setting up BNS Data"
@@ -17,28 +26,19 @@ else
     echo "Found existing tarfile: ${TARFILE}"
 fi
 
-# list of files needed to import BNS names
-BNS_FILES="
-    chainstate.txt
-    name_zonefiles.txt 
-    subdomain_zonefiles.txt 
-    subdomains.csv
-"
-
 check_sha256(){
-    local file="$1" # text file
+    local file="${1}" # text file
     local file_256="${file}.sha256" # text file sha256
     local file_path="${BNS_IMPORT_DIR}/${file}" # full path to file
     local file_256_path="${BNS_IMPORT_DIR}/${file_256}" # full path to sha256 file
     # if both files exist, compare sha1sum
     if [ -f "${file_path}" -a -f "${file_256_path}" ]; then
-        echo "Checking sha256 of ${file}"
         # retrieve/calculate the sha1sum
         local sha256=$(cat ${file_256_path})
         local sha256sum=$(sha256sum ${file_path} | awk {'print $1'})
         # if sha1sum doesn't match, remove the files and extract them
         # then, retrty this function 1 more time
-        if [ "$sha256" != "$sha256sum" ]; then
+        if [ "${sha256}" != "${sha256sum}" ]; then
             echo "[ Warning ] - sha256 mismatch"
             echo "    - Removing ${file} and ${file_256}, re-attempting sha256 verification"
             rm -f "${file_path}"
@@ -50,7 +50,7 @@ check_sha256(){
             fi            
         else
             # matched the sha1sum, move on to the next file in the list
-            echo "  - Matched sha256 of ${file} and $file_256"
+            printf "  - %-25s: %-20s Matched sha256 with %s\n" "${file}" "${sha256sum}" "${file_256}" 
             return 0
         fi 
     else
@@ -64,14 +64,14 @@ check_sha256(){
 }
 
 extract_files() {
-    local file="$1" # text file
+    local file="${1}" # text file
     local file_256="${file}.sha256" # text file sha256
     local file_path="${BNS_IMPORT_DIR}/${file}" # full path to file
     local file_256_path="${BNS_IMPORT_DIR}/${file_256}" # full path to sha256 file
-    if [ "$counter" -gt "1" ];then
+    if [ "${counter}" -gt "1" ];then
         # if we've tried extracting more than once (i.e. checked sha2sum 2x already) - exit
         echo
-        echo "[ Error ] - Failed to verify sha56 of $file after 2 attempts"
+        echo "[ Error ] - Failed to verify sha56 of ${file} after 2 attempts"
         exit 1
     fi
     if [ ! -f "${file_256_path}" ]; then
@@ -94,16 +94,19 @@ extract_files() {
         fi
     fi
     # if both files were extracted, recheck the sha1sum
-    check_sha256 "$file"
+    check_sha256 "${file}"
     return 0
 }
 
 
-for FILE in $BNS_FILES; do
+for FILE in ${BNS_FILES[@]}; do
     counter=0 # reset sha1sum comparison counter to 0 for each file 
     echo
     check_sha256 "${FILE}"
 done
+echo "Setting dir ownership"
+echo "cmd: chown -R ${USER_ID} ${BNS_IMPORT_DIR}"
+chown -R ${USER_ID} ${BNS_IMPORT_DIR}
 echo
 echo "Complete"
 exit 0
