@@ -361,6 +361,96 @@ cat_env(){
 	# read ans
 	return
 }
+
+# BNS_IMPORT_DIR
+bns_import_env() {
+	if "${REVERT_BNS}"; then
+		${VERBOSE} && log "Uncommenting BNS_IMPORT_DIR in ${ENV_FILE}"
+		${VERBOSE} && log "Running: sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
+		$(sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Catting ${ENV_FILE_TMP} -> ${ENV_FILE}${COLRESET}"
+		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
+			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}" 
+		}
+		${VERBOSE} && log "${COLYELLOW}COMMENT BNS_IMPORT_DIR${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE_TMP}${COLRESET}"
+		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Reset REVERT_BNS to false${COLRESET}"
+		REVERT_BNS=false
+	fi
+	if [ "${BNS_IMPORT_DIR}" ];then
+		${VERBOSE} && log "Commenting BNS_IMPORT_DIR in ${ENV_FILE}"
+		${VERBOSE} && log "Running: sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
+		$(sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}COMMENT BNS_IMPORT_DIR${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Catting temp .env file to .env${COLRESET}"
+		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
+			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
+		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Reset REVERT_BNS to true${COLRESET}"
+		REVERT_BNS=true
+		${VERBOSE} && log "${COLYELLOW}Unset BNS_IMPORT_DIR var${COLRESET}"
+		unset BNS_IMPORT_DIR
+	fi
+	${VERBOSE} && log "Sourcing updated .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
+	source "${ENV_FILE}"
+	return 0
+}
+# STACKS_EXPORT_EVENTS_FILE
+events_file_env(){
+	if "${REVERT_EVENTS}"; then
+		${VERBOSE} && log "Uncommenting STACKS_EXPORT_EVENTS_FILE in ${ENV_FILE}"
+		${VERBOSE} && log "Running: sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}""
+		$(sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "REVERT_EVENTS"
+		${VERBOSE} && log "${COLYELLOW}Catting ${ENV_FILE_TMP} -> ${ENV_FILE}${COLRESET}"
+		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
+			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
+		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log ${COLYELLOW}"Reset REVERT_EVENTS to false${COLRESET}"
+		REVERT_EVENTS=false
+	fi
+	if [ "${STACKS_EXPORT_EVENTS_FILE}" ]; then
+		${VERBOSE} && log "Commenting STACKS_EXPORT_EVENTS_FILE in ${ENV_FILE_TMP}"
+		${VERBOSE} && log "Running: sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
+		$(sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}COMMENT STACKS_EXPORT_EVENTS_FILE${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Catting temp .env file to .env${COLRESET}"
+		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
+			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
+		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
+			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Reset REVERT_EVENTS to true${COLRESET}"
+		REVERT_EVENTS=true
+		${VERBOSE} && log "${COLYELLOW}Unset STACKS_EXPORT_EVENTS_FILE${COLRESET}"
+		unset STACKS_EXPORT_EVENTS_FILE
+	fi
+	${VERBOSE} && log "Sourcing updated .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
+	source "${ENV_FILE}"
+	return 0
+}
+
 mocknet_env() {
 	if "${REVERT_BNS}"; then
 		${VERBOSE} && log "Uncommenting BNS_IMPORT_DIR in ${ENV_FILE}"
@@ -815,9 +905,16 @@ run_docker() {
 	${VERBOSE} && log "param: ${param}"
 	${VERBOSE} && log "OPTIONAL_FLAGS: ${OPTIONAL_FLAGS}"
 	${VERBOSE} && log "Running: eval ${cmd}"
-	if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
-		${VERBOSE} && log "calling mocknet_env function to comment env var not needed for mocknet (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
-		mocknet_env
+	# if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
+	if [[ "${NETWORK}" == "mocknet" || "${NETWORK}" == "private-testnet" ]] && [ "${action}" == "up" ]; then
+		${VERBOSE} && log "Disabling STACKS_EXPORT_EVENTS_FILE for ${NETWORK}"
+		events_file_env
+		if [ "${NETWORK}" == "mocknet" ]; then
+			${VERBOSE} && log "Disabling BNS_IMPORT_DIR for ${NETWORK}"
+			bns_import_env
+		fi
+		# ${VERBOSE} && log "calling mocknet_env function to comment env var not needed for mocknet (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
+		# mocknet_env
 	fi
 	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [ "${action}" == "up" ]; then
 		${VERBOSE} && log "Checking if BNS_IMPORT_DIR is defined and has data"
@@ -831,9 +928,19 @@ run_docker() {
 	fi
 	eval "${cmd}"
 	local ret="${?}"
-	if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
-		${VERBOSE} && log "calling mocknet_env function to uncomment env vars (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
-		mocknet_env
+	# if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
+	# 	${VERBOSE} && log "calling mocknet_env function to uncomment env vars (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
+	# 	mocknet_env
+	# fi
+	if [[ "${NETWORK}" == "mocknet" || "${NETWORK}" == "private-testnet" ]] && [ "${action}" == "up" ]; then
+		${VERBOSE} && log "Re-enabling STACKS_EXPORT_EVENTS_FILE for ${NETWORK}"
+		events_file_env
+		if [ "${NETWORK}" == "mocknet" ]; then
+			${VERBOSE} && log "Re-enabling BNS_IMPORT_DIR for ${NETWORK}"
+			bns_import_env
+		fi
+		# ${VERBOSE} && log "calling mocknet_env function to comment env var not needed for mocknet (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
+		# mocknet_env
 	fi
 	${VERBOSE} && log "cmd returned: ${ret}"
 	# If return is not zero, it should be apparent. if it worked, print how to see the logs

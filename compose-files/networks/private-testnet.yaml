@@ -1,22 +1,16 @@
 version: "3"
 services:
   stacks-blockchain:
-    # image: blockstack/stacks-blockchain:feat-miner-control
     image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}-stretch
-
     volumes:
-      - ${SCRIPTPATH}/conf/private-testnet:/src/stacks-blockchain
-    command: sh -c "until nc -vz bitcoin.stacks-blockchain 18443; do echo \"Waiting for bitcoin\"; sleep 2; done; /bin/stacks-node start --config /src/stacks-blockchain/Config.toml"
-  stacks-blockchain-api:
-    volumes:
-      - ${SCRIPTPATH}/persistent-data/bns-data:/bns-data
-      - ${SCRIPTPATH}/persistent-data/mainnet/event-replay:/tmp/event-replay
+      - ${SCRIPTPATH}/conf/${NETWORK}:/src/stacks-blockchain
+    command: sh -c "until nc -vz bitcoin.stacks 18443; do echo \"Waiting for bitcoin\"; sleep 2; done; /bin/stacks-node start --config /src/stacks-blockchain/Config.toml"
   explorer:
     image: blockstack/explorer:latest
     container_name: explorer
     environment:
-      - NEXT_PUBLIC_MAINNET_API_SERVER=http://stacks-blockchain-api.stacks-blockhain:3999
-      - NEXT_PUBLIC_TESTNET_API_SERVER=http://stacks-blockchain-api.stacks-blockchain:3399
+      - NEXT_PUBLIC_MAINNET_API_SERVER=http://stacks-blockchain-api:3999
+      - NEXT_PUBLIC_TESTNET_API_SERVER=http://stacks-blockchain-api:3399
       - MOCKNET_API_SERVER=http://localhost:3999
       - TESTNET_API_SERVER=http://localhost:3999
     ports:
@@ -26,11 +20,14 @@ services:
     profiles:
       - stacks-blockchain
   bitcoin:
-    image: blockstack/bitcoind:puppet-chain
+    image: bitcoin:puppet-chain
+    build:
+      context: ${SCRIPTPATH}/Dockerfiles
+      dockerfile: private-testnet.Dockerfile
     container_name: bitcoin
     restart: on-failure
     volumes:
-      - ${SCRIPTPATH}/conf/private-testnet:/etc/bitcoin
+      - ${SCRIPTPATH}/conf/${NETWORK}:/etc/bitcoin
     expose:
       - 18443
       - 28444
