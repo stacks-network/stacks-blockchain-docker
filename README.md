@@ -6,8 +6,8 @@
 ⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
 
 ```bash
-./manage.sh -n <network> -a export
 ./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a export
 ./manage.sh -n <network> -a import
 ./manage.sh -n <network> -a restart
 ```
@@ -72,11 +72,13 @@ By default:
 
 - BNS data is **not** enabled/imported
   - To enable, uncomment `# BNS_IMPORT_DIR=/bns-data` in `./env`
-    - Download BNS data: `./manage.sh -a bns`
+    - Download BNS data: `./manage.sh bns`
 - Fungible token metadata is **not** enabled
   - To enable, uncomment `# STACKS_API_ENABLE_FT_METADATA=1` in `./env`
 - Non-Fungible token metadata is **not** enabled
   - To enable, uncomment `# STACKS_API_ENABLE_NFT_METADATA=1` in `./env`
+- Verbose logging is **not** enabled
+  - To enable, uncomment `# VERBOSE=true` in `./env`
 
 ### Local Data Dirs
 
@@ -84,20 +86,20 @@ Directories will be created on first start that will store persistent data under
 
 `<network>` can be 1 of:
 
-- mocknet
-- testnet
 - mainnet
-- private-testnet
+- testnet
+- mocknet
+<!-- - private-testnet -->
 
 ## **Quickstart**
 
-1. Clone the repo locally:
+1. **Clone the repo locally**
 
 ```bash
 git clone https://github.com/stacks-network/stacks-blockchain-docker && cd ./stacks-blockchain-docker
 ```
 
-2. Create/Copy `.env` file
+2. **Create/Copy `.env` file**
 
 ```bash
 cp sample.env .env
@@ -105,37 +107,43 @@ cp sample.env .env
 
 _You may also use a symlink as an alternative to copying: `ln -s sample.env .env`_
 
-3. Ensure all images are up to date
+3. **Ensure all images are up to date**
 
 ```bash
 ./manage.sh -n <network> -a pull
 ```
 
-4. Start the Services:
+4. **Start the Services**
 
 ```bash
-./manage.sh -n <network> -a up
+./manage.sh -n <network> -a start
 ```
 
 - With optional proxy:
 
 ```bash
-./manage.sh -n <network> -a up -f proxy
+./manage.sh -n <network> -a start -f proxy
 ```
 
-5. Stop the Services:
+5. **Stop the Services**
 
 ```bash
-./manage.sh -n <network> -a down
+./manage.sh -n <network> -a stop
 ```
 
-6. Retrieve Service Logs
+6. **Retrieve Service Logs**
 
 ```bash
 ./manage.sh -n <network> -a logs
 ```
 
-7. Restart all services:
+- Export docker logs to `./exported-logs`:
+
+```bash
+./manage.sh -n <network> -a logs export
+```
+
+7. **Restart all services**
 
 ```bash
 ./manage.sh -n <network> -a restart
@@ -147,19 +155,19 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a restart -f proxy
 ```
 
-7. Delete all data in `./persistent-data/<network>`:
+8. **Delete all data in** `./persistent-data/<network>`
 
 ```bash
 ./manage.sh -n <network> -a reset
 ```
 
-8. Download BNS data to `./persistent-data/bns-data`:
+9. **Download BNS data to** `./persistent-data/bns-data`
 
 ```bash
-./manage.sh -n <network> -a bns
+./manage.sh bns
 ```
 
-9. export stacks-blockchain-api events (Not applicable for mocknet)
+10. **Export stacks-blockchain-api events** (_Not applicable for mocknet_)
 
 ```bash
 ./manage.sh -n <network> -a export
@@ -167,7 +175,7 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a restart
 ```
 
-10. replay stacks-blockchain-api events (Not applicable for mocknet)
+11. **Replay stacks-blockchain-api events** (_Not applicable for mocknet_)
 
 ```bash
 ./manage.sh -n <network> -a import
@@ -177,7 +185,7 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 
 ## **Accessing the services**
 
-_Note_: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data.
+_Note_: For networks other than `mocknet`, downloading the initial headers can take several minutes. Until the headers are downloaded, the `/v2/info` endpoints won't return any data. \
 Use the command `./manage.sh -n <network> -a logs` to check the sync progress.
 
 **stacks-blockchain**:
@@ -185,7 +193,7 @@ Use the command `./manage.sh -n <network> -a logs` to check the sync progress.
 - Ports `20443-20444` are exposed to `localhost`
 
 ```bash
-curl localhost:20443/v2/info | jq
+curl -sL localhost:20443/v2/info | jq
 ```
 
 **stacks-blockchain-api**:
@@ -193,7 +201,7 @@ curl localhost:20443/v2/info | jq
 - Port `3999` are exposed to `localhost`
 
 ```bash
-curl localhost:3999/v2/info | jq
+curl -sL localhost:3999/v2/info | jq
 ```
 
 **proxy**:
@@ -201,13 +209,13 @@ curl localhost:3999/v2/info | jq
 - Port `80` is exposed to `localhost`
 
 ```bash
-curl localhost/v2/info | jq
-curl localhost/ | jq
+curl -sL localhost/v2/info | jq
+curl -sL localhost/ | jq
 ```
 
 ---
 
-## **Using the private testnet**
+<!-- ## **Using the private testnet**
 
 ### **Deploying a contract**
 
@@ -292,7 +300,7 @@ curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defabd
   "events": [],
   "event_count": 0
 }
-```
+``` -->
 
 ## **Workarounds to potential issues**
 
@@ -313,22 +321,14 @@ _**Containers not starting (hanging on start)**_:
 
 - Occasionally, docker can get **stuck** and not allow new containers to start. If this happens, simply restart your docker daemon and try again.
 
-_**BNS Data not imported/incorrect**_:
-
-- This could happen if a file exists, but is empty or truncated. The script to extract these files _should_ address this, but if it doesn't you can manually extract the files.
-
-```bash
-wget https://storage.googleapis.com/blockstack-v1-migration-data/export-data.tar.gz -O ./persistent-data/bns-data/export-data.tar.gz
-tar -xvzf ./persistent-data/bns-data/export-data.tar.gz -C ./persistent-data/bns-data/
-```
-
 _**Database Issues**_:
 
 - For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated.
 
 ```bash
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a reset
-./manage.sh -n <network> -a restart
+./manage.sh -n <network> -a start
 ```
 
 _**API Missing Parent Block Error**_:
@@ -341,6 +341,7 @@ _**API Missing Parent Block Error**_:
 - To attempt the event-replay
 
 ```bash
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a import
 # check logs for completion
 ./manage.sh -n <network> -a restart
@@ -349,6 +350,7 @@ _**API Missing Parent Block Error**_:
 - To wipe data and re-sync from genesis
 
 ```bash
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a reset
 ./manage.sh -n <network> -a restart
 ```

@@ -1033,7 +1033,7 @@ do
 		${VERBOSE} && log "Defining FLAGS: ${FLAGS[*]}"
 		shift
 		;;
-	upgrade)
+	upgrade|pull)
 		# Standalone - this can be run without supplying an action arg
 		#     If .env image version has been modified, this pulls any image that isn't stored locally
 		if [ "${ACTION}" == "status" ]; then
