@@ -1,4 +1,5 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
 # list of files needed to import BNS names
 BNS_FILES=(
     chainstate.txt

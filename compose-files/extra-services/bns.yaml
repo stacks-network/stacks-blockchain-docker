@@ -1,7 +1,7 @@
 version: "3"
 services:
-  alpine:
-    image: alpine
+  bns:
+    image: bash
     container_name: bns_data
     working_dir: /srv
     volumes:
