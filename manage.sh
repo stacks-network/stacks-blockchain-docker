@@ -245,21 +245,33 @@ check_event_replay(){
 	${VERBOSE} && log "Checking status of API event-replay"
 	##
 	## Check if import has started and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for an active event-replay import"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Importing raw event requests'" || test ${?} -eq 141
 	check_import_started="${?}"
 	${VERBOSE} && log "check_import_started: ${check_import_started}"
 	##
 	## Check if import has completed and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for a completed event-replay import"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Event import and playback successful'" || test ${?} -eq 141
 	check_import_finished="${?}"	
 	${VERBOSE} && log "check_import_finished: ${check_import_finished}"
 	##
 	## Check if export has started and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for an active event-replay export"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Export started'" || test ${?} -eq 141
 	check_export_started="${?}"
 	${VERBOSE} && log "check_export_started: ${check_export_started}"
 	##
 	## Check if export has completed and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for a completed event-replay export"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Export successful'" || test ${?} -eq 141
 	check_export_finished="${?}"
 	${VERBOSE} && log "check_export_finished: ${check_export_finished}"
