@@ -162,7 +162,7 @@ usage() {
 	exit 0
 }
 
-# Function to ask for confirmation. Lloop until valid input is received
+# Function to ask for confirmation. Loop until valid input is received
 confirm() {
 	# y/n confirmation. loop until valid response is received
 	while true; do
@@ -558,6 +558,16 @@ mocknet_env() {
 	return 0
 }
 
+# If bitcoin flag is detected and I'm starting the node then
+# I need to overwrite the peer_host value of my Config.toml
+# so it uses the local bitcoin node instead of the remote one
+setup_bitcoin() {
+	log "flags: BITCOIN FLAG DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+	# Copy and overwrite without prompt
+	\cp -r ${SCRIPTPATH}/conf/${NETWORK}/Config.toml ${SCRIPTPATH}/conf/${NETWORK}/Config-before-bitcoin.toml
+ 	# sed 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml > ${SCRIPTPATH}/conf/${NETWORK}/Config-bitcoin.toml 2>&1
+	sed -i 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml 2>&1
+}
 
 # Loop through supplied flags and set FLAGS for the yaml files to load
 #     - Silently fail if a flag isn't supported or a yaml file doesn't exist
@@ -588,6 +598,10 @@ set_flags() {
 			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
+				# If bitcoin flag is detected call bitcoin function
+				if [ ${item} = "bitcoin" ]; then
+					setup_bitcoin
+				fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
 					log_error "Missing compose file: ${COLCYAN}${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml${COLRESET}"
@@ -645,7 +659,7 @@ docker_up() {
 	if [ "${PROFILE}" == "bns" ]; then
 		param=""
 	fi
-    # Create requirted config files and directories
+    # Create required config files and directories
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
 			log "Creating persistent-data for ${NETWORK}"
