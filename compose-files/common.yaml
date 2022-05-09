@@ -14,7 +14,7 @@ services:
       - event-replay
       - stacks-blockchain
   stacks-blockchain:
-    image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}
+    image: wileyj/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}
     container_name: stacks-blockchain
     restart: on-failure
     ports:
@@ -36,7 +36,7 @@ services:
         "/src/stacks-blockchain/Config.toml",
       ]
   stacks-blockchain-api:
-    image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
+    image: wileyj/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
     restart: always
     # volumes:
