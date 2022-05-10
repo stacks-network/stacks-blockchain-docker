@@ -16,8 +16,3 @@ services:
     profiles:
       - bns
     command: sh -c "/scripts/setup-bns.sh"
-networks:
-  default:
-    name: ${DOCKER_NETWORK}
-    ipam:
-      driver: default
