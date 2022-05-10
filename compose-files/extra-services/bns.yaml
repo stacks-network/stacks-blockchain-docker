@@ -17,6 +17,7 @@ services:
       - bns
     command: sh -c "/scripts/setup-bns.sh"
 networks:
-  stacks-blockchain:
-    driver: bridge
-    name: stacks
+  default:
+    name: ${DOCKER_NETWORK}
+    ipam:
+      driver: default

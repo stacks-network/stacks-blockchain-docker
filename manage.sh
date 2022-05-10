@@ -967,7 +967,9 @@ fi
 
 USER_ID=$(id -u "$(whoami)")
 export USER_ID="${USER_ID}"
+export DOCKER_NETWORK="${DOCKER_NETWORK}"
 ${VERBOSE} && log "Exporting USER_ID: ${USER_ID}"
+${VERBOSE} && log "Exporting DOCKER_NETWORK: ${DOCKER_NETWORK}"
 
 # loop through the args and try to determine what options we have
 #   - simple check for logs/status/upgrade/bns since these are not network dependent

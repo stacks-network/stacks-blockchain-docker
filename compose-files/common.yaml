@@ -9,7 +9,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
     networks:
-      - stacks-blockchain
+      - default
     profiles:
       - event-replay
       - stacks-blockchain
@@ -23,7 +23,7 @@ services:
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
-      - stacks-blockchain
+      - default
     depends_on:
       - stacks-blockchain-api
     profiles:
@@ -47,7 +47,7 @@ services:
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
-      - stacks-blockchain
+      - default
     depends_on:
       - postgres
     profiles:
@@ -55,6 +55,7 @@ services:
       - stacks-blockchain
     command: ["npm", "run", "start"]
 networks:
-  stacks-blockchain:
-    driver: bridge
-    name: stacks
+  default:
+    name: ${DOCKER_NETWORK}
+    ipam:
+      driver: default
