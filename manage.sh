@@ -8,6 +8,7 @@ shopt -s expand_aliases
 export NETWORK="mainnet"
 export ACTION=""
 export PROFILE="stacks-blockchain"
+export CONFIG_TOML_TO_USE="/src/stacks-blockchain/Config.toml"
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
 FLAGS="proxy"
@@ -559,15 +560,21 @@ mocknet_env() {
 }
 
 # If bitcoin flag is detected when I'm starting the node then
-# I need to overwrite the peer_host value of my Config.toml
+# the stacks blockchain needs to use a different Config.toml file
 # so it uses the local bitcoin node instead of the remote one
 setup_bitcoin_up() {
-	log "flags: BITCOIN FLAG DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!START"
+	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
+	log "flags: Bitcoin flag detected. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
+
 	# Copy and overwrite without prompt
-	\cp -r ${SCRIPTPATH}/conf/${NETWORK}/Config.toml ${SCRIPTPATH}/conf/${NETWORK}/Config-before-bitcoin.toml
+	# \cp -r ${SCRIPTPATH}/conf/${NETWORK}/Config.toml ${SCRIPTPATH}/conf/${NETWORK}/Config-before-bitcoin.toml
  	# sed 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml > ${SCRIPTPATH}/conf/${NETWORK}/Config-bitcoin.toml 2>&1
-	sed -i 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml 2>&1
-	log "flags: BITCOIN FLAG DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!END"
+	# sed -i 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml 2>&1
+}
+
+setup_bitcoin_down() {
+	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
+	log "flags: Bitcoin flag detected. Stacks blockchain was using the following config.toml file: ${CONFIG_TOML_TO_USE}"
 }
 
 # Loop through supplied flags and set FLAGS for the yaml files to load
@@ -599,9 +606,12 @@ set_flags() {
 			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
-				# If bitcoin flag is detected call bitcoin function
+				# If bitcoin flag is detected when turning up mainent or testnet, then call setup_bitcoin_up function
 				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" ]] && [[ ${item} == "bitcoin" ]]; then
 					setup_bitcoin_up
+				fi
+				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
+					setup_bitcoin_down
 				fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
@@ -672,10 +682,12 @@ docker_up() {
 		${VERBOSE} && log "Using existing data dir: ${SCRIPTPATH}/persistent-data/${NETWORK}"
 	fi
 	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
-	if [[ "${NETWORK}" == "private-testnet" ]]; then
-		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml"
-		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
-	fi
+	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml"
+	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
+#	if [[ "${NETWORK}" == "private-testnet" ]]; then
+#		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml"
+#		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
+#	fi
 
     # See if we can detect a Hiro API major version change requiring an event-replay import
 	if check_api; then
