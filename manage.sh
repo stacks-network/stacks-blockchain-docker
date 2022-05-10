@@ -558,15 +558,16 @@ mocknet_env() {
 	return 0
 }
 
-# If bitcoin flag is detected and I'm starting the node then
+# If bitcoin flag is detected when I'm starting the node then
 # I need to overwrite the peer_host value of my Config.toml
 # so it uses the local bitcoin node instead of the remote one
-setup_bitcoin() {
-	log "flags: BITCOIN FLAG DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+setup_bitcoin_up() {
+	log "flags: BITCOIN FLAG DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!START"
 	# Copy and overwrite without prompt
 	\cp -r ${SCRIPTPATH}/conf/${NETWORK}/Config.toml ${SCRIPTPATH}/conf/${NETWORK}/Config-before-bitcoin.toml
  	# sed 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml > ${SCRIPTPATH}/conf/${NETWORK}/Config-bitcoin.toml 2>&1
 	sed -i 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml 2>&1
+	log "flags: BITCOIN FLAG DETECTED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!END"
 }
 
 # Loop through supplied flags and set FLAGS for the yaml files to load
@@ -599,8 +600,8 @@ set_flags() {
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
 				# If bitcoin flag is detected call bitcoin function
-				if [ ${item} = "bitcoin" ]; then
-					setup_bitcoin
+				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [ "${action}" == "up" ] && [ ${item} = "bitcoin" ]; then
+					setup_bitcoin_up
 				fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then

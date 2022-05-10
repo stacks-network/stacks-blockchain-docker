@@ -1,19 +1,13 @@
 version: "3.8"
 services:
-
   bitcoin-core:
-    image: ruimarinho/bitcoin-core
+    build: ${SCRIPTPATH}/compose-files/extra-services/bitcoin
     container_name: bitcoin-core
-    command:
-      -printtoconsole
-    environment:
-      - BITCOIN_DATA=/var/lib/bitcoin-core-data
     volumes:
-      - "${BITCOIN_BLOCKCHAIN_FOLDER}:/var/lib/bitcoin-core-data"
-      - "${BITCOIN_CONFIG_FILE}:/var/lib/bitcoin-core-data/bitcoin.conf"
+      - "${BITCOIN_BLOCKCHAIN_FOLDER}:/root/.bitcoin"
+      - "${BITCOIN_CONFIG_FILE}:/etc/bitcoin/bitcoin.conf"
     networks:
       - stacks-blockchain
-
 networks:
   stacks-blockchain:
     driver: bridge
