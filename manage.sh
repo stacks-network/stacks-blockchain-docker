@@ -600,7 +600,7 @@ set_flags() {
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
 				# If bitcoin flag is detected call bitcoin function
-				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [ "${action}" == "up" ] && [ ${item} = "bitcoin" ]; then
+				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" ]] && [[ ${item} == "bitcoin" ]]; then
 					setup_bitcoin_up
 				fi
 			else
