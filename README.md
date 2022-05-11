@@ -22,7 +22,7 @@ This only seems to affect MacOS, other Arm based systems like Raspberry Pi's see
 
 ## **Requirements:**
 
-- [Docker](https://docs.docker.com/get-docker/)
+- [Docker](https://docs.docker.com/get-docker/) >= 17.09
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)

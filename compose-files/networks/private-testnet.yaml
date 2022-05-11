@@ -1,4 +1,4 @@
-version: "3"
+version: "3.5"
 services:
   stacks-blockchain:
     image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}-stretch
