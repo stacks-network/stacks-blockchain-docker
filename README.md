@@ -205,6 +205,8 @@ Stacks needs to use a Bitcoin node, and by default when you run a Stacks node yo
 
 However, you can optionaly run both nodes together and configured in a way that you Stacks node will use your own Bitcoin node instead of a public one.
 
+If you run the script with a bitcoin node it will download and build it directly from source for increased security. This process which only needs to happen once can take up to 20-30 minutes depending on the speed of your system. Also, once the bitcoin node is up and running it will need an additional time for sync for the first time (can be hours for testnet and days for mainnet).
+
 ### Why run Stacks node with your own Bitcoin node?
 
 Because running your own Bitcoin node will give you higher security and improved perfomance.
