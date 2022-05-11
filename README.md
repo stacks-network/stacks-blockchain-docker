@@ -3,33 +3,30 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Pull Requests Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 
-⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
+Run your own Stacks Blockchain node easily with just few commands.
 
-```bash
-./manage.sh -n <network> -a stop
-./manage.sh -n <network> -a export
-./manage.sh -n <network> -a import
-./manage.sh -n <network> -a restart
-```
+---
 
 Note: repo has been renamed from `stacks-local-dev` to `stacks-blockchain-docker` and moved from github org `blockstack` to `stacks-network`\
 Be sure to update the remote url: `git remote set-url origin https://github.com/stacks-network/stacks-blockchain-docker`
 
-### **MacOS with an M1 processor is _NOT_ recommended for this repo**
-
-⚠️ The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are **_very_** heavy on I/O. \
-This only seems to affect MacOS, other Arm based systems like Raspberry Pi's seem to work fine.
+---
 
 ## **Requirements:**
 
-- [Docker](https://docs.docker.com/get-docker/) >= 17.09
+- [Docker](https://docs.docker.com/get-docker/) >= `17.09`
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
 - Machine with (at a minimum):
   - 4GB memory
   - 1 Vcpu
-  - 50GB storage (600GB if you optionaly also run the bitcoin mainnet node)
+  - 50GB storage (600GB if you optionally also run the bitcoin mainnet node)
+
+#### **MacOS with an M1 processor is _NOT_ recommended for this repo**
+
+⚠️ The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are **_very_** heavy on I/O. \
+This only seems to affect MacOS, other Arm based systems like Raspberry Pi's seem to work fine.
 
 ### **Install/Update docker-compose**
 
@@ -70,9 +67,15 @@ The Docker daemon always runs as the root user so by default you will need root 
 
 The script `manage.sh` uses docker, so to avoid the requirement of needing to run the script with root privileges it is prefered to be able to *manage Docker as a non-root user*, following [these simple tests](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 
-### **Env Vars**
+### Configuration files you can edit
 
-All variables used in the [`sample.env`](sample.env) file can be modified, but generally most of them should be left as-is.
+The following files can be modified to personalize your node configuration, but generally most of them should be left as-is. All these files will be created from the sample copy if they don't exist at runtime (for example `.env` is created from [`sample.env`](sample.env) ). However these files will never be modified by the application once created and will never be pushed back to github, so your changes will be safe.
+
+* `.env`
+* `./conf/mainnet/Config.toml`
+* `./conf/mainnet/bitcoin.conf`
+* `./conf/testnet/Config.toml`
+* `./conf/testnet/bitcoin.conf`
 
 By default:
 
@@ -85,6 +88,7 @@ By default:
   - To enable, uncomment `# STACKS_API_ENABLE_NFT_METADATA=1` in `./env`
 - Verbose logging is **not** enabled
   - To enable, uncomment `# VERBOSE=true` in `./env`
+- Bitcoin blockchain folder is configured in `BITCOIN_BLOCKCHAIN_FOLDER` in `./env`
 
 ### Local Data Dirs
 
@@ -105,7 +109,7 @@ Directories will be created on first start that will store persistent data under
 git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stacks-blockchain-docker
 ```
 
-2. **Create/Copy `.env` file**
+2. **Optionally, create/copy `.env` file. If file `.env` doesn't exist when launched it will be created from `sample.env` automatically.**
 
 ```bash
 cp sample.env .env
@@ -122,19 +126,25 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 4. **Start the Services**
 
 ```bash
-./manage.sh -n <network> -a start
+./manage.sh -n <network> -a up
 ```
 
 - With optional proxy:
 
 ```bash
-./manage.sh -n <network> -a start -f proxy
+./manage.sh -n <network> -a up -f proxy
+```
+
+- With optional bitcoin node:
+
+```bash
+./manage.sh -n <network> -a up -f bitcoin
 ```
 
 5. **Stop the Services**
 
 ```bash
-./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a down
 ```
 
 6. **Retrieve Service Logs**
@@ -143,7 +153,7 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a logs
 ```
 
-- Export docker logs to `./exported-logs`:
+- Export docker logs to files in folder `./exported-logs`:
 
 ```bash
 ./manage.sh -n <network> -a logs export
@@ -209,6 +219,11 @@ The disadvantage of running your own Bitcoin node is that you need the extra spa
 You can run easily run your Stacks node with your own Bitcoin node by adding the flag `bitcoin`. This is available only for testnet and mainnet.
 
 Example: `./manage.sh -n mainnet -a up -f bitcoin` or `./manage.sh -n testnet -a up -f bitcoin`
+
+### Bitcoin node configuration
+
+In the `.env` file there is the variable `BITCOIN_BLOCKCHAIN_FOLDER`.
+As the bitcoin blockchain can be large (over 500GB) you optionally change this variable to any location of your choosing. If you have previously used the [bitcoin core application](https://bitcoin.org/en/bitcoin-core/) and already have the bitcoin blockchain synced, you can use the same data folder and avoid redownloading the entire bitcoin blockchain.
 
 ## **Accessing the services**
 
@@ -329,6 +344,17 @@ curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defabd
 }
 ``` -->
 
+## Upgrades
+
+⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
+
+```bash
+./manage.sh -n <network> -a down
+./manage.sh -n <network> -a export
+./manage.sh -n <network> -a import
+./manage.sh -n <network> -a restart
+```
+
 ## **Workarounds to potential issues**
 
 _**Port(s) already in use**_:
@@ -353,9 +379,9 @@ _**Database Issues**_:
 - For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated.
 
 ```bash
-./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a down
 ./manage.sh -n <network> -a reset
-./manage.sh -n <network> -a start
+./manage.sh -n <network> -a up
 ```
 
 _**API Missing Parent Block Error**_:
@@ -368,7 +394,7 @@ _**API Missing Parent Block Error**_:
 - To attempt the event-replay
 
 ```bash
-./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a down
 ./manage.sh -n <network> -a import
 # check logs for completion
 ./manage.sh -n <network> -a restart
@@ -377,7 +403,7 @@ _**API Missing Parent Block Error**_:
 - To wipe data and re-sync from genesis
 
 ```bash
-./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a down
 ./manage.sh -n <network> -a reset
 ./manage.sh -n <network> -a restart
 ```
