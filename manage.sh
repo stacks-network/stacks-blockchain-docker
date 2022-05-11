@@ -8,7 +8,7 @@ shopt -s expand_aliases
 export NETWORK="mainnet"
 export ACTION=""
 export PROFILE="stacks-blockchain"
-export CONFIG_TOML_TO_USE="/src/stacks-blockchain/Config.toml"
+export CONFIG_TOML_TO_USE=""
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
 FLAGS="proxy"
