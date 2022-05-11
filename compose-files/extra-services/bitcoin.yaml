@@ -1,7 +1,7 @@
 version: "3.5"
 services:
   bitcoin-core:
-    build: ${SCRIPTPATH}/compose-files/extra-services/bitcoin
+    build: ${SCRIPTPATH}/Dockerfiles
     container_name: bitcoin-core
     volumes:
       - "${BITCOIN_BLOCKCHAIN_FOLDER}:/root/.bitcoin"
