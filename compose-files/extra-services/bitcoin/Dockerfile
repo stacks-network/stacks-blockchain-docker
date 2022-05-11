@@ -1,11 +1,11 @@
-FROM debian:stretch-slim
+FROM debian:buster-slim
 ARG BTC_VERSION=0.21.1
 ENV BTC_VERSION=${BTC_VERSION}
 WORKDIR /
 COPY ./make_binary_dist.sh /make_binary_dist.sh
 # COPY ./docker-entrypoint.sh /docker-entrypoint.sh
 # RUN chmod 755 /docker-entrypoint.sh /make_binary_dist.sh && mkdir -p /root/.bitcoin
-RUN chmod 755 /make_binary_dist.sh && mkdir -p /root/.bitcoin && mkdir -p /etc/bitcoin
+RUN chmod 755 /make_binary_dist.sh && mkdir -p /root/.bitcoin
 RUN apt-get update && apt-get install -y \
     autoconf \
     build-essential \
