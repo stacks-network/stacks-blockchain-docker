@@ -177,10 +177,27 @@ Notice that each time you run this command the log files will be overwritten.
 ./manage.sh -n <network> -a restart -f proxy
 ```
 
-8. **Delete all data in** `./persistent-data/<network>`
+8. **Delete** all data in `./persistent-data/<network>` and/or data of the Bitcoin blockchain.
+
+    This data is owned by root, so you will need to run it with sudo privileges so it can delete the data.
 
 ```bash
-./manage.sh -n <network> -a reset
+$ sudo ./manage.sh -n <network> -a reset
+
+Please confirm what persistent data you wish to delete: 
+
+0. Cancel                 
+1. Delete Persistent data for Stacks testnet only and leave Bitcoin blockchain data unaffected. 
+2. Delete Persistent data for Stacks testnet and Bitcoin blockchain data in ./persistent-data/blockchain-bitcoin 
+3. Delete Persistent data for Bitcoin blockchain data in ./persistent-data/blockchain-bitcoin only. 
+Please note that BNS data will never get deleted. 
+
+Type 0, 1, 2 or 3: 2
+
+Ok. Delete Stacks and Bitcoin data. 
+[ Success ]      Persistent data deleted for Bitcoin blockchain.
+[ Success ]      Persistent data deleted for Stacks testnet.
+
 ```
 
 9. **Download BNS data to** `./persistent-data/bns-data`
