@@ -95,13 +95,15 @@ By default:
 
 ### Local Data Dirs
 
-Directories will be created on first start that will store persistent data under `./persistent-data/<network>`
+Directories will be created on first start that will store persistent data under `./persistent-data/<folder>`
 
-`<network>` can be 1 of:
+`<folder>` can be 1 of:
 
 - mainnet
 - testnet
 - mocknet
+- bns
+- blockchain-bitcoin
 <!-- - private-testnet -->
 
 ## **Quickstart**
