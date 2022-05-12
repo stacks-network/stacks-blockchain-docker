@@ -27,6 +27,8 @@ Session.vim
 *.save
 node_modules/
 stacks-node-follower/Config.toml
+configurations/*/Config.toml
+configurations/private-testnet/*.toml
 
 conf/*/Config.toml
 conf/*/Config-with-bitcoin-flag.toml

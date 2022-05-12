@@ -67,6 +67,8 @@ The Docker daemon always runs as the root user so by default you will need root 
 
 The script `manage.sh` uses docker, so to avoid the requirement of needing to run the script with root privileges it is prefered to be able to *manage Docker as a non-root user*, following [these simple tests](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 
+This will avoid the need of running the script with root privileges for all operations except the removal of data.
+
 ### Configuration files you can edit
 
 The following files can be modified to personalize your node configuration, but generally most of them should be left as-is. All these files will be created from the sample copy if they don't exist at runtime (for example `.env` is created from [`sample.env`](sample.env) ). However these files will never be modified by the application once created and will never be pushed back to github, so your changes will be safe.
@@ -109,7 +111,7 @@ Directories will be created on first start that will store persistent data under
 git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stacks-blockchain-docker
 ```
 
-2. **Optionally, create/copy `.env` file. If file `.env` doesn't exist when launched it will be created from `sample.env` automatically.**
+2. **Optionally, create/copy `.env` file**. If file `.env` doesn't exist when launched it will be created from `sample.env` automatically.
 
 ```bash
 cp sample.env .env
@@ -153,7 +155,7 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a logs
 ```
 
-- Export docker logs to files in folder `./exported-logs`:
+- Export docker log files to `./exported-logs`:
 
 ```bash
 ./manage.sh -n <network> -a logs export
