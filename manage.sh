@@ -831,7 +831,7 @@ reset_data_stacks() {
 }
 
 # Delete data for NETWORK
-#     - Note: does not delete BNS data
+#     - Note: does not delete BNS data - Why not? Should we add and option 4 to delete BNS data?
 reset_data() {
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		${VERBOSE} && log "Found existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
@@ -839,13 +839,13 @@ reset_data() {
 			# Exit if operation isn't confirmed
 			log "Please confirm what persistent data you wish to delete:"
 			echo
-			log "0. Cancel"
+			log "0. Cancel."
 			log "1. Delete Persistent data for ${COLYELLOW}Stacks ${NETWORK}${COLRESET} only and leave ${COLYELLOW}Bitcoin${COLRESET} blockchain data unaffected."
 			log "2. Delete Persistent data for ${COLYELLOW}Stacks ${NETWORK}${COLRESET} and ${COLYELLOW}Bitcoin${COLRESET} blockchain in ${BITCOIN_BLOCKCHAIN_FOLDER}"
 			log "3. Delete Persistent data for ${COLYELLOW}Bitcoin${COLRESET} blockchain in ${BITCOIN_BLOCKCHAIN_FOLDER} only."
 			log "Please note that BNS data will never get deleted."
 			echo
-			read -p "Type 0, 1 or 2:" -n 1 -r USERSANSWER
+			read -p "Type 0, 1, 2 or 3: " -n 1 -r USERSANSWER
 			echo
 			echo
 			case "$USERSANSWER" in 
