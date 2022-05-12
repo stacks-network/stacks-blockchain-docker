@@ -806,6 +806,30 @@ status() {
 	fi
 }
 
+# Command taht delete Bitcoins persistent data
+reset_data_bitcoin() {
+			  ${VERBOSE} && log "  Running: rm -rf ${BITCOIN_BLOCKCHAIN_FOLDER}"
+			  rm -rf "${BITCOIN_BLOCKCHAIN_FOLDER}"  >/dev/null 2>&1 || { 
+				# Log error and exit if data wasn't deleted (permission denied etc)
+				log_error "Failed to remove ${COLCYAN}${BITCOIN_BLOCKCHAIN_FOLDER}${COLRESET}"
+				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
+			  }
+			  log_info "Persistent data deleted for ${COLYELLOW}Bitcoin blockchain${COLRESET}."
+}
+
+# Commands that delete Stacks persistent data
+reset_data_stacks() {
+			  # confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}? (Bitcoin blockchain data, if it exists won't be affected)" || log_exit "Delete Cancelled"
+			  ${VERBOSE} && log "  Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
+			  rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
+				# Log error and exit if data wasn't deleted (permission denied etc)
+				log_error "Failed to remove ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}${COLRESET}"
+				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
+			  }
+			  log_info "Persistent data deleted for Stacks ${COLYELLOW}${NETWORK}${COLRESET}."
+			  echo
+}
+
 # Delete data for NETWORK
 #     - Note: does not delete BNS data
 reset_data() {
@@ -813,16 +837,50 @@ reset_data() {
 		${VERBOSE} && log "Found existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
 		if ! check_network; then
 			# Exit if operation isn't confirmed
-			confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}?" || log_exit "Delete Cancelled"
-			${VERBOSE} && log "  Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
-			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
-				# Log error and exit if data wasn't deleted (permission denied etc)
-				log_error "Failed to remove ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}${COLRESET}"
-				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
-			}
-			log_info "Persistent data deleted"
+			log "Please confirm what persistent data you wish to delete:"
 			echo
-			exit 0
+			log "0. Cancel"
+			log "1. Delete Persistent data for ${COLYELLOW}Stacks ${NETWORK}${COLRESET} only and leave ${COLYELLOW}Bitcoin${COLRESET} blockchain data unaffected."
+			log "2. Delete Persistent data for ${COLYELLOW}Stacks ${NETWORK}${COLRESET} and ${COLYELLOW}Bitcoin${COLRESET} blockchain in ${BITCOIN_BLOCKCHAIN_FOLDER}"
+			log "3. Delete Persistent data for ${COLYELLOW}Bitcoin${COLRESET} blockchain in ${BITCOIN_BLOCKCHAIN_FOLDER} only."
+			log "Please note that BNS data will never get deleted."
+			echo
+			read -p "Type 0, 1 or 2:" -n 1 -r USERSANSWER
+			echo
+			echo
+			case "$USERSANSWER" in 
+			# 0 will cancel
+			0 )
+			  log "Ok. Cancel"
+			  log_exit "Delete Cancelled by users request."
+			  ;;
+			# 1 will delete on Stacks data
+			1 )
+			  log "Ok. Delete Stacks data only."
+			  reset_data_stacks
+			  exit 0
+			  ;;
+			# 2 will delete on Stacks data and Bitcoin data
+			2 )
+			  log "Ok. Delete Stacks and Bitcoin data."
+			  reset_data_bitcoin
+			  reset_data_stacks
+			  exit 0
+			  ;;	
+			# 3 will delete Bitcoin data only  
+			3 )
+			  log "Ok. Delete Bitcoin data only"
+			  reset_data_bitcoin
+			  echo
+			  exit 0
+			  ;;
+			# Any other reply will cancel			
+			* )
+			  log "${COLRED}$USERSANSWER${COLRESET} is not a valid option. Canceling."
+			  log_exit "Delete Cancelled."
+
+			  ;;
+			esac
 		else
 			# Log error and exit if services are already running
 			log_error "Can't reset while services are running"
