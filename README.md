@@ -18,6 +18,7 @@ Be sure to update the remote url: `git remote set-url origin https://github.com/
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
+- [sed](https://www.gnu.org/software/sed/)
 - Machine with (at a minimum):
   - 4GB memory
   - 1 Vcpu
