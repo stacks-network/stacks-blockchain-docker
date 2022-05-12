@@ -158,6 +158,9 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 
 - Export docker log files to `./exported-logs`:
 
+This will create one log file for every running service, for example: postgres.log, stacks-blockain.log, stacks-blockchain-api.log and bitcoin-core.log.  
+Notice that each time you run this command the log files will be overwritten.
+
 ```bash
 ./manage.sh -n <network> -a logs export
 ```

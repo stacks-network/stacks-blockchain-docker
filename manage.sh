@@ -99,12 +99,14 @@ exit_error() {
     exit 1
 }
 
-# Populate hardcoded list of default services for shutdown order
+# Populate hardcoded list of default services for shutdown order and log files export
 ${VERBOSE} && log "Creating list of default services"
 DEFAULT_SERVICES=(
 	stacks-blockchain
 	stacks-blockchain-api
 	postgres
+	bitcoin-core
+	nginx
 )
 ${VERBOSE} && log "DEFAULT_SERVICES: ${DEFAULT_SERVICES[*]}"
 
@@ -567,11 +569,6 @@ mocknet_env() {
 setup_bitcoin_up() {
 	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
 	log "flags: Bitcoin flag detected. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
-
-	# Copy and overwrite without prompt
-	# \cp -r ${SCRIPTPATH}/conf/${NETWORK}/Config.toml ${SCRIPTPATH}/conf/${NETWORK}/Config-before-bitcoin.toml
- 	# sed 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml > ${SCRIPTPATH}/conf/${NETWORK}/Config-bitcoin.toml 2>&1
-	# sed -i 's/peer_host =.*/peer_host = "bitcoin-core"/g' ${SCRIPTPATH}/conf/${NETWORK}/Config.toml 2>&1
 }
 
 setup_bitcoin_down() {
