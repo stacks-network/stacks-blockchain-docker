@@ -131,25 +131,25 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 4. **Start the Services**
 
 ```bash
-./manage.sh -n <network> -a up
+./manage.sh -n <network> -a start
 ```
 
 - With optional proxy:
 
 ```bash
-./manage.sh -n <network> -a up -f proxy
+./manage.sh -n <network> -a start -f proxy
 ```
 
 - With optional bitcoin node:
 
 ```bash
-./manage.sh -n <network> -a up -f bitcoin
+./manage.sh -n <network> -a start -f bitcoin
 ```
 
 5. **Stop the Services**
 
 ```bash
-./manage.sh -n <network> -a down
+./manage.sh -n <network> -a stop
 ```
 
 6. **Retrieve Service Logs**
@@ -245,7 +245,7 @@ The disadvantage of running your own Bitcoin node is that you need the extra spa
 
 You can run easily run your Stacks node with your own Bitcoin node by adding the flag `bitcoin`. This is available only for testnet and mainnet.
 
-Example: `./manage.sh -n mainnet -a up -f bitcoin` or `./manage.sh -n testnet -a up -f bitcoin`
+Example: `./manage.sh -n mainnet -a start -f bitcoin` or `./manage.sh -n testnet -a start -f bitcoin`
 
 ### Bitcoin node configuration
 
@@ -376,7 +376,7 @@ curl -s http://localhost:3999/extended/v1/tx/0xc1a41067d67e55962018b449fc7defabd
 ⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
 
 ```bash
-./manage.sh -n <network> -a down
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a export
 ./manage.sh -n <network> -a import
 ./manage.sh -n <network> -a restart
@@ -406,9 +406,9 @@ _**Database Issues**_:
 - For any of the various Postgres/sync issues, it may be easier to simply remove the persistent data dir. Note that doing so will result in a longer startup time as the data is repopulated.
 
 ```bash
-./manage.sh -n <network> -a down
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a reset
-./manage.sh -n <network> -a up
+./manage.sh -n <network> -a start
 ```
 
 _**API Missing Parent Block Error**_:
@@ -421,7 +421,7 @@ _**API Missing Parent Block Error**_:
 - To attempt the event-replay
 
 ```bash
-./manage.sh -n <network> -a down
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a import
 # check logs for completion
 ./manage.sh -n <network> -a restart
@@ -430,7 +430,7 @@ _**API Missing Parent Block Error**_:
 - To wipe data and re-sync from genesis
 
 ```bash
-./manage.sh -n <network> -a down
+./manage.sh -n <network> -a stop
 ./manage.sh -n <network> -a reset
 ./manage.sh -n <network> -a restart
 ```

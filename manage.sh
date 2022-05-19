@@ -156,12 +156,12 @@ usage() {
 	log "Usage:"
 	log "    ${0} -n <network> -a <action> <optional args>"
 	log "        -n|--network: [ mainnet | testnet | mocknet | bns ]"
-	log "        -a|--action: [ up | down | logs | reset | upgrade | import | export | bns ]"
+	log "        -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ]"
 	log "    optional args:"
 	log "        -f|--flags: [ proxy,bitcoin ]"
 	log "        export: combined with 'logs' action, exports logs to a text file"
-	log "    ex: ${COLCYAN}${0} -n mainnet -a up -f proxy,bitcoin${COLRESET}"
-	log "    ex: ${COLCYAN}${0} --network mainnet --action up --flags proxy${COLRESET}"
+	log "    ex: ${COLCYAN}${0} -n mainnet -a start -f proxy,bitcoin${COLRESET}"
+	log "    ex: ${COLCYAN}${0} --network mainnet --action start --flags proxy${COLRESET}"
 	log "    ex: ${COLCYAN}${0} -n mainnet -a logs export${COLRESET}"
 	echo
 	exit 0
