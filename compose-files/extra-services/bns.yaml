@@ -12,7 +12,7 @@ services:
     environment:
       - USER_ID=${USER_ID}
     networks:
-      - stacks-blockchain
+      - default
     profiles:
       - bns
     command: sh -c "/scripts/setup-bns.sh"
