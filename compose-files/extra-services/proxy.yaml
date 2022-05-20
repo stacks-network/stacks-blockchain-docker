@@ -7,7 +7,7 @@ services:
     ports:
       - ${NGINX_PROXY_PORT:-80}:80
     networks:
-      - stacks-blockchain
+      - default
     profiles:
       - stacks-blockchain
     volumes:

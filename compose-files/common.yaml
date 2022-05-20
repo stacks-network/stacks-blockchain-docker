@@ -9,7 +9,7 @@ services:
     environment:
       - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
     networks:
-      - stacks-blockchain
+      - default
     profiles:
       - event-replay
       - stacks-blockchain
@@ -23,7 +23,7 @@ services:
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
-      - stacks-blockchain
+      - default
     depends_on:
       - stacks-blockchain-api
     profiles:
@@ -39,15 +39,12 @@ services:
     image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
     restart: always
-    # volumes:
-    #   - ${SCRIPTPATH}/persistent-data/bns-data:/bns-data
-    #   - ${SCRIPTPATH}/persistent-data/mainnet/event-replay:/tmp/event-replay
     ports:
       - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL:-3999}:${API_STACKS_BLOCKCHAIN_API_PORT:-3999}
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
-      - stacks-blockchain
+      - default
     depends_on:
       - postgres
     profiles:
@@ -55,6 +52,7 @@ services:
       - stacks-blockchain
     command: ["npm", "run", "start"]
 networks:
-  stacks-blockchain:
-    driver: bridge
-    name: stacks
+  default:
+    name: ${DOCKER_NETWORK}
+    ipam:
+      driver: default

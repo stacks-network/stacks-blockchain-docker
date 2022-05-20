@@ -250,21 +250,33 @@ check_event_replay(){
 	${VERBOSE} && log "Checking status of API event-replay"
 	##
 	## Check if import has started and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for an active event-replay import"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Importing raw event requests'" || test ${?} -eq 141
 	check_import_started="${?}"
 	${VERBOSE} && log "check_import_started: ${check_import_started}"
 	##
 	## Check if import has completed and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for a completed event-replay import"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Event import and playback successful'" || test ${?} -eq 141
 	check_import_finished="${?}"	
 	${VERBOSE} && log "check_import_finished: ${check_import_finished}"
 	##
 	## Check if export has started and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for an active event-replay export"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | head -n20 | grep -q 'Export started'" || test ${?} -eq 141
 	check_export_started="${?}"
 	${VERBOSE} && log "check_export_started: ${check_export_started}"
 	##
 	## Check if export has completed and save return code
+	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
+		log "${ACTION} Checking for a completed event-replay export"
+	fi
 	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Export successful'" || test ${?} -eq 141
 	check_export_finished="${?}"
 	${VERBOSE} && log "check_export_finished: ${check_export_finished}"
@@ -337,72 +349,40 @@ check_bns() {
 	return 0
 }
 
-cat_env(){
-	echo
-	echo	
-	echo "***************************************************************************************************************************************************************"
-	${VERBOSE} && log "${COLMAGENTA}Info: ${1}${COLRESET}"
-	echo "***************************************************************************************************************************************************************"
-
-	# echo "***************************************************************************************************************************************************************"
-	# log "${COLMAGENTA}cat ${ENV_FILE_TMP}${COLRESET}"
-	# echo "***************************************************************************************************************************************************************"
-	# log "${COLBLUE}"
-	# log "`cat ${ENV_FILE_TMP}` ${COLRESET}"
-	# echo
-
-	echo "***************************************************************************************************************************************************************"
-	log "${COLMAGENTA}cat ${ENV_FILE}${COLRESET}"
-	echo "***************************************************************************************************************************************************************"
-	log "${COLBLUE}"
-	log "`cat ${ENV_FILE}` ${COLRESET}"
-	echo
-
-	echo "***************************************************************************************************************************************************************"
-	echo "***************************************************************************************************************************************************************"
-
-	echo
-	echo
-	# read ans
-	return
-}
-
-# BNS_IMPORT_DIR
+# adjust BNS_IMPORT_DIR for mocknet
 bns_import_env() {
 	if "${REVERT_BNS}"; then
 		${VERBOSE} && log "Uncommenting BNS_IMPORT_DIR in ${ENV_FILE}"
-		${VERBOSE} && log "Running: sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
-		$(sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		${VERBOSE} && log "Running: sed -i.tmp \"s/^#BNS_IMPORT_DIR=/BNS_IMPORT_DIR=/;\" ${ENV_FILE}"
+		$(sed -i.tmp "
+			s/^#BNS_IMPORT_DIR=/BNS_IMPORT_DIR=/;
+		" "${ENV_FILE}" 2>&1) || {
+			log_exit "Unable to update BNS_IMPORT_DIR value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}Catting ${ENV_FILE_TMP} -> ${ENV_FILE}${COLRESET}"
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}" 
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Grepping for BNS_IMPORT_DIR"
+		cat ${ENV_FILE} | grep "BNS_IMPORT_DIR"
+		$(rm "${ENV_FILE}.tmp" 2>&1) || {
+			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}COMMENT BNS_IMPORT_DIR${COLRESET}"
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE_TMP}${COLRESET}"
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Reset REVERT_BNS to false${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Set REVERT_BNS to false${COLRESET}"
 		REVERT_BNS=false
 	fi
 	if [ "${BNS_IMPORT_DIR}" ];then
 		${VERBOSE} && log "Commenting BNS_IMPORT_DIR in ${ENV_FILE}"
-		${VERBOSE} && log "Running: sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
-		$(sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		${VERBOSE} && log "Running: sed -i.tmp \"s/^BNS_IMPORT_DIR=/#BNS_IMPORT_DIR=/;\" ${ENV_FILE}"
+		$(sed -i.tmp "
+			s/^BNS_IMPORT_DIR=/#BNS_IMPORT_DIR=/;
+		" "${ENV_FILE}" 2>&1) || {
+			log_exit "Unable to update BNS_IMPORT_DIR value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}COMMENT BNS_IMPORT_DIR${COLRESET}"
-		${VERBOSE} && log "${COLYELLOW}Catting temp .env file to .env${COLRESET}"
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Grepping for BNS_IMPORT_DIR"
+		cat ${ENV_FILE} | grep "BNS_IMPORT_DIR"
+		$(rm "${ENV_FILE}.tmp" 2>&1) || {
+			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Reset REVERT_BNS to true${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Set REVERT_BNS to true${COLRESET}"
 		REVERT_BNS=true
 		${VERBOSE} && log "${COLYELLOW}Unset BNS_IMPORT_DIR var${COLRESET}"
 		unset BNS_IMPORT_DIR
@@ -411,154 +391,45 @@ bns_import_env() {
 	source "${ENV_FILE}"
 	return 0
 }
-# STACKS_EXPORT_EVENTS_FILE
+# adjust STACKS_EXPORT_EVENTS_FILE for mocknet
 events_file_env(){
 	if "${REVERT_EVENTS}"; then
 		${VERBOSE} && log "Uncommenting STACKS_EXPORT_EVENTS_FILE in ${ENV_FILE}"
-		${VERBOSE} && log "Running: sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}""
-		$(sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		${VERBOSE} && log "Running: sed -i.tmp \"s/^#STACKS_EXPORT_EVENTS_FILE=/STACKS_EXPORT_EVENTS_FILE=/;\" ${ENV_FILE}"
+		$(sed -i.tmp "
+			s/^#STACKS_EXPORT_EVENTS_FILE=/STACKS_EXPORT_EVENTS_FILE=/;
+		" "${ENV_FILE}" 2>&1) || {
+			log_exit "Unable to update STACKS_EXPORT_EVENTS_FILE value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
-		${VERBOSE} && log "REVERT_EVENTS"
-		${VERBOSE} && log "${COLYELLOW}Catting ${ENV_FILE_TMP} -> ${ENV_FILE}${COLRESET}"
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Grepping for STACKS_EXPORT_EVENTS_FILE"
+		cat ${ENV_FILE} | grep "STACKS_EXPORT_EVENTS_FILE"
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
+		$(rm "${ENV_FILE}.tmp" 2>&1) || {
+			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log ${COLYELLOW}"Reset REVERT_EVENTS to false${COLRESET}"
+		${VERBOSE} && log ${COLYELLOW}"Set REVERT_EVENTS to false${COLRESET}"
 		REVERT_EVENTS=false
 	fi
 	if [ "${STACKS_EXPORT_EVENTS_FILE}" ]; then
 		${VERBOSE} && log "Commenting STACKS_EXPORT_EVENTS_FILE in ${ENV_FILE_TMP}"
-		${VERBOSE} && log "Running: sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
-		$(sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
+		${VERBOSE} && log "Running: sed -i.tmp \"s/^STACKS_EXPORT_EVENTS_FILE=/#STACKS_EXPORT_EVENTS_FILE=/;\" ${ENV_FILE}"
+		$(sed -i.tmp "
+			s/^STACKS_EXPORT_EVENTS_FILE=/#STACKS_EXPORT_EVENTS_FILE=/;
+		" "${ENV_FILE}" 2>&1) || {
+			log_exit "Unable to update STACKS_EXPORT_EVENTS_FILE value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}COMMENT STACKS_EXPORT_EVENTS_FILE${COLRESET}"
-		${VERBOSE} && log "${COLYELLOW}Catting temp .env file to .env${COLRESET}"
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Grepping for STACKS_EXPORT_EVENTS_FILE"
+		cat ${ENV_FILE} | grep "STACKS_EXPORT_EVENTS_FILE"
+		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
+		$(rm "${ENV_FILE}.tmp" 2>&1) || {
+			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Reset REVERT_EVENTS to true${COLRESET}"
+		${VERBOSE} && log "${COLYELLOW}Set REVERT_EVENTS to true${COLRESET}"
 		REVERT_EVENTS=true
 		${VERBOSE} && log "${COLYELLOW}Unset STACKS_EXPORT_EVENTS_FILE${COLRESET}"
 		unset STACKS_EXPORT_EVENTS_FILE
 	fi
 	${VERBOSE} && log "Sourcing updated .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
-	source "${ENV_FILE}"
-	return 0
-}
-
-mocknet_env() {
-	if "${REVERT_BNS}"; then
-		${VERBOSE} && log "Uncommenting BNS_IMPORT_DIR in ${ENV_FILE}"
-		# read ans
-		${VERBOSE} && log "Running: sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
-		# $(sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(sed 's|^#BNS_IMPORT_DIR=|BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		# cat_env "REVERT_BNS:true / Uncommenting BNS_IMPORT_DIR"
-		${VERBOSE} && log "${COLYELLOW}Catting ${ENV_FILE_TMP} -> ${ENV_FILE}${COLRESET}"
-		# $(cat "${ENV_FILE_TMP}" > "${ENV_FILE}") >/dev/null 2>&1 || { 
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}" 
-		}
-		${VERBOSE} && log "${COLYELLOW}COMMENT BNS_IMPORT_DIR${COLRESET}"
-		# cat_env "REVERT_BNS:true / Uncommenting BNS_IMPORT_DIR :: copied .env.tmp -> .env"
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE_TMP}${COLRESET}"
-		# $(rm "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Reset REVERT_BNS to false${COLRESET}"
-		REVERT_BNS=false
-	fi
-	if "${REVERT_EVENTS}"; then
-		${VERBOSE} && log "Uncommenting STACKS_EXPORT_EVENTS_FILE in ${ENV_FILE}"
-		# read ans
-		${VERBOSE} && log "Running: sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}""
-		# $(sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(sed 's|^#STACKS_EXPORT_EVENTS_FILE=|STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "REVERT_EVENTS"
-		# cat_env "REVERT_EVENTS:true / Uncommenting STACKS_EXPORT_EVENTS_FILE"
-		${VERBOSE} && log "${COLYELLOW}Catting ${ENV_FILE_TMP} -> ${ENV_FILE}${COLRESET}"
-		# $(cat "${ENV_FILE_TMP}" > "${ENV_FILE}")  >/dev/null 2>&1 || { 
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
-		}
-		# cat_env "REVERT_EVENTS:true / Uncommenting STACKS_EXPORT_EVENTS_FILE :: copied .env.tmp -> .env"
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
-		# $(rm "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log ${COLYELLOW}"Reset REVERT_EVENTS to false${COLRESET}"
-		REVERT_EVENTS=false
-	fi
-	if [ "${BNS_IMPORT_DIR}" ];then
-		${VERBOSE} && log "Commenting BNS_IMPORT_DIR in ${ENV_FILE}"
-		# read ans
-		${VERBOSE} && log "Running: sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
-		# $(sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(sed 's|^BNS_IMPORT_DIR=|#BNS_IMPORT_DIR=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}COMMENT BNS_IMPORT_DIR${COLRESET}"
-		# cat_env "REVERT_BNS:false / Commenting BNS_IMPORT_DIR"
-		${VERBOSE} && log "${COLYELLOW}Catting temp .env file to .env${COLRESET}"
-		# $(cat "${ENV_FILE_TMP}" > "${ENV_FILE}") >/dev/null 2>&1 || { 
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
-		}
-		# cat_env "REVERT_BNS:false / Commenting BNS_IMPORT_DIR :: copied .env.tmp -> .env"
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
-		# $(rm "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Reset REVERT_BNS to true${COLRESET}"
-		REVERT_BNS=true
-		${VERBOSE} && log "${COLYELLOW}Unset BNS_IMPORT_DIR var${COLRESET}"
-		unset BNS_IMPORT_DIR
-	fi
-	if [ "${STACKS_EXPORT_EVENTS_FILE}" ]; then
-		${VERBOSE} && log "Commenting STACKS_EXPORT_EVENTS_FILE in ${ENV_FILE_TMP}"
-		# read ans
-		${VERBOSE} && log "Running: sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}""
-		# $(sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(sed 's|^STACKS_EXPORT_EVENTS_FILE=|#STACKS_EXPORT_EVENTS_FILE=|' "${ENV_FILE}" > "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to create required tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}COMMENT STACKS_EXPORT_EVENTS_FILE${COLRESET}"
-		# cat_env "REVERT_EVENTS:false / Commenting STACKS_EXPORT_EVENTS_FILE"
-		${VERBOSE} && log "${COLYELLOW}Catting temp .env file to .env${COLRESET}"
-		# $(cat "${ENV_FILE_TMP}" > "${ENV_FILE}") >/dev/null 2>&1 || { 
-		$(cat "${ENV_FILE_TMP}" > "${ENV_FILE}" 2>&1) || { 
-			log_exit "Unable to cat ${COLCYAN}${ENV_FILE_TMP}${COLRESET} -> ${COLCYAN}${ENV_FILE}${COLRESET}"
-		}
-		# cat_env "REVERT_EVENTS:false / Commenting STACKS_EXPORT_EVENTS_FILE :: copied .env.tmp -> .env"
-		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file${COLRESET}"
-		# $(rm "${ENV_FILE_TMP}") >/dev/null 2>&1 || { 
-		$(rm "${ENV_FILE_TMP}" 2>&1) || { 
-			log_exit "Unable to delete tmp env file: ${COLCYAN}${ENV_FILE_TMP}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Reset REVERT_EVENTS to true${COLRESET}"
-		REVERT_EVENTS=true
-		${VERBOSE} && log "${COLYELLOW}Unset STACKS_EXPORT_EVENTS_FILE${COLRESET}"
-		unset STACKS_EXPORT_EVENTS_FILE
-	fi
-	${VERBOSE} && log "Sourcing updated .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
-	${VERBOSE} && log "catting ${ENV_FILE}"
 	source "${ENV_FILE}"
 	return 0
 }
@@ -683,10 +554,6 @@ docker_up() {
 	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
 	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml"
 	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
-	#	if [[ "${NETWORK}" == "private-testnet" ]]; then
-	#		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml"
-	#		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
-	#	fi
 
     # See if we can detect a Hiro API major version change requiring an event-replay import
 	if check_api; then
@@ -977,11 +844,8 @@ run_docker() {
 	local flags="${2}"
 	local profile="${3}"
 	local param="${4}"
-	# local optional_flags=""
-	# optional_flags=$(set_flags "${flags}")
 	# # set any optional flags
 	set_flags "${flags}"
-	# cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${optional_flags} --profile ${profile} ${action} ${param}"
 	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${OPTIONAL_FLAGS} --profile ${profile} ${action} ${param}"
 	# Log the command we'll be running for verbosity
 	${VERBOSE} && log "action: ${action}"
@@ -989,16 +853,11 @@ run_docker() {
 	${VERBOSE} && log "param: ${param}"
 	${VERBOSE} && log "OPTIONAL_FLAGS: ${OPTIONAL_FLAGS}"
 	${VERBOSE} && log "Running: eval ${cmd}"
-	# if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
-	if [[ "${NETWORK}" == "mocknet" || "${NETWORK}" == "private-testnet" ]] && [ "${action}" == "up" ]; then
+	if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
 		${VERBOSE} && log "Disabling STACKS_EXPORT_EVENTS_FILE for ${NETWORK}"
 		events_file_env
-		if [ "${NETWORK}" == "mocknet" ]; then
-			${VERBOSE} && log "Disabling BNS_IMPORT_DIR for ${NETWORK}"
-			bns_import_env
-		fi
-		# ${VERBOSE} && log "calling mocknet_env function to comment env var not needed for mocknet (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
-		# mocknet_env
+		${VERBOSE} && log "Disabling BNS_IMPORT_DIR for ${NETWORK}"
+		bns_import_env
 	fi
 	if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [ "${action}" == "up" ]; then
 		${VERBOSE} && log "Checking if BNS_IMPORT_DIR is defined and has data"
@@ -1012,19 +871,11 @@ run_docker() {
 	fi
 	eval "${cmd}"
 	local ret="${?}"
-	# if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
-	# 	${VERBOSE} && log "calling mocknet_env function to uncomment env vars (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
-	# 	mocknet_env
-	# fi
-	if [[ "${NETWORK}" == "mocknet" || "${NETWORK}" == "private-testnet" ]] && [ "${action}" == "up" ]; then
+	if [[ "${NETWORK}" == "mocknet" && "${action}" == "up" ]]; then
 		${VERBOSE} && log "Re-enabling STACKS_EXPORT_EVENTS_FILE for ${NETWORK}"
 		events_file_env
-		if [ "${NETWORK}" == "mocknet" ]; then
-			${VERBOSE} && log "Re-enabling BNS_IMPORT_DIR for ${NETWORK}"
-			bns_import_env
-		fi
-		# ${VERBOSE} && log "calling mocknet_env function to comment env var not needed for mocknet (STACKS_EXPORT_EVENTS_FILE, BNS_IMPORT_DIR)"
-		# mocknet_env
+		${VERBOSE} && log "Re-enabling BNS_IMPORT_DIR for ${NETWORK}"
+		bns_import_env
 	fi
 	${VERBOSE} && log "cmd returned: ${ret}"
 	# If return is not zero, it should be apparent. if it worked, print how to see the logs
@@ -1051,7 +902,9 @@ fi
 
 USER_ID=$(id -u "$(whoami)")
 export USER_ID="${USER_ID}"
+export DOCKER_NETWORK="${DOCKER_NETWORK}"
 ${VERBOSE} && log "Exporting USER_ID: ${USER_ID}"
+${VERBOSE} && log "Exporting DOCKER_NETWORK: ${DOCKER_NETWORK}"
 
 # loop through the args and try to determine what options we have
 #   - simple check for logs/status/upgrade/bns since these are not network dependent
