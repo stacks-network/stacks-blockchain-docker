@@ -105,8 +105,6 @@ DEFAULT_SERVICES=(
 	stacks-blockchain
 	stacks-blockchain-api
 	postgres
-	bitcoin-core
-	nginx
 )
 ${VERBOSE} && log "DEFAULT_SERVICES: ${DEFAULT_SERVICES[*]}"
 
@@ -155,7 +153,7 @@ usage() {
 	echo
 	log "Usage:"
 	log "    ${0} -n <network> -a <action> <optional args>"
-	log "        -n|--network: [ mainnet | testnet | mocknet | bns ]"
+	log "        -n|--network: [ mainnet | testnet | mocknet ]"
 	log "        -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ]"
 	log "    optional args:"
 	log "        -f|--flags: [ proxy,bitcoin ]"
@@ -437,14 +435,9 @@ events_file_env(){
 # If bitcoin flag is detected when I'm starting the node then
 # the stacks blockchain needs to use a different Config.toml file
 # so it uses the local bitcoin node instead of the remote one
-setup_bitcoin_up() {
+setup_bitcoin() {
 	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
 	log "flags: Bitcoin flag detected. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
-}
-
-setup_bitcoin_down() {
-	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
-	log "flags: Bitcoin flag detected. Stacks blockchain was using the following config.toml file: ${CONFIG_TOML_TO_USE}"
 }
 
 # Loop through supplied flags and set FLAGS for the yaml files to load
@@ -476,12 +469,12 @@ set_flags() {
 			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
-				# If bitcoin flag is detected when turning up mainent or testnet, then call setup_bitcoin_up function
+				# If bitcoin flag is detected when turning up mainent or testnet, then call setup_bitcoin function
 				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" ]] && [[ ${item} == "bitcoin" ]]; then
-					setup_bitcoin_up
+					setup_bitcoin
 				fi
 				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
-					setup_bitcoin_down
+					setup_bitcoin
 				fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
