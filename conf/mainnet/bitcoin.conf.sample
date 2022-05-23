@@ -1,3 +1,16 @@
+testnet=0
+server=1
+disablewallet=1
 rpcuser=stacks
 rpcpassword=foundation
-server=1
+rpcallowip=0.0.0.0/0
+dbcache=512
+banscore=1
+rpcthreads=256
+rpcworkqueue=256
+rpctimeout=100
+
+[main]
+bind=0.0.0.0:8333
+rpcbind=0.0.0.0:8332
+rpcport=8332 
