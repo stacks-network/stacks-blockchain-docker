@@ -437,7 +437,8 @@ events_file_env(){
 # so it uses the local bitcoin node instead of the remote one
 setup_bitcoin() {
 	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
-	log "flags: Bitcoin flag detected. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
+	${VERBOSE} && log "flags: Bitcoin flag detected. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
+	return 0
 }
 
 # Loop through supplied flags and set FLAGS for the yaml files to load
