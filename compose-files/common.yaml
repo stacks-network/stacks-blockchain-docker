@@ -1,4 +1,4 @@
-version: "3"
+version: "3.5"
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION:-13}-alpine
@@ -33,7 +33,7 @@ services:
         "/bin/stacks-node",
         "start",
         "--config",
-        "/src/stacks-blockchain/Config.toml",
+        "${CONFIG_TOML_TO_USE:-/src/stacks-blockchain/Config.toml}",
       ]
   stacks-blockchain-api:
     image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}

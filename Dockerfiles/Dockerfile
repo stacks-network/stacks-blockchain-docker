@@ -1,5 +1,4 @@
-FROM debian:stretch-slim
-
+FROM debian:buster-slim
 ARG BTC_VERSION=0.21.1
 ENV BTC_VERSION=${BTC_VERSION}
 WORKDIR /

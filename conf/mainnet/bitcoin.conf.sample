@@ -1,7 +1,6 @@
+testnet=0
 server=1
-testnet=1
 disablewallet=1
-datadir=/bitcoin/testnet
 rpcuser=stacks
 rpcpassword=foundation
 rpcallowip=0.0.0.0/0
@@ -11,7 +10,7 @@ rpcthreads=256
 rpcworkqueue=256
 rpctimeout=100
 
-[test]
-bind=0.0.0.0:18333
-rpcbind=0.0.0.0:18332
-rpcport=18332
+[main]
+bind=0.0.0.0:8333
+rpcbind=0.0.0.0:8332
+rpcport=8332 

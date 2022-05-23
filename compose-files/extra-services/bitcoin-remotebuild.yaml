@@ -1,0 +1,20 @@
+version: "3.5"
+services:
+
+  bitcoin-core:
+    image: ruimarinho/bitcoin-core
+    container_name: bitcoin-core
+    command:
+      -printtoconsole
+    environment:
+      - BITCOIN_DATA=/var/lib/bitcoin-core-data
+    volumes:
+      - "${BITCOIN_BLOCKCHAIN_FOLDER}:/var/lib/bitcoin-core-data"
+      - "${BITCOIN_CONFIG_FILE}:/var/lib/bitcoin-core-data/bitcoin.conf"
+    networks:
+      - stacks-blockchain
+
+networks:
+  stacks-blockchain:
+    driver: bridge
+    name: stacks

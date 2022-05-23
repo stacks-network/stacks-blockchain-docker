@@ -3,33 +3,31 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Pull Requests Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat)](http://makeapullrequest.com)
 
-⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
+Run your own Stacks Blockchain node easily with just few commands.
 
-```bash
-./manage.sh -n <network> -a stop
-./manage.sh -n <network> -a export
-./manage.sh -n <network> -a import
-./manage.sh -n <network> -a restart
-```
+---
 
 Note: repo has been renamed from `stacks-local-dev` to `stacks-blockchain-docker` and moved from github org `blockstack` to `stacks-network`\
 Be sure to update the remote url: `git remote set-url origin https://github.com/stacks-network/stacks-blockchain-docker`
 
-### **MacOS with an M1 processor is _NOT_ recommended for this repo**
-
-⚠️ The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are **_very_** heavy on I/O. \
-This only seems to affect MacOS, other Arm based systems like Raspberry Pi's seem to work fine.
+---
 
 ## **Requirements:**
 
-- [Docker](https://docs.docker.com/get-docker/)
+- [Docker](https://docs.docker.com/get-docker/) >= `17.09`
 - [docker-compose](https://github.com/docker/compose/releases/) >= `1.27.4`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
+- [sed](https://www.gnu.org/software/sed/)
 - Machine with (at a minimum):
   - 4GB memory
   - 1 Vcpu
-  - 50GB storage
+  - 50GB storage (600GB if you optionally also run the bitcoin mainnet node)
+
+#### **MacOS with an M1 processor is _NOT_ recommended for this repo**
+
+⚠️ The way Docker for Mac on an Arm chip is designed makes the I/O incredibly slow, and blockchains are **_very_** heavy on I/O. \
+This only seems to affect MacOS, other Arm based systems like Raspberry Pi's seem to work fine.
 
 ### **Install/Update docker-compose**
 
@@ -64,9 +62,23 @@ sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/dock
 sudo chmod 755 $DESTINATION
 ```
 
-### **Env Vars**
+### Security note on docker
 
-All variables used in the [`sample.env`](sample.env) file can be modified, but generally most of them should be left as-is.
+The Docker daemon always runs as the root user so by default you will need root privileges to interact with it.
+
+The script `manage.sh` uses docker, so to avoid the requirement of needing to run the script with root privileges it is prefered to be able to *manage Docker as a non-root user*, following [these simple tests](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
+
+This will avoid the need of running the script with root privileges for all operations except the removal of data.
+
+### Configuration files you can edit
+
+The following files can be modified to personalize your node configuration, but generally most of them should be left as-is. All these files will be created from the sample copy if they don't exist at runtime (for example `.env` is created from [`sample.env`](sample.env) ). However these files will never be modified by the application once created and will never be pushed back to github, so your changes will be safe.
+
+* `.env`
+* `./conf/mainnet/Config.toml`
+* `./conf/mainnet/bitcoin.conf`
+* `./conf/testnet/Config.toml`
+* `./conf/testnet/bitcoin.conf`
 
 By default:
 
@@ -79,12 +91,13 @@ By default:
   - To enable, uncomment `# STACKS_API_ENABLE_NFT_METADATA=1` in `./env`
 - Verbose logging is **not** enabled
   - To enable, uncomment `# VERBOSE=true` in `./env`
+- Bitcoin blockchain folder is configured in `BITCOIN_BLOCKCHAIN_FOLDER` in `./env`
 
 ### Local Data Dirs
 
-Directories will be created on first start that will store persistent data under `./persistent-data/<network>`
+Directories will be created on first start that will store persistent data under `./persistent-data/<folder>`
 
-`<network>` can be 1 of:
+`<folder>` can be 1 of:
 
 - mainnet
 - testnet
@@ -95,10 +108,10 @@ Directories will be created on first start that will store persistent data under
 1. **Clone the repo locally**
 
 ```bash
-git clone https://github.com/stacks-network/stacks-blockchain-docker && cd ./stacks-blockchain-docker
+git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stacks-blockchain-docker
 ```
 
-2. **Create/Copy `.env` file**
+2. **Optionally, create/copy `.env` file**. If file `.env` doesn't exist when launched it will be created from `sample.env` automatically.
 
 ```bash
 cp sample.env .env
@@ -124,6 +137,12 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a start -f proxy
 ```
 
+- With optional bitcoin node:
+
+```bash
+./manage.sh -n <network> -a start -f bitcoin
+```
+
 5. **Stop the Services**
 
 ```bash
@@ -136,7 +155,10 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a logs
 ```
 
-- Export docker logs to `./exported-logs`:
+- Export docker log files to `./exported-logs`:
+
+This will create one log file for every running service, for example: postgres.log, stacks-blockain.log, stacks-blockchain-api.log and bitcoin-core.log.  
+Notice that each time you run this command the log files will be overwritten.
 
 ```bash
 ./manage.sh -n <network> -a logs export
@@ -154,10 +176,27 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 ./manage.sh -n <network> -a restart -f proxy
 ```
 
-8. **Delete all data in** `./persistent-data/<network>`
+8. **Delete** all data in `./persistent-data/<network>` and/or data of the Bitcoin blockchain.
+
+    This data is owned by root, so you will need to run it with sudo privileges so it can delete the data.
 
 ```bash
-./manage.sh -n <network> -a reset
+$ sudo ./manage.sh -n <network> -a reset
+
+Please confirm what persistent data you wish to delete: 
+
+0. Cancel                 
+1. Delete Persistent data for Stacks testnet only and leave Bitcoin blockchain data unaffected. 
+2. Delete Persistent data for Stacks testnet and Bitcoin blockchain data in ./persistent-data/blockchain-bitcoin 
+3. Delete Persistent data for Bitcoin blockchain data in ./persistent-data/blockchain-bitcoin only. 
+Please note that BNS data will never get deleted. 
+
+Type 0, 1, 2 or 3: 2
+
+Ok. Delete Stacks and Bitcoin data. 
+[ Success ]      Persistent data deleted for Bitcoin blockchain.
+[ Success ]      Persistent data deleted for Stacks testnet.
+
 ```
 
 9. **Download BNS data to** `./persistent-data/bns-data`
@@ -181,6 +220,34 @@ _You may also use a symlink as an alternative to copying: `ln -s sample.env .env
 # check logs for completion
 ./manage.sh -n <network> -a restart
 ```
+
+## **Running also a bitcoin node (Optional)**
+
+Stacks needs to use a Bitcoin node, and by default when you run a Stacks node you will be using a public Bitcoin node, which is configured in the `.env` file. Default values is `BITCOIN_NODE=bitcoin.mainnet.stacks.org`.
+
+However, you can optionaly run both nodes together and configured in a way that you Stacks node will use your own Bitcoin node instead of a public one.
+
+If you run the script with a bitcoin node it will download and build it directly from source for increased security. This process which only needs to happen once can take up to 20-30 minutes depending on the speed of your system. Also, once the bitcoin node is up and running it will need an additional time for sync for the first time (can be hours for testnet and days for mainnet).
+
+### Why run Stacks node with your own Bitcoin node?
+
+Because running your own Bitcoin node will give you higher security and improved perfomance.
+
+* **Improved perfomance**: The Bitcoin node will serve you blocks faster, as well as UTXOs for your miner (if you run one).
+* **Higher security**: The Bitcoin node will also have validated all bitcoin transactions the Stacks node consumes. If you don't run your own Bitcoin node, you're relying on the SPV headers to vouch for the validity of Bitcoin blocks.
+
+The disadvantage of running your own Bitcoin node is that you need the extra space to store the Bitcoin blockchain (about 500GB) and the initial time it will take to download this data the first time.
+
+### Example
+
+You can run easily run your Stacks node with your own Bitcoin node by adding the flag `bitcoin`. This is available only for testnet and mainnet.
+
+Example: `./manage.sh -n mainnet -a start -f bitcoin` or `./manage.sh -n testnet -a start -f bitcoin`
+
+### Bitcoin node configuration
+
+In the `.env` file there is the variable `BITCOIN_BLOCKCHAIN_FOLDER`.
+As the bitcoin blockchain can be large (over 500GB) you optionally change this variable to any location of your choosing. If you have previously used the [bitcoin core application](https://bitcoin.org/en/bitcoin-core/) and already have the bitcoin blockchain synced, you can use the same data folder and avoid redownloading the entire bitcoin blockchain.
 
 ## **Accessing the services**
 
@@ -210,6 +277,19 @@ curl -sL localhost:3999/v2/info | jq
 ```bash
 curl -sL localhost/v2/info | jq
 curl -sL localhost/ | jq
+```
+
+---
+
+## Upgrades
+
+⚠️ For upgrades to running instances of this repo, you'll need to [run the event-replay](https://github.com/hirosystems/stacks-blockchain-api#event-replay):
+
+```bash
+./manage.sh -n <network> -a stop
+./manage.sh -n <network> -a export
+./manage.sh -n <network> -a import
+./manage.sh -n <network> -a restart
 ```
 
 ---

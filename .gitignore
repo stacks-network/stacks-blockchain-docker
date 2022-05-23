@@ -12,7 +12,6 @@ crash.log
 *.pyc
 .gitconfig
 .idea
-/configurations/*/Config.toml
 
 # Vim-related files
 [._]*.s[a-w][a-z]
@@ -30,9 +29,10 @@ node_modules/
 stacks-node-follower/Config.toml
 configurations/*/Config.toml
 configurations/private-testnet/*.toml
-configurations/private-testnet/*.conf
 
 conf/*/Config.toml
+conf/*/Config-with-bitcoin-flag.toml
+conf/*/bitcoin.conf
 conf/private-testnet/*.toml
 conf/private-testnet/*.conf
 
