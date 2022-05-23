@@ -7,8 +7,4 @@ services:
       - "${BITCOIN_BLOCKCHAIN_FOLDER}:/root/.bitcoin"
       - "${BITCOIN_CONFIG_FILE}:/etc/bitcoin/bitcoin.conf"
     networks:
-      - stacks-blockchain
-networks:
-  stacks-blockchain:
-    driver: bridge
-    name: stacks
+      - default

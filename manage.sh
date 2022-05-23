@@ -105,8 +105,6 @@ DEFAULT_SERVICES=(
 	stacks-blockchain
 	stacks-blockchain-api
 	postgres
-# Uncomment the following line to export also bitcoin-core logs for troubleshooting
-#   bitcoin-core
 )
 ${VERBOSE} && log "DEFAULT_SERVICES: ${DEFAULT_SERVICES[*]}"
 
@@ -445,14 +443,14 @@ update_configs(){
     fi
 	CONFIG_TOML="${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
 	BTC_CONF="${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
-	${VERBOSE} && log "update_configs BTC_HOST: ${BTC_HOST}"
-	${VERBOSE} && log "update_configs BTC_RPC_USER: ${BTC_RPC_USER}"
-	${VERBOSE} && log "update_configs BTC_RPC_PASS: ${BTC_RPC_PASS}"
-	${VERBOSE} && log "update_configs BTC_RPC_PORT: ${BTC_RPC_PORT}"
-	${VERBOSE} && log "update_configs BTC_P2P_PORT: ${BTC_P2P_PORT}"
-	${VERBOSE} && log "update_configs CONFIG_TOML: ${CONFIG_TOML}"
-	${VERBOSE} && log "update_configs BTC_CONF: ${BTC_CONF}"
-	${VERBOSE} && log "update_configs NETWORK: ${NETWORK}"
+	# ${VERBOSE} && log "update_configs BTC_HOST: ${BTC_HOST}"
+	# ${VERBOSE} && log "update_configs BTC_RPC_USER: ${BTC_RPC_USER}"
+	# ${VERBOSE} && log "update_configs BTC_RPC_PASS: ${BTC_RPC_PASS}"
+	# ${VERBOSE} && log "update_configs BTC_RPC_PORT: ${BTC_RPC_PORT}"
+	# ${VERBOSE} && log "update_configs BTC_P2P_PORT: ${BTC_P2P_PORT}"
+	# ${VERBOSE} && log "update_configs CONFIG_TOML: ${CONFIG_TOML}"
+	# ${VERBOSE} && log "update_configs BTC_CONF: ${BTC_CONF}"
+	# ${VERBOSE} && log "update_configs NETWORK: ${NETWORK}"
 
     ## update Config.toml with btc vars
 	[[ ! -f "${CONFIG_TOML}" ]] && cp "${CONFIG_TOML}.sample" "${CONFIG_TOML}"
@@ -492,15 +490,6 @@ update_configs(){
 	return 0
 }
 
-# If bitcoin flag is detected when I'm starting the node then
-# the stacks blockchain needs to use a different Config.toml file
-# so it uses the local bitcoin node instead of the remote one
-setup_bitcoin() {
-#	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
-	${VERBOSE} && log "flags: Bitcoin flag detected. " #. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
-	return 0
- }
-
 # Loop through supplied flags and set FLAGS for the yaml files to load
 #     - Silently fail if a flag isn't supported or a yaml file doesn't exist
 set_flags() {
@@ -530,12 +519,9 @@ set_flags() {
 			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
-				# If bitcoin flag is detected when turning up mainent or testnet, then call setup_bitcoin function
-				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" ]] && [[ ${item} == "bitcoin" ]]; then
-					setup_bitcoin
-				fi
-				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
-					setup_bitcoin
+				# If bitcoin flag is detected log it
+				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" || "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
+					${VERBOSE} && log "flags: Bitcoin flag detected on ${NETWORK}"
 				fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
@@ -612,10 +598,7 @@ docker_up() {
 		${VERBOSE} && log "Using existing data dir: ${SCRIPTPATH}/persistent-data/${NETWORK}"
 		update_configs
 	fi
-	# [[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
-	# [[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config-with-bitcoin-flag.toml"
-	# [[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
-
+	
     # See if we can detect a Hiro API major version change requiring an event-replay import
 	if check_api; then
 		log_warn "    Required to perform a stacks-blockchain-api event-replay:"
@@ -758,57 +741,28 @@ reset_data_stacks() {
 			  echo
 }
 
-# Delete data for NETWORK
-#     - Note: does not delete BNS data - Why not? Should we add and option 4 to delete BNS data?
+# Delete persistent data for NETWORK
+#     - Note: does not delete BNS data
 reset_data() {
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		${VERBOSE} && log "Found existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
+		if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain" ]; then
+			${VERBOSE} && log "Found existing bitcoin data on default location: ${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain"  
+		fi
 		if ! check_network; then
 			# Exit if operation isn't confirmed
-			log "Please confirm what persistent data you wish to delete:"
+			confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}?" || log_exit "Delete Cancelled"
+			${VERBOSE} && log "  Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
+			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
+				# Log error and exit if data wasn't deleted (permission denied etc)
+				log_error "Failed to remove ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}${COLRESET}"
+				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
+			}
+			# log "Please note that BNS data is never deleted."
+			# log "If you have used the Bitcoin flag and changed its default data location out of ${SCRIPTPATH}/persistent-data/${NETWORK}, it will be unaffected."		
+			log_info "Persistent data deleted"
 			echo
-			log "0. Cancel."
-			log "1. Delete Persistent data for ${COLYELLOW}Stacks ${NETWORK}${COLRESET} only and leave ${COLYELLOW}Bitcoin${COLRESET} blockchain data unaffected."
-			log "2. Delete Persistent data for ${COLYELLOW}Stacks ${NETWORK}${COLRESET} and ${COLYELLOW}Bitcoin${COLRESET} blockchain in ${BITCOIN_BLOCKCHAIN_FOLDER}"
-			log "3. Delete Persistent data for ${COLYELLOW}Bitcoin${COLRESET} blockchain in ${BITCOIN_BLOCKCHAIN_FOLDER} only."
-			log "Please note that BNS data will never get deleted."
-			echo
-			read -p "Type 0, 1, 2 or 3: " -n 1 -r USERSANSWER
-			echo
-			echo
-			case "$USERSANSWER" in 
-			# 0 will cancel
-			0 )
-			  log "Ok. Cancel"
-			  log_exit "Delete Cancelled by users request."
-			  ;;
-			# 1 will delete on Stacks data
-			1 )
-			  log "Ok. Delete Stacks data only."
-			  reset_data_stacks
-			  exit 0
-			  ;;
-			# 2 will delete on Stacks data and Bitcoin data
-			2 )
-			  log "Ok. Delete Stacks and Bitcoin data."
-			  reset_data_bitcoin
-			  reset_data_stacks
-			  exit 0
-			  ;;	
-			# 3 will delete Bitcoin data only  
-			3 )
-			  log "Ok. Delete Bitcoin data only"
-			  reset_data_bitcoin
-			  echo
-			  exit 0
-			  ;;
-			# Any other reply will cancel			
-			* )
-			  log "${COLRED}$USERSANSWER${COLRESET} is not a valid option. Canceling."
-			  log_exit "Delete Cancelled."
-
-			  ;;
-			esac
+			exit 0
 		else
 			# Log error and exit if services are already running
 			log_error "Can't reset while services are running"
