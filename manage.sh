@@ -9,8 +9,8 @@ export NETWORK="mainnet"
 export ACTION=""
 export PROFILE="stacks-blockchain"
 export CONFIG_TOML_TO_USE=""
-CONFIG_TOML_WITHOUT_BITCOIN_FLAG=/src/stacks-blockchain/Config.toml
-CONFIG_TOML_WITH_BITCOIN_FLAG=/src/stacks-blockchain/Config-with-bitcoin-flag.toml
+# CONFIG_TOML_WITHOUT_BITCOIN_FLAG=/src/stacks-blockchain/Config.toml
+# CONFIG_TOML_WITH_BITCOIN_FLAG=/src/stacks-blockchain/Config-with-bitcoin-flag.toml
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
 FLAGS="proxy"
@@ -105,6 +105,8 @@ DEFAULT_SERVICES=(
 	stacks-blockchain
 	stacks-blockchain-api
 	postgres
+# Uncomment the following line to export also bitcoin-core logs for troubleshooting
+#   bitcoin-core
 )
 ${VERBOSE} && log "DEFAULT_SERVICES: ${DEFAULT_SERVICES[*]}"
 
@@ -494,10 +496,10 @@ update_configs(){
 # the stacks blockchain needs to use a different Config.toml file
 # so it uses the local bitcoin node instead of the remote one
 setup_bitcoin() {
-	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
-	${VERBOSE} && log "flags: Bitcoin flag detected. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
+#	CONFIG_TOML_TO_USE=${CONFIG_TOML_WITH_BITCOIN_FLAG}
+	${VERBOSE} && log "flags: Bitcoin flag detected. " #. Stacks blockchain will use the following config.toml file: ${CONFIG_TOML_TO_USE}"
 	return 0
-}
+ }
 
 # Loop through supplied flags and set FLAGS for the yaml files to load
 #     - Silently fail if a flag isn't supported or a yaml file doesn't exist
