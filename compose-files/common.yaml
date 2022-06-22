@@ -18,8 +18,8 @@ services:
     container_name: stacks-blockchain
     restart: on-failure
     ports:
-      - ${STACKS_CORE_RPC_PORT:-20443}:20443
-      - ${STACKS_CORE_P2P_PORT:-20444}:20444
+      - ${STACKS_CORE_RPC_PORT:-20443}:${STACKS_CORE_RPC_PORT:-20443}
+      - ${STACKS_CORE_P2P_PORT:-20444}:${STACKS_CORE_P2P_PORT:-20444}
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
@@ -40,7 +40,7 @@ services:
     container_name: stacks-blockchain-api
     restart: always
     ports:
-      - ${STACKS_BLOCKCHAIN_API_PORT:-3999}:3999
+      - ${STACKS_BLOCKCHAIN_API_PORT:-3999}:${STACKS_BLOCKCHAIN_API_PORT:-3999}
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
