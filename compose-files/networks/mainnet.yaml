@@ -9,7 +9,7 @@ services:
       - ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain:/root/stacks-blockchain/data
   stacks-blockchain-api:
     environment:
-      - STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
+      - STACKS_CHAIN_ID=${STACKS_CHAIN_ID:-STACKS_CHAIN_ID_DEFAULT}
     volumes:
       - ${SCRIPTPATH}/persistent-data/bns-data:/bns-data
       - ${SCRIPTPATH}/persistent-data/mainnet/event-replay:/tmp/event-replay
