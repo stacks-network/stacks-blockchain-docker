@@ -18,8 +18,8 @@ services:
     container_name: stacks-blockchain
     restart: on-failure
     ports:
-      - ${STACKS_FOLLOWER_RPC_PORT_LOCAL:-20443}:20443
-      - ${STACKS_FOLLOWER_P2P_PORT_LOCAL:-20444}:20444
+      - ${STACKS_CORE_RPC_PORT:-20443}:20443
+      - ${STACKS_CORE_P2P_PORT:-20444}:20444
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
@@ -33,14 +33,14 @@ services:
         "/bin/stacks-node",
         "start",
         "--config",
-        "${CONFIG_TOML_TO_USE:-/src/stacks-blockchain/Config.toml}",
+        "/src/stacks-blockchain/Config.toml",
       ]
   stacks-blockchain-api:
     image: hirosystems/stacks-blockchain-api:${STACKS_BLOCKCHAIN_API_VERSION:-latest}
     container_name: stacks-blockchain-api
     restart: always
     ports:
-      - ${API_STACKS_BLOCKCHAIN_API_PORT_LOCAL:-3999}:${API_STACKS_BLOCKCHAIN_API_PORT:-3999}
+      - ${STACKS_BLOCKCHAIN_API_PORT:-3999}:3999
     env_file:
       - ${SCRIPTPATH}/.env
     networks:
