@@ -152,7 +152,7 @@ Notice that each time you run this command the log files will be overwritten.
 ./manage.sh -n <network> -a logs export
 ```
 
-1. **Restart all services**
+7. **Restart all services**
 
 ```bash
 ./manage.sh -n <network> -a restart
