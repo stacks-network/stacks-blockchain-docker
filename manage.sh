@@ -156,9 +156,9 @@ usage() {
 	log "        -n|--network: [ mainnet | testnet | mocknet ]"
 	log "        -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ]"
 	log "    optional args:"
-	log "        -f|--flags: [ proxy,bitcoin ]"
+	log "        -f|--flags: [ proxy ]"
 	log "        export: combined with 'logs' action, exports logs to a text file"
-	log "    ex: ${COLCYAN}${0} -n mainnet -a start -f proxy,bitcoin${COLRESET}"
+	log "    ex: ${COLCYAN}${0} -n mainnet -a start -f proxy${COLRESET}"
 	log "    ex: ${COLCYAN}${0} --network mainnet --action start --flags proxy${COLRESET}"
 	log "    ex: ${COLCYAN}${0} -n mainnet -a logs export${COLRESET}"
 	echo
@@ -432,7 +432,7 @@ events_file_env(){
 	return 0
 }
 
-# Function that updates bitcoin.conf and Config.toml
+# Function that updates Config.toml
 update_configs(){
     if [ "${NETWORK}" == "testnet" ]; then
 		BTC_HOST=${TBTC_HOST}
@@ -442,7 +442,7 @@ update_configs(){
 		BTC_P2P_PORT=${TBTC_P2P_PORT}
     fi
 	CONFIG_TOML="${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
-	BTC_CONF="${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
+	# BTC_CONF="${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
 	# ${VERBOSE} && log "update_configs BTC_HOST: ${BTC_HOST}"
 	# ${VERBOSE} && log "update_configs BTC_RPC_USER: ${BTC_RPC_USER}"
 	# ${VERBOSE} && log "update_configs BTC_RPC_PASS: ${BTC_RPC_PASS}"
@@ -468,25 +468,25 @@ update_configs(){
     $(rm "${CONFIG_TOML}.tmp" 2>&1) || {
         log_exit "Unable to delete tmp Config.toml file: ${COLCYAN}${CONFIG_TOML}.tmp${COLRESET}"
     }
-    ## update bitcoin.conf with btc vars
-	if check_flags "${FLAGS_ARRAY[*]}" "bitcoin"; then
-		[[ ! -f "${BTC_CONF}" ]] && cp "${BTC_CONF}.sample" "${BTC_CONF}"
-		${VERBOSE} && log "Matched bitcoin flag"
-		${VERBOSE} && log "${COLYELLOW}Updating values in ${BTC_CONF} from .env${COLRESET}"
-		$(sed -i.tmp "
-			/^rpcport/s/.*/rpcport=${BTC_RPC_PORT}/; 
-			/^rpcuser/s/.*/rpcuser=${BTC_RPC_USER}/;
-			/^rpcpassword/s/.*/rpcpassword=${BTC_RPC_PASS}/;
-			/^bind/s/.*/bind=0.0.0.0:${BTC_P2P_PORT}/;
-			/^rpcbind/s/.*/rpcbind=0.0.0.0:${BTC_RPC_PORT}/;
-		" "${BTC_CONF}" 2>&1) || {
-			log_exit "Unable to update values in bitcoin.conf file: ${COLCYAN}${BTC_CONF}${COLRESET}"
-		}
-		${VERBOSE} && log "${COLYELLOW}Deleting temp bitcoin.conf file: ${BTC_CONF}.tmp${COLRESET}"
-		$(rm "${BTC_CONF}.tmp" 2>&1) || {
-			log_exit "Unable to delete tmp bitcoin.conf file: ${COLCYAN}${BTC_CONF}.tmp${COLRESET}"
-		}
-	fi
+    # ## update bitcoin.conf with btc vars
+	# if check_flags "${FLAGS_ARRAY[*]}" "bitcoin"; then
+	# 	[[ ! -f "${BTC_CONF}" ]] && cp "${BTC_CONF}.sample" "${BTC_CONF}"
+	# 	${VERBOSE} && log "Matched bitcoin flag"
+	# 	${VERBOSE} && log "${COLYELLOW}Updating values in ${BTC_CONF} from .env${COLRESET}"
+	# 	$(sed -i.tmp "
+	# 		/^rpcport/s/.*/rpcport=${BTC_RPC_PORT}/; 
+	# 		/^rpcuser/s/.*/rpcuser=${BTC_RPC_USER}/;
+	# 		/^rpcpassword/s/.*/rpcpassword=${BTC_RPC_PASS}/;
+	# 		/^bind/s/.*/bind=0.0.0.0:${BTC_P2P_PORT}/;
+	# 		/^rpcbind/s/.*/rpcbind=0.0.0.0:${BTC_RPC_PORT}/;
+	# 	" "${BTC_CONF}" 2>&1) || {
+	# 		log_exit "Unable to update values in bitcoin.conf file: ${COLCYAN}${BTC_CONF}${COLRESET}"
+	# 	}
+	# 	${VERBOSE} && log "${COLYELLOW}Deleting temp bitcoin.conf file: ${BTC_CONF}.tmp${COLRESET}"
+	# 	$(rm "${BTC_CONF}.tmp" 2>&1) || {
+	# 		log_exit "Unable to delete tmp bitcoin.conf file: ${COLCYAN}${BTC_CONF}.tmp${COLRESET}"
+	# 	}
+	# fi
 	return 0
 }
 
@@ -519,10 +519,10 @@ set_flags() {
 			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
-				# If bitcoin flag is detected log it
-				if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" || "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
-					${VERBOSE} && log "flags: Bitcoin flag detected on ${NETWORK}"
-				fi
+				# # If bitcoin flag is detected log it
+				# if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" || "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
+				# 	${VERBOSE} && log "flags: Bitcoin flag detected on ${NETWORK}"
+				# fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
 					log_error "Missing compose file: ${COLCYAN}${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml${COLRESET}"
@@ -585,7 +585,7 @@ docker_up() {
 	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
 	if [[ "${NETWORK}" == "private-testnet" ]]; then
 		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml"
-		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
+		# [[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
 	fi
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
@@ -717,38 +717,13 @@ status() {
 	fi
 }
 
-# Command taht delete Bitcoins persistent data
-reset_data_bitcoin() {
-			  ${VERBOSE} && log "  Running: rm -rf ${BITCOIN_BLOCKCHAIN_FOLDER}"
-			  rm -rf "${BITCOIN_BLOCKCHAIN_FOLDER}"  >/dev/null 2>&1 || { 
-				# Log error and exit if data wasn't deleted (permission denied etc)
-				log_error "Failed to remove ${COLCYAN}${BITCOIN_BLOCKCHAIN_FOLDER}${COLRESET}"
-				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
-			  }
-			  log_info "Persistent data deleted for ${COLYELLOW}Bitcoin blockchain${COLRESET}."
-}
-
-# Commands that delete Stacks persistent data
-reset_data_stacks() {
-			  # confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}? (Bitcoin blockchain data, if it exists won't be affected)" || log_exit "Delete Cancelled"
-			  ${VERBOSE} && log "  Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
-			  rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
-				# Log error and exit if data wasn't deleted (permission denied etc)
-				log_error "Failed to remove ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}${COLRESET}"
-				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
-			  }
-			  log_info "Persistent data deleted for Stacks ${COLYELLOW}${NETWORK}${COLRESET}."
-			  echo
-}
-
 # Delete persistent data for NETWORK
-#     - Note: does not delete BNS data
 reset_data() {
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		${VERBOSE} && log "Found existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
-		if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain" ]; then
-			${VERBOSE} && log "Found existing bitcoin data on default location: ${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain"  
-		fi
+		# if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain" ]; then
+		# 	${VERBOSE} && log "Found existing bitcoin data on default location: ${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain"  
+		# fi
 		if ! check_network; then
 			# Exit if operation isn't confirmed
 			confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}?" || log_exit "Delete Cancelled"
@@ -758,8 +733,6 @@ reset_data() {
 				log_error "Failed to remove ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}${COLRESET}"
 				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
 			}
-			# log "Please note that BNS data is never deleted."
-			# log "If you have used the Bitcoin flag and changed its default data location out of ${SCRIPTPATH}/persistent-data/${NETWORK}, it will be unaffected."		
 			log_info "Persistent data deleted"
 			echo
 			exit 0
