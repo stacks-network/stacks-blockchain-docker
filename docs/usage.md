@@ -37,8 +37,6 @@ Usage:
 
 ### Stopping Services
 
-Start services:
-
 ```bash
 ./manage.sh -n <network> -a stop
 ```

@@ -38,7 +38,7 @@ $ ./manage.sh -n <network> -a restart
 If the `stacks-blockchain-api` emits an error like the following: \
 `stacks-blockchain-api    | {"level":"error","message":"Error executing:\nSELECT bit_xor(1)\n       ^^^^\n\nfunction bit_xor(integer) does not exist\n","timestamp":"2022-08-23T15:40:56.929Z"}` \
 The postgres instance will need to be upgraded from version `13` to >= `14` (postgres 14 has _bit_xor_ enabled by default). \
-There is a script that will attempt to upgrade the database from 13 -> 14 at [`./scripts/postgres_upgrade.sh`](../scripts/postgrs_upgrade.sh). 
+There is a script that will attempt to upgrade the database from 13 -> 14 at [`./scripts/postgres_upgrade.sh`](../scripts/postgres_upgrade.sh). 
 
 ### Attempt to upgrade the postgres data
 ```bash
