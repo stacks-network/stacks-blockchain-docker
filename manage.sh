@@ -8,9 +8,6 @@ shopt -s expand_aliases
 export NETWORK="mainnet"
 export ACTION=""
 export PROFILE="stacks-blockchain"
-# export CONFIG_TOML_TO_USE=""
-# CONFIG_TOML_WITHOUT_BITCOIN_FLAG=/src/stacks-blockchain/Config.toml
-# CONFIG_TOML_WITH_BITCOIN_FLAG=/src/stacks-blockchain/Config-with-bitcoin-flag.toml
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
 FLAGS="proxy"
@@ -442,15 +439,6 @@ update_configs(){
 		BTC_P2P_PORT=${TBTC_P2P_PORT}
     fi
 	CONFIG_TOML="${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
-	# BTC_CONF="${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
-	# ${VERBOSE} && log "update_configs BTC_HOST: ${BTC_HOST}"
-	# ${VERBOSE} && log "update_configs BTC_RPC_USER: ${BTC_RPC_USER}"
-	# ${VERBOSE} && log "update_configs BTC_RPC_PASS: ${BTC_RPC_PASS}"
-	# ${VERBOSE} && log "update_configs BTC_RPC_PORT: ${BTC_RPC_PORT}"
-	# ${VERBOSE} && log "update_configs BTC_P2P_PORT: ${BTC_P2P_PORT}"
-	# ${VERBOSE} && log "update_configs CONFIG_TOML: ${CONFIG_TOML}"
-	# ${VERBOSE} && log "update_configs BTC_CONF: ${BTC_CONF}"
-	# ${VERBOSE} && log "update_configs NETWORK: ${NETWORK}"
 
     ## update Config.toml with btc vars
 	[[ ! -f "${CONFIG_TOML}" ]] && cp "${CONFIG_TOML}.sample" "${CONFIG_TOML}"
@@ -468,25 +456,6 @@ update_configs(){
     $(rm "${CONFIG_TOML}.tmp" 2>&1) || {
         log_exit "Unable to delete tmp Config.toml file: ${COLCYAN}${CONFIG_TOML}.tmp${COLRESET}"
     }
-    # ## update bitcoin.conf with btc vars
-	# if check_flags "${FLAGS_ARRAY[*]}" "bitcoin"; then
-	# 	[[ ! -f "${BTC_CONF}" ]] && cp "${BTC_CONF}.sample" "${BTC_CONF}"
-	# 	${VERBOSE} && log "Matched bitcoin flag"
-	# 	${VERBOSE} && log "${COLYELLOW}Updating values in ${BTC_CONF} from .env${COLRESET}"
-	# 	$(sed -i.tmp "
-	# 		/^rpcport/s/.*/rpcport=${BTC_RPC_PORT}/; 
-	# 		/^rpcuser/s/.*/rpcuser=${BTC_RPC_USER}/;
-	# 		/^rpcpassword/s/.*/rpcpassword=${BTC_RPC_PASS}/;
-	# 		/^bind/s/.*/bind=0.0.0.0:${BTC_P2P_PORT}/;
-	# 		/^rpcbind/s/.*/rpcbind=0.0.0.0:${BTC_RPC_PORT}/;
-	# 	" "${BTC_CONF}" 2>&1) || {
-	# 		log_exit "Unable to update values in bitcoin.conf file: ${COLCYAN}${BTC_CONF}${COLRESET}"
-	# 	}
-	# 	${VERBOSE} && log "${COLYELLOW}Deleting temp bitcoin.conf file: ${BTC_CONF}.tmp${COLRESET}"
-	# 	$(rm "${BTC_CONF}.tmp" 2>&1) || {
-	# 		log_exit "Unable to delete tmp bitcoin.conf file: ${COLCYAN}${BTC_CONF}.tmp${COLRESET}"
-	# 	}
-	# fi
 	return 0
 }
 
@@ -519,10 +488,6 @@ set_flags() {
 			if [ -f "${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml" ]; then
 				${VERBOSE} && log "compose file for ${item} is found"
 				flags="${flags} -f ${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml"
-				# # If bitcoin flag is detected log it
-				# if [[ "${NETWORK}" == "mainnet" || "${NETWORK}" == "testnet" ]] && [[ "${action}" == "up" || "${action}" == "down" ]] && [[ ${item} == "bitcoin" ]]; then
-				# 	${VERBOSE} && log "flags: Bitcoin flag detected on ${NETWORK}"
-				# fi
 			else
 				if [ "${profile}" != "stacks-blockchain" ];then
 					log_error "Missing compose file: ${COLCYAN}${SCRIPTPATH}/compose-files/${flag_path}/${item}.yaml${COLRESET}"
@@ -585,7 +550,6 @@ docker_up() {
 	[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/Config.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/Config.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
 	if [[ "${NETWORK}" == "private-testnet" ]]; then
 		[[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml.sample" "${SCRIPTPATH}/conf/${NETWORK}/puppet-chain.toml"
-		# [[ ! -f "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf" ]] && cp "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf.sample" "${SCRIPTPATH}/conf/${NETWORK}/bitcoin.conf"
 	fi
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
@@ -721,9 +685,6 @@ status() {
 reset_data() {
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		${VERBOSE} && log "Found existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
-		# if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain" ]; then
-		# 	${VERBOSE} && log "Found existing bitcoin data on default location: ${SCRIPTPATH}/persistent-data/${NETWORK}/bitcoin-blockchain"  
-		# fi
 		if ! check_network; then
 			# Exit if operation isn't confirmed
 			confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}?" || log_exit "Delete Cancelled"
