@@ -1,5 +1,22 @@
 # Workarounds to potential issues
 
+## Changes to BNS import using stacks-blockchain-api version >= 5.0.0
+
+Some changes introduced in this version of the API breaks the way BNS has been imported in the past. \
+In this version, the BNS import has been moved to the event-replay. Notably, this makes it impossible to *first* import BNS data before syncing. \
+The only way I've found to import BNS data using this version is to start the sync, stop it, then run the event-replay import with `BNS_IMPORT_DIR` uncommented, then restart the services. \
+<https://github.com/hirosystems/stacks-blockchain-api/issues/1327> 
+
+```bash
+$ ./manage.sh -n <network> -a start
+# let this run until some blocks have been downloaded
+$ ./manage.sh -n <network> -a stop 
+$ ./manage.sh -n <network> -a import
+# this will take a while since it should now import BNS data
+$ ./manage.sh -n <network> -a restart
+```
+
+
 ## Port(s) already in use
 
 If you have a port conflict, typically this means you already have a process using that same port. \

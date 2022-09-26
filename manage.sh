@@ -8,6 +8,7 @@ shopt -s expand_aliases
 export NETWORK="mainnet"
 export ACTION=""
 export PROFILE="stacks-blockchain"
+STACKS_CHAIN_ID="2147483648"
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
 FLAGS="proxy"
@@ -199,7 +200,7 @@ check_device() {
 		log_warn "⚠️  ${COLYELLOW}WARNING${COLRESET}"
 		log_warn "⚠️  MacOS M1 CPU detected - NOT recommended for this repo"
 		log_warn "⚠️  see README for details"
-		log_warn "⚠️      https://github.com/stacks-network/stacks-blockchain-docker#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
+		log_warn "⚠️      https://github.com/stacks-network/stacks-blockchain-docker/blob/master/docs/requirements.md#macos-with-an-m1-processor-is-not-recommended-for-this-repo"
 		confirm "Continue Anyway?" || exit_error "${COLRED}Exiting${COLRESET}"
 	fi
 }
@@ -852,6 +853,8 @@ fi
 USER_ID=$(id -u "$(whoami)")
 export USER_ID="${USER_ID}"
 export DOCKER_NETWORK="${DOCKER_NETWORK}"
+export STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
+${VERBOSE} && log "Exporting STACKS_CHAIN_ID: ${STACKS_CHAIN_ID}"
 ${VERBOSE} && log "Exporting USER_ID: ${USER_ID}"
 ${VERBOSE} && log "Exporting DOCKER_NETWORK: ${DOCKER_NETWORK}"
 
@@ -956,6 +959,7 @@ do
 		;;
 	bns)
 		${VERBOSE} && log "calling download_bns_data function"
+		export STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
 		download_bns_data
 		;;	
 	-h|--help)
@@ -978,6 +982,14 @@ do
 	shift
 done
 
+# If ACTION is not set, exit
+if [ ! "${ACTION}" ]; then
+	log_error "Missing ${COLYELLOW}-a|--action${COLRESET} arg";
+	${VERBOSE} && log "calling usage function"
+	usage
+fi
+
+# Explicitly export these vars since we use them in compose files
 # If NETWORK is not set (either cmd line or default of mainnet), exit
 if [ ! "${NETWORK}" ]; then
 	log_error "Missing ${COLYELLOW}-n|--network${COLRESET} arg"
@@ -999,19 +1011,10 @@ else
 			;;
 	esac
 fi
-
-# Explicitly export these vars since we use them in compose files
-${VERBOSE} && log "exporting STACKS_CHAIN_ID: ${STACKS_CHAIN_ID}"
+${VERBOSE} && log "setting STACKS_CHAIN_ID based on arg: ${STACKS_CHAIN_ID}"
 ${VERBOSE} && log "exporting NETWORK: ${NETWORK}"
 export STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
 export NETWORK=${NETWORK}
-
-# If ACTION is not set, exit
-if [ ! "${ACTION}" ]; then
-	log_error "Missing ${COLYELLOW}-a|--action${COLRESET} arg";
-	${VERBOSE} && log "calling usage function"
-	usage
-fi
 
 # Call function based on ACTION arg
 case ${ACTION} in
