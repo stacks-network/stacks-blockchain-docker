@@ -257,7 +257,7 @@ check_event_replay(){
 	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
 		log "${ACTION} Checking for a completed event-replay import"
 	fi
-	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Event import and playback successful'" || test ${?} -eq 141
+	eval "docker logs stacks-blockchain-api --tail 20 2>&1 | grep -q 'Event import and playback successful'" || test ${?} -eq 141
 	check_import_finished="${?}"	
 	${VERBOSE} && log "check_import_finished: ${check_import_finished}"
 	##
@@ -273,7 +273,7 @@ check_event_replay(){
 	if [[ "${ACTION}" == "export" || "${ACTION}" == "import" ]]; then
 		log "${ACTION} Checking for a completed event-replay export"
 	fi
-	eval "docker logs stacks-blockchain-api 2>&1 | tail -n20 | grep -q 'Export successful'" || test ${?} -eq 141
+	eval "docker logs stacks-blockchain-api --tail 20 2>&1 | grep -q 'Export successful'" || test ${?} -eq 141
 	check_export_finished="${?}"
 	${VERBOSE} && log "check_export_finished: ${check_export_finished}"
 
@@ -387,6 +387,7 @@ bns_import_env() {
 	source "${ENV_FILE}"
 	return 0
 }
+
 # adjust STACKS_EXPORT_EVENTS_FILE for mocknet
 events_file_env(){
 	if "${REVERT_EVENTS}"; then

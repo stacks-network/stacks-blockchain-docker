@@ -1,5 +1,10 @@
 # API Upgrades
 
+The current major version of the API (version `5.x.x` ) isn't allowing an event-replay to upgrade from API version `4.x.x` \
+An issue has been filed: https://github.com/hirosystems/stacks-blockchain-api/issues/1336 \
+For now, it's recommended to sync from genesis if using API version `5.x.x`
+
+
 ## Breaking API schema changes
 
 Typically when there is a major version change in the Stacks Blockchain API, an event-replay import will be required \
