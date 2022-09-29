@@ -14,10 +14,11 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 
 ### Global Settings
 
-| Name                                   | Description                                                  | Value                                      |
+| Name                                   | Description                                                  | Default Value                              |
 | -------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
 | `VERBOSE`                              | Enables verbose logging when `./manage.sh` is invoked        | `false`                                    |
 | `DOCKER_NETWORK`                       | Name of docker network used to launch services               | `stacks`                                   |
+| `EXPOSE_POSTGRES`                      | Expose postgres service to the host OS                       | `false`                                    |
 | `STACKS_BLOCKCHAIN_VERSION`            | Stacks Blockchain Docker image version                       | `latest released version`                  |
 | `STACKS_BLOCKCHAIN_API_VERSION`        | Stacks Blockchain API Docker image version                   | `latest released version`                  |
 | `POSTGRES_VERSION`                     | Postgres Docker image version                                | `14`                                       |
@@ -28,7 +29,7 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 
 #### Recommened to leave these settings _as is_
 
-| Name                                   | Description                                                  | Value                                      |
+| Name                                   | Description                                                  | Default Value                              |
 | -------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
 | `NODE_ENV`                             | Application environment the API is running                   | `production`                               |
 | `GIT_TAG`                              | Application Git tag                                          | `master`                                   |
@@ -49,7 +50,7 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 
 #### Options commented out by default
 
-| Name                                   | Description                                                  | Value                                      |
+| Name                                   | Description                                                  | Default Value                              |
 | -------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
 | `STACKS_API_ENABLE_FT_METADATA`        | Enables storing metadata for fungible events                 | `0`                                        |
 | `STACKS_API_ENABLE_NFT_METADATA`       | Enables storing metadata for non-fungible events             | `0`                                        |
@@ -69,7 +70,7 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 
 #### Mainnet Burnchain Defaults
 
-| Name                                   | Description                                                  | Value                                      |
+| Name                                   | Description                                                  | Default Value                              |
 | -------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
 | `BTC_HOST`                             | FQDN of bitcoin mainnnet host                                | `bitcoin.mainnet.stacks.org`               |
 | `BTC_RPC_USER`                         | RPC username for bitcoin mainnet host                        | `stacks`                                   |
@@ -79,7 +80,7 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 
 #### Testnet Burnchain Defaults
 
-| Name                                   | Description                                                  | Value                                      |
+| Name                                   | Description                                                  | Default Value                              |
 | -------------------------------------- | ------------------------------------------------------------ | ------------------------------------------ |
 | `TBTC_HOST`                            | FQDN of bitcoin mainnnet host                                | `bitcoin.testnet.stacks.org`               |
 | `TBTC_RPC_USER`                        | RPC username for bitcoin mainnet host                        | `stacks`                                   |
