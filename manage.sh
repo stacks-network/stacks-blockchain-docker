@@ -749,6 +749,15 @@ download_bns_data() {
 
 # Perform the Hiro API event-replay
 event_replay(){
+	if [ "${STACKS_BLOCKCHAIN_API_VERSION}" == "5.0.1" ]; then
+	 	echo
+		log "${COLYELLOW}${COLBOLD}There is an open issue running event-replay with this version (${STACKS_BLOCKCHAIN_API_VERSION}) of the API${COLRESET}"
+		log "    https://github.com/hirosystems/stacks-blockchain-api/issues/1336"
+		log "For now, use prior version of the API: ${COLBOLD}4.2.1${COLRESET}"
+		log "Or sync from genesis using API: ${COLBOLD}5.0.1${COLRESET}"
+		echo
+		log_exit "${1} not supported for this version of the API"
+	fi
 	if [ "${STACKS_EXPORT_EVENTS_FILE}" != "" ]; then
 		${VERBOSE} && log "Using defined STACKS_EXPORT_EVENTS_FILE: ${STACKS_EXPORT_EVENTS_FILE}"
 		# Check if the event-replay file exists first
