@@ -229,9 +229,10 @@ check_api(){
 
 # Check if services are running
 check_network() {
+	local profile="${1}"
 	${VERBOSE} && log "Checking if default services are running"
 	# Determine if the services are already running
-	if [[ $(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" ps -q) ]]; then
+	if [[ $(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" --profile ${profile} ps -q) ]]; then
 		${VERBOSE} && log "Docker services have a pid"
 		# Docker is running, return success
 		return 0
@@ -539,7 +540,7 @@ ordered_stop() {
 
 # Configure options to bring services up
 docker_up() {
-	if check_network; then
+	if check_network "${PROFILE}"; then
 		echo
 		log_exit "Stacks Blockchain services are already running"
 	fi
@@ -597,7 +598,7 @@ docker_up() {
 
 # Configure options to bring services down
 docker_down() {
-	if ! check_network; then
+	if ! check_network "${PROFILE}"; then
 		if [ "${ACTION}" != "restart" ];then
 			${VERBOSE} && log "calling status function"
 			status
@@ -627,7 +628,7 @@ docker_logs(){
 	# Tail docker logs for the last x lines via LOG_TAIL as 'param'
 	local param="${1}"
 	${VERBOSE} && log "param: ${param}"
-	if ! check_network; then
+	if ! check_network "${PROFILE}"; then
 		log_error "No ${COLYELLOW}${NETWORK}${COLRESET} services running"
 		usage
 	fi
@@ -637,7 +638,7 @@ docker_logs(){
 
 # Export docker logs for the main services to files in ./exported-logs
 logs_export(){
-	if ! check_network; then
+	if ! check_network "${PROFILE}"; then
 		log_error "No ${COLYELLOW}${NETWORK}${COLRESET} services running"
 		usage
 	fi
@@ -673,7 +674,7 @@ docker_pull() {
 
 # Check if the services are running
 status() {
-	if check_network; then
+	if check_network "${PROFILE}"; then
 		echo
 		log "${COLBOLD}Stacks Blockchain services are running${COLRESET}"
 		echo
@@ -691,7 +692,7 @@ status() {
 reset_data() {
 	if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]; then
 		${VERBOSE} && log "Found existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
-		if ! check_network; then
+		if ! check_network "${PROFILE}"; then
 			# Exit if operation isn't confirmed
 			confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}?" || log_exit "Delete Cancelled"
 			${VERBOSE} && log "  Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
@@ -719,7 +720,7 @@ reset_data() {
 download_bns_data() {
 	if [ "${BNS_IMPORT_DIR}" ]; then
 		${VERBOSE} && log "Using defined BNS_IMPORT_DIR: ${BNS_IMPORT_DIR}"
-		if ! check_network; then
+		if ! check_network "${PROFILE}"; then
 			SUPPORTED_FLAGS+=("bns")
 			FLAGS_ARRAY=(bns)
 			PROFILE="bns"
@@ -767,7 +768,7 @@ event_replay(){
 			log_error "Missing event-replay file: ${COLCYAN}${tsv_file}${COLRESET}"
 		fi
 		${VERBOSE} && log "Using local event-replay file: ${tsv_file}"
-		if check_network; then
+		if check_network "${PROFILE}"; then
 			${VERBOSE} && log "calling docker_down function"
 			docker_down
 		fi
