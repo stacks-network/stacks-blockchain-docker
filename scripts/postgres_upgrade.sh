@@ -73,6 +73,11 @@ echo "  [ import ] Restore postgres password from .env"
 sudo docker exec -it postgres_dump \
     sh -c "psql -U postgres -c \"ALTER USER postgres PASSWORD '${PG_PASSWORD}';\""
 
+echo "  [ import ] Restore postgres password from .env"
+
+echo "  [ import ] Stopping postgres container"
+eval "sudo docker stop postgres_dump > /dev/null  2>&1" || exit_error "[ export ] Error stopping postgres container"
+
 echo
 echo "*** Removing pg_dump sql file"
 eval "rm -rf ${SCRIPTPATH}/pg_dump"

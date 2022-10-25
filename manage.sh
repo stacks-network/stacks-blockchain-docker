@@ -205,27 +205,27 @@ check_device() {
 	fi
 }
 
-# Try to detect a breaking (major version change) in the API by comparing local version to .env definition
-# Return non-zero if a breaking change is detected (this logic is suspect, but should be ok)
-check_api(){
-	# Try to detect if there is a breaking API change based on major version change
-	${VERBOSE} && log "Checking API version for potential breaking change"
-	if [ "${PROFILE}" != "event-replay" ]; then
-		CURRENT_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | cut -f 1 -d "." | head -1)
-		CONFIGURED_API_VERSION=$( echo "${STACKS_BLOCKCHAIN_API_VERSION}" | cut -f 1 -d ".")
-		${VERBOSE} && log "CURRENT_API_VERSION: ${CURRENT_API_VERSION}"
-		${VERBOSE} && log "CONFIGURED_API_VERSION: ${CONFIGURED_API_VERSION}"
-		if [ "${CURRENT_API_VERSION}" != "" ]; then
-			if [ "${CURRENT_API_VERSION}" -lt "${CONFIGURED_API_VERSION}" ];then
-				echo
-				log_warn "${COLBOLD}stacks-blockchain-api contains a breaking schema change${COLRESET} ( Version: ${COLYELLOW}${STACKS_BLOCKCHAIN_API_VERSION}${COLRESET} )"
-				return 0
-			fi
-		fi
-	fi
-	${VERBOSE} && log "No schema-breaking change detected"
-	return 1
-}
+# # Try to detect a breaking (major version change) in the API by comparing local version to .env definition
+# # Return non-zero if a breaking change is detected (this logic is suspect, but should be ok)
+# check_api(){
+# 	# Try to detect if there is a breaking API change based on major version change
+# 	${VERBOSE} && log "Checking API version for potential breaking change"
+# 	if [ "${PROFILE}" != "event-replay" ]; then
+# 		CURRENT_API_VERSION=$(docker images --format "{{.Tag}}" blockstack/stacks-blockchain-api  | cut -f 1 -d "." | head -1)
+# 		CONFIGURED_API_VERSION=$( echo "${STACKS_BLOCKCHAIN_API_VERSION}" | cut -f 1 -d ".")
+# 		${VERBOSE} && log "CURRENT_API_VERSION: ${CURRENT_API_VERSION}"
+# 		${VERBOSE} && log "CONFIGURED_API_VERSION: ${CONFIGURED_API_VERSION}"
+# 		if [ "${CURRENT_API_VERSION}" != "" ]; then
+# 			if [ "${CURRENT_API_VERSION}" -lt "${CONFIGURED_API_VERSION}" ];then
+# 				echo
+# 				log_warn "${COLBOLD}stacks-blockchain-api contains a breaking schema change${COLRESET} ( Version: ${COLYELLOW}${STACKS_BLOCKCHAIN_API_VERSION}${COLRESET} )"
+# 				return 0
+# 			fi
+# 		fi
+# 	fi
+# 	${VERBOSE} && log "No schema-breaking change detected"
+# 	return 1
+# }
 
 # Check if services are running
 check_network() {
@@ -570,23 +570,23 @@ docker_up() {
 		update_configs
 	fi
 	
-    # See if we can detect a Hiro API major version change requiring an event-replay import
-	if check_api; then
-		log_warn "    Required to perform a stacks-blockchain-api event-replay:"
-		log_warn "        https://github.com/hirosystems/stacks-blockchain-api#event-replay "
-		if confirm "Run event-replay now?"; then
-			## Bring running services down
-			${VERBOSE} && log "upgrade api: calling docker_down function"
-			docker_down
-			## Pull new images if available
-			${VERBOSE} && log "upgrade api: docker_pull function"
-			docker_pull
-			## Run the event-replay import
-			${VERBOSE} && log "upgrade api: event-replay import function"
-			event_replay "import"
-		fi
-		log_exit "Event-replay is required"
-	fi
+    # # See if we can detect a Hiro API major version change requiring an event-replay import
+	# if check_api; then
+	# 	log_warn "    Required to perform a stacks-blockchain-api event-replay:"
+	# 	log_warn "        https://github.com/hirosystems/stacks-blockchain-api#event-replay "
+	# 	if confirm "Run event-replay now?"; then
+	# 		## Bring running services down
+	# 		${VERBOSE} && log "upgrade api: calling docker_down function"
+	# 		docker_down
+	# 		## Pull new images if available
+	# 		${VERBOSE} && log "upgrade api: docker_pull function"
+	# 		docker_pull
+	# 		## Run the event-replay import
+	# 		${VERBOSE} && log "upgrade api: event-replay import function"
+	# 		event_replay "import"
+	# 	fi
+	# 	log_exit "Event-replay is required"
+	# fi
 	${VERBOSE} && log "Copying ${COLCYAN}${ENV_FILE}${COLRESET} -> ${COLCYAN}${ENV_FILE}.save${COLRESET}"
 	$(cp -a "${ENV_FILE}" "${ENV_FILE}.save") >/dev/null 2>&1 || { 
 		log_exit "Unable to copy ${COLCYAN}${ENV_FILE}${COLRESET} -> ${COLCYAN}${ENV_FILE}.save${COLRESET}"
