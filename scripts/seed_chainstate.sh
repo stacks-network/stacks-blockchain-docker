@@ -1,22 +1,24 @@
 
 
 #!/usr/bin/env bash
-export NETWORK=mainnet
-export API_VERSION=5.0.0
-export STACKS_VERSION=2.05.0.3.0
-export POSTGRES_VERSION=14
-export CONTAINER=postgres_import
-
-set -eo pipefail
-
 echo "Setting variables to be used throughout upgrade"
 ABS_PATH="$( cd -- "$(dirname '${0}')" >/dev/null 2>&1 ; pwd -P )"
-export SCRIPTPATH=${ABS_PATH}
-# echo $SCRIPTPATH
-mkdir -p ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain
-mkdir -p ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay
-mkdir -p ${SCRIPTPATH}/persistent-data/${NETWORK}/postgres
-source .env
+export SCRIPTPATH="${ABS_PATH}"
+export CONTAINER="postgres_import"
+ENV_FILE="${SCRIPTPATH}/.env"
+# If no .env file exists, copy the sample env and export the vars
+if [ ! -f "${ENV_FILE}" ];then
+	cp -a "${SCRIPTPATH}/sample.env" "${ENV_FILE}"
+fi
+source "${ENV_FILE}"
+set -eo pipefail
+
+
+mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain"
+mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
+mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/postgres"
+COLRED=$'\033[31m' # Red
+COLRESET=$'\033[0m' # reset color
 
 # Function to ask for confirmation. Loop until valid input is received
 confirm() {
@@ -41,20 +43,23 @@ echo "using files/methods from https://docs.hiro.so/references/hiro-archiver#wha
 echo ""
 confirm "Seed blockchain data from hiro-archiver?" || exit_error "${COLRED}Exiting${COLRESET}"
 
-echo "  Downloading stacks-blockchain data (${STACKS_VERSION} to: ${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_VERSION}-latest.tar.gz"
-curl -L https://storage.googleapis.com/hirosystems-archive/${NETWORK}/blockchain/${NETWORK}-blockchain-${STACKS_VERSION}-latest.tar.gz -o ${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_VERSION}-latest.tar.gz
+echo "  Downloading stacks-blockchain data (${STACKS_BLOCKCHAIN_VERSION} to: ${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz"
+curl -L https://storage.googleapis.com/hirosystems-archive/${NETWORK}/blockchain/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz -o "${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz"
 
-echo "  Downloading stacks-blockchain-api data (${API_VERSION} to: ${SCRIPTPATH}/${NETWORK}-blockchain-api-${API_VERSION}-latest.tar.gz"
-curl -L https://storage.googleapis.com/hirosystems-archive/${NETWORK}/api/${NETWORK}-blockchain-api-${API_VERSION}-latest.tar.gz -o ${SCRIPTPATH}/${NETWORK}-blockchain-api-${API_VERSION}-latest.tar.gz
+echo "  Downloading stacks-blockchain-api data (${STACKS_BLOCKCHAIN_API_VERSION} to: ${SCRIPTPATH}/${NETWORK}-blockchain-api-${STACKS_BLOCKCHAIN_API_VERSION}-latest.tar.gz"
+curl -L https://storage.googleapis.com/hirosystems-archive/${NETWORK}/api/${NETWORK}-blockchain-api-${STACKS_BLOCKCHAIN_API_VERSION}-latest.tar.gz -o "${SCRIPTPATH}/${NETWORK}-blockchain-api-${STACKS_BLOCKCHAIN_API_VERSION}-latest.tar.gz"
 
 echo "  Downloading postgres data (${POSTGRES_VERSION} to: ${SCRIPTPATH}/${NETWORK}-postgres-${POSTGRES_VERSION}-latest.tar.gz"
-curl -L https://storage.googleapis.com/hirosystems-archive/${NETWORK}/postgres/${NETWORK}-postgres-${POSTGRES_VERSION}-latest.tar.gz -o ${SCRIPTPATH}/${NETWORK}-postgres-${POSTGRES_VERSION}-latest.tar.gz
+curl -L https://storage.googleapis.com/hirosystems-archive/${NETWORK}/postgres/${NETWORK}-postgres-${POSTGRES_VERSION}-latest.tar.gz -o "${SCRIPTPATH}/${NETWORK}-postgres-${POSTGRES_VERSION}-latest.tar.gz"
 
 echo "  Extracting stacks-blockchain data to: ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain"
-tar -xvf ${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_VERSION}-latest.tar.gz -C ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain/
+tar -xvf "${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz" -C "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain/"
 
 echo "  Extracting stacks-blockchain-api data to: ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay/"
-tar -xvf ${SCRIPTPATH}/${NETWORK}-blockchain-api-${API_VERSION}-latest.tar.gz -C ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay/
+tar -xvf "${SCRIPTPATH}/${NETWORK}-blockchain-api-${STACKS_BLOCKCHAIN_API_VERSION}-latest.tar.gz" -C "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay/"
+
+echo "  Chowning data to $(whoami)"
+chown -R $(whoami):$(whoami) "${SCRIPTPATH}/persistent-data/${NETWORK}"
 
 echo
 echo "*** Postgres Import ***"
@@ -65,7 +70,12 @@ echo "  Sleeping for 15s to give time for Postgres to start"
 sleep 15
 
 echo "  Import backed up postgres data from ${SCRIPTPATH}/${NETWORK}-postgres-${POSTGRES_VERSION}-latest.tar.gz"
-eval "sudo docker exec ${CONTAINER} sh -c \"pg_restore -U postgres -v -C -d postgres /tmp/stacks_node_postgres.tar.gz\"" || exit_error "[ export ] Error restoring postgres data"
+##
+## this shouldn't exit on ignored errrors: pg_restore: warning: errors ignored on restore: 213
+##
+eval "sudo docker exec ${CONTAINER} sh -c \"pg_restore -U postgres -v -C -d postgres /tmp/stacks_node_postgres.tar.gz\"" || echo "[ export ] Error restoring postgres data"
+# eval "sudo docker exec ${CONTAINER} sh -c \"pg_restore -U postgres -v -C -d postgres /tmp/stacks_node_postgres.tar.gz\"" || echo "warnings encountered"
+# eval "sudo docker exec ${CONTAINER} sh -c \"pg_restore -U postgres -v -C -d postgres /tmp/stacks_node_postgres.tar.gz\""
 
 echo "  [ import ] Restore postgres password from .env"
 sudo docker exec -it ${CONTAINER} \
