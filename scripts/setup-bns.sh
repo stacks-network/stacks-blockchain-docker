@@ -8,6 +8,12 @@ BNS_FILES=(
     subdomains.csv
 )
 
+if [ ! ${USER_ID} ]; then
+  USER_ID=$(id -u "$(whoami)")
+fi
+
+USER_ID=$(id -u "$(whoami)")
+
 echo ""
 echo "*********************************"
 echo "Setting up BNS Data"

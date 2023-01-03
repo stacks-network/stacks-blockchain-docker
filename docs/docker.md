@@ -36,11 +36,9 @@ The script `manage.sh` uses docker, so to avoid the requirement of needing to ru
 
 This will avoid the need of running the script with root privileges for all operations **except** the removal of data.
 
-
-
-
 ## Debian based install
-Copy/paste the following *should* work to get docker and other requirements setup on a Debian based host
+
+Copy/paste the following _should_ work to get docker and other requirements setup on a Debian based host
 
 ```bash
 sudo apt-get update && sudo apt-get install -y git jq sed curl
@@ -62,5 +60,3 @@ DESTINATION=/usr/local/bin/docker-compose
 sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
 sudo chmod 755 $DESTINATION
 ```
-
-
