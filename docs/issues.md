@@ -1,21 +1,22 @@
 # Workarounds to potential issues
 
+## Error message
+
 ## Changes to BNS import using stacks-blockchain-api version >= 5.0.0
 
 Some changes introduced in this version of the API breaks the way BNS has been imported in the past. \
-In this version, the BNS import has been moved to the event-replay. Notably, this makes it impossible to *first* import BNS data before syncing. \
+In this version, the BNS import has been moved to the event-replay. Notably, this makes it impossible to _first_ import BNS data before syncing. \
 The only way I've found to import BNS data using this version is to start the sync, stop it, then run the event-replay import with `BNS_IMPORT_DIR` uncommented, then restart the services. \
-<https://github.com/hirosystems/stacks-blockchain-api/issues/1327> 
+<https://github.com/hirosystems/stacks-blockchain-api/issues/1327>
 
 ```bash
 $ ./manage.sh -n <network> -a start
 # let this run until some blocks have been downloaded
-$ ./manage.sh -n <network> -a stop 
+$ ./manage.sh -n <network> -a stop
 $ ./manage.sh -n <network> -a import
 # this will take a while since it should now import BNS data
 $ ./manage.sh -n <network> -a restart
 ```
-
 
 ## Port(s) already in use
 
@@ -52,19 +53,19 @@ $ ./manage.sh -n <network> -a restart
 ```
 
 ## Missing bit_xor
+
 If the `stacks-blockchain-api` emits an error like the following: \
 `stacks-blockchain-api    | {"level":"error","message":"Error executing:\nSELECT bit_xor(1)\n       ^^^^\n\nfunction bit_xor(integer) does not exist\n","timestamp":"2022-08-23T15:40:56.929Z"}` \
 The postgres instance will need to be upgraded from version `13` to >= `14` (postgres 14 has _bit_xor_ enabled by default). \
-There is a script that will attempt to upgrade the database from 13 -> 14 at [`./scripts/postgres_upgrade.sh`](../scripts/postgres_upgrade.sh). 
+There is a script that will attempt to upgrade the database from 13 -> 14 at [`./scripts/postgres_upgrade.sh`](../scripts/postgres_upgrade.sh).
 
 ### Attempt to upgrade the postgres data
+
 ```bash
 $ ./manage.sh -n mainnet -a stop
 $ ./scripts/postgres_upgrade.sh
 $ ./manage.sh -n mainnet -a start
 ```
-
-
 
 ## Database Issues
 

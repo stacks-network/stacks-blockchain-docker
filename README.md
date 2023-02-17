@@ -5,6 +5,8 @@
 
 Run your own Stacks Blockchain node easily with just few commands.
 
+⚠️ **[docker-compose version `2.2.2` or greater is required](./docs/docker.md)**
+
 ---
 
 ## Quickstart
