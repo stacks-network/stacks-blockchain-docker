@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-SHM_SIZE="256MB"
 ABS_PATH="$( cd -- "$(dirname '${0}')" >/dev/null 2>&1 ; pwd -P )"
 export SCRIPTPATH="${ABS_PATH}"
 export CONTAINER="postgres_import"
@@ -30,9 +29,10 @@ WARN="${COLYELLOW}[ Warn ]${COLRESET} "
 INFO="${COLGREEN}[ Success ]${COLRESET} "
 EXIT_MSG="${COLRED}[ Exit Error ]${COLRESET} "
 
-# if [[ "$EUID" != 0 ]]; then
-#     exit_error "${COLRED}Error${COLRESET} - Script needs to run as root or with sudo"
-# fi
+if [[ "$EUID" != 0 ]]; then
+    exit_error "${COLRED}Error${COLRESET} - Script needs to run as root or with sudo"
+fi
+CURRENT_USER=$(who am i | awk '{print $1}')
 
 echo "-- seed-chainstate.sh --" 
 echo "  Starting at $(date "+%D %H:%m:%S")"
@@ -159,69 +159,63 @@ echo "Extracting stacks-blockchain chainstate data to: ${SCRIPTPATH}/persistent-
 tar -xvf "${CHAINDATA_DEST}" -C "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain/" || exit_error "${COLRED}Error${COLRESET} extracting stacks-blockchain chainstate data"
 
 echo
-echo "  Chowning data to $(whoami)"
-chown -R $(whoami) "${SCRIPTPATH}/persistent-data/${NETWORK}" || exit_error "${COLRED}Error${COLRESET} setting file permissions"
+echo "  Chowning data to ${CURRENT_USER}"
+chown -R ${CURRENT_USER} "${SCRIPTPATH}/persistent-data/${NETWORK}" || exit_error "${COLRED}Error${COLRESET} setting file permissions"
 
 echo
 echo "Importing postgres data"
 echo "  Starting postgres container: ${CONTAINER}"
 
 # eval "docker run -d --rm --name ${CONTAINER} -e POSTGRES_PASSWORD=${PG_PASSWORD} -v ${SCRIPTPATH}/scripts/postgres-initdb.sh:/docker-entrypoint-initdb.d/postgres-initdb.sh:ro -v ${PGDUMP_DEST}:/tmp/stacks_node_postgres.dump -v ${SCRIPTPATH}/persistent-data/mainnet/postgres:/var/lib/postgresql/data postgres:${POSTGRES_VERSION}-alpine > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} starting postgres container"
-eval "docker run -d --rm --name ${CONTAINER} --shm-size=${SHM_SIZE} -e POSTGRES_PASSWORD=${PG_PASSWORD} -v ${PGDUMP_DEST}:/tmp/stacks_node_postgres.dump -v ${SCRIPTPATH}/persistent-data/mainnet/postgres:/var/lib/postgresql/data postgres:${POSTGRES_VERSION}-alpine > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} starting postgres container"
+eval "docker run -d --rm --name ${CONTAINER} --shm-size=${PG_SHMSIZE:-256MB} -e POSTGRES_PASSWORD=${PG_PASSWORD} -v ${PGDUMP_DEST}:/tmp/stacks_node_postgres.dump -v ${SCRIPTPATH}/persistent-data/mainnet/postgres:/var/lib/postgresql/data postgres:${POSTGRES_VERSION}-alpine > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} starting postgres container"
 echo "  Sleeping for 15s to give time for Postgres to start"
 sleep 15
 
 echo
 echo "Restoring postgres data from ${SCRIPTPATH}/stacks-blockchain-api-pg-${POSTGRES_VERSION}-${STACKS_BLOCKCHAIN_API_VERSION}-latest.dump"
-# eval "docker exec ${CONTAINER} sh -c \"pg_restore --username ${PG_USER} --verbose --clean --create --dbname postgres /tmp/stacks_node_postgres.dump\"" || exit_error "${COLRED}Error${COLRESET} restoring postgres data"
 eval "docker exec ${CONTAINER} sh -c \"pg_restore --username ${PG_USER} --verbose --create --dbname postgres /tmp/stacks_node_postgres.dump\"" || exit_error "${COLRED}Error${COLRESET} restoring postgres data"
 echo "Setting postgres user password from .env for ${PG_USER}"
 eval "docker exec -it ${CONTAINER} sh -c \"psql -U ${PG_USER} -c \\\"ALTER USER ${PG_USER} PASSWORD '${PG_PASSWORD}';\\\"\" " || exit_error "${COLRED}Error${COLRESET} setting postgres password for ${PG_USER}"
 
+
+
+# modify restored DB to match .env
+# psql -U postgres -d stacks_blockchain_api -c "drop SCHEMA public;" 
+# psql -U postgres -d stacks_blockchain_api -c "ALTER SCHEMA stacks_blockchain_api RENAME TO public;" 
+# psql -U postgres -d template1 -c "DROP database postgres;"
+# psql -U postgres -d template1 -c "ALTER DATABASE stacks_blockchain_api RENAME TO postgres;"
+
+if [[ ${PG_DATABASE} != "stacks_blockchain_api" && ${PG_SCHEMA} != "stacks_blockchain_api" ]];then
+    echo "dropping restored schema stacks_blockchain_api.public"
+    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"drop SCHEMA if exists public;\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping schema public"
+
+    echo "altering restored schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
+    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"ALTER SCHEMA stacks_blockchain_api RENAME TO ${PG_SCHEMA:-public};\\\"\" " || exit_error "${COLRED}Error${COLRESET} altering schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
+fi
+if [[ ${PG_DATABASE} == "postgres" ]];then
+    echo "dropping db ${PG_DATABASE}"
+    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"DROP database ${PG_DATABASE};\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping db ${PG_DATABASE}"
+fi
+if [[ ${PG_DATABASE} != "stacks_blockchain_api" ]]; then
+    echo "renaming db stacks_blockchain_api to ${PG_DATABASE}"
+    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"ALTER DATABASE stacks_blockchain_api RENAME TO ${PG_DATABASE};\\\"\" "|| exit_error "${COLRED}Error${COLRESET} renaming db stacks_blockchain_api to ${PG_DATABASE}"
+fi
 echo "Stopping postgres container"
 eval "docker stop ${CONTAINER} > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} stopping postgres container ${CONTAINER}"
 
-
-## rm the downloaded files now
-echo "REMOVE: rm -f ${PGDUMP_DEST}"
-echo "REMOVE: rm -f ${CHAINDATA_DEST}"
-# rm -f "${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz"
-# rm -f "${SCRIPTPATH}/stacks-blockchain-api-pg-${POSTGRES_VERSION}-${STACKS_BLOCKCHAIN_API_VERSION}-latest.dump"
+echo "Deleting downloaded archive files"
+if [ -f ${PGDUMP_DEST} ]; then
+    eval "rm -f ${PGDUMP_DEST}" || exit_error "${COLRED}Error${COLRESET} deleting ${PGDUMP_DEST}"
+fi
+if [ -f ${PGDUMP_DEST_SHA256} ]; then
+    eval "rm -f ${PGDUMP_DEST_SHA256}" || exit_error "${COLRED}Error${COLRESET} deleting ${PGDUMP_DEST_SHA256}"
+fi
+if [ -f ${CHAINDATA_DEST} ]; then
+    eval "rm -f ${CHAINDATA_DEST}" || exit_error "${COLRED}Error${COLRESET} deleting ${CHAINDATA_DEST}"
+fi
+if [ -f ${CHAINDATA_DEST_SHA256} ]; then
+    eval "rm -f ${CHAINDATA_DEST_SHA256}" || exit_error "${COLRED}Error${COLRESET} deleting ${CHAINDATA_DEST_SHA256}"
+fi
 
 echo "Exiting successfully at $(date "+%D %H:%m:%S")"
 exit 0
-
-
-
-
-# ARCHIVE_HTTP_CODE=$(curl --output /dev/null --silent --head --fail -w "%{http_code}" https://archive.hiro.so/mainnet/stacks-blockchain/mainnet-stacks-blockchain-2.1.0.0.2-latest.tar.gz)
-# if [[ "${ARCHIVE_HTTP_CODE}" && "${ARCHIVE_HTTP_CODE}" == "200" ]];then
-#     echo "file exists"
-# else
-#     echo "file does not exist"
-# fi
-
-# ##############
-# docker stop postgres_import
-# rm -rf persistent-data/mainnet/postgres/
-# docker run -d --rm \
-#     --name postgres_import \
-#     -e PG_PORT=5432 \
-#     -e PG_USER=postgres \
-#     -e PG_PASSWORD=postgres \
-#     -e PG_DATABASE=stacks_blockchain_api \
-#     -e PG_SCHEMA=stacks_blockchain_api \
-#     -e POSTGRES_USER=postgres \
-#     -e POSTGRES_PASSWORD=postgres \
-#     -e POSTGRES_DB=stacks_blockchain_api \
-#     -e PG_SCHEMA=stacks_blockchain_api \
-#     -v /home/admin/stacks-blockchain-docker/scripts/postgres-initdb.sh:/docker-entrypoint-initdb.d/postgres-initdb.sh:ro \
-#     -v /home/admin/stacks-blockchain-docker/stacks-blockchain-api-pg-15-7.1.2-latest.dump:/tmp/stacks_node_postgres.dump \
-#     -v /home/admin/stacks-blockchain-docker/persistent-data/mainnet/postgres:/var/lib/postgresql/data \
-#     postgres:15-alpine
-# 
-# docker exec -it postgres_import sh
-#     pg_restore --username postgres --verbose --clean --create --dbname postgres /tmp/stacks_node_postgres.dump
-# docker exec -it postgres_import sh 
-#     psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';"
-# ###########
