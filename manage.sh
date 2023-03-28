@@ -1030,6 +1030,7 @@ ${VERBOSE} && log "setting STACKS_CHAIN_ID based on arg: ${STACKS_CHAIN_ID}"
 ${VERBOSE} && log "exporting NETWORK: ${NETWORK}"
 export STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
 export NETWORK=${NETWORK}
+export PG_SHMSIZE=${PG_SHMSIZE}
 
 # Call function based on ACTION arg
 case ${ACTION} in
