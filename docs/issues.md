@@ -2,6 +2,19 @@
 
 ## Error message
 
+## Postgres error: No Space left on device
+
+tl;dr - This doesn't mean what the error message suggests it means. \
+Basically, it needs more memory than is provided by default in Docker - but it can be addressed by modifying the `./env` setting `PG_SHMSIZE` to match the memory resources on your system. \
+Currently, the default is set to `256MB` and this has shown to be sufficient to bypass this error, but more is obviously better if you can afford it. \
+<https://stackoverflow.com/questions/56751565/pq-could-not-resize-shared-memory-segment-no-space-left-on-device>
+
+Sample error from postgres/API logs:
+
+```
+pq: could not resize shared memory segment "/PostgreSQL.2058389254" to 12615680 bytes: No space left on device
+```
+
 ## Changes to BNS import using stacks-blockchain-api version >= 5.0.0
 
 Some changes introduced in this version of the API breaks the way BNS has been imported in the past. \
@@ -76,4 +89,11 @@ The most common Postgres issue looks like: `Error: DB does not contain a parent 
 $ ./manage.sh -n <network> -a stop
 $ sudo ./manage.sh -n <network> -a reset
 $ ./manage.sh -n <network> -a start
+```
+
+**Alternatively** you can use the script `./scripts/seed-chainstate.sh` to attempt to use a public archive of the data. \
+_This requires at least 150GB of free disk and does take a long while to complete_. \
+
+```bash
+sudo ./scripts/seed-chainstate.sh
 ```

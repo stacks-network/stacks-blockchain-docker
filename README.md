@@ -14,6 +14,21 @@ Run your own Stacks Blockchain node easily with just few commands.
 ```bash
 git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stacks-blockchain-docker
 cp sample.env .env
+```
+
+### Sync from genesis
+
+```bash
+./manage.sh -n mainnet -a start
+```
+
+### Seed chainstate from Hiro Archiver
+
+Using data from the [Hiro Archiver](https://docs.hiro.so/references/hiro-archive#what-is-the-hiro-archive) service, this script will download the latest files, extract them and restore the postgres data. \
+_**Note**: it can take a long time to process the data, and you'll need at a minimum roughly 150GB of free space_
+
+```bash
+sudo ./scripts/seed-chainstate.sh
 ./manage.sh -n mainnet -a start
 ```
 
