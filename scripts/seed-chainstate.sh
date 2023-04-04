@@ -2,9 +2,9 @@
 set -eo pipefail
 set -Eo functrace
 shopt -s expand_aliases
-
-### need to check if services are currently running
-
+export NETWORK="mainnet"
+export PROFILE="stacks-blockchain"
+# CURRENT_USER=$(who am i | awk '{print $1}')
 ABS_PATH="$( cd -- "$(dirname '${0}')" >/dev/null 2>&1 ; pwd -P )"
 export SCRIPTPATH="${ABS_PATH}"
 export CONTAINER="postgres_import"
@@ -14,6 +14,8 @@ if [ ! -f "${ENV_FILE}" ];then
 	cp -a "${SCRIPTPATH}/sample.env" "${ENV_FILE}"
 fi
 source "${ENV_FILE}"
+export DOCKER_NETWORK="${DOCKER_NETWORK}"
+export CURRENT_USER=$(who am i | awk '{print $1}')
 
 
 COLRED=$'\033[31m' # Red
@@ -57,43 +59,78 @@ exit_error() {
 	else
         printf "%-25s %s\\n\\n" "${1}" "${2}"
     fi
+    log "Stopping container ${CONTAINER} before exit"
+    eval "docker stop ${CONTAINER} > /dev/null  2>&1"
     exit 1
 }
 
 if [[ "$EUID" != 0 ]]; then
     exit_error "${COLRED}Error${COLRESET} - Script needs to run as root or with sudo"
 fi
-CURRENT_USER=$(who am i | awk '{print $1}')
+
+# Check if services are running
+check_network() {
+	local profile="${1}"
+	${VERBOSE} && log "Checking if default services are running"
+	# Determine if the services are already running
+	if [[ $(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" --profile ${profile} ps -q) ]]; then
+		${VERBOSE} && log "Docker services have a pid"
+        log "Stacks Blockchain services are currently running."
+        log "  Stop services with: ./manage.sh -n ${NETWORK} -a stop"
+        exit_error "  Exiting"
+		# Docker is running, return success
+	fi
+	${VERBOSE} && log "Docker services have no pid"
+	return 0
+}
+
+download_file(){
+    local url=${1}
+    local dest=${2}
+    local http_code=$(curl --output /dev/null --silent --head -w "%{http_code}" ${url})
+    log
+    log "Downloading ${url} data to: ${DEST}"
+    if [[ "${http_code}" && "${http_code}" != "200" ]];then
+        exit_error "${COLRED}Error${COLRESET} - ${url} doesn't exist"
+    fi
+    local size=$( curl -s -L -I ${url} | awk -v IGNORECASE=1 '/^content-length/ { print $2 }' | sed 's/\r$//' )
+    local converted_size=$(numfmt --to iec --format "%8.4f" ${size})
+    log "  File Download size: ${converted_size}"
+    log "  Retrieving: ${url}"
+    curl -L -# ${url} -o "${dest}" || exit_error "${COLRED}Error${COLRESET} downloading ${url} to ${dest}"
+    return 0
+}
+
+verify_checksum(){
+    local local_file=${1}
+    local local_sha256=${2}
+    local sha256=$(cat ${local_sha256} | awk {'print $1'} )
+    local basename=$(basename ${local_file})
+    log "  Generating sha256 for ${basename} and comparing to: ${sha256}"
+    local sha256sum=$(sha256sum ${local_file} | awk {'print $1'})
+    if [ "${sha256}" != "${sha256sum}" ]; then
+        log "${COLRED}Error${COLRESET} sha256 mismatch for ${basename}"
+        log "  downloaded sha256: ${sha256}"
+        log "  calulated sha256: ${sha256sum}"
+        exit_error "exiting"
+    else
+        log "  SHA256 matched for: ${basename}"
+        log "  Continuing"
+    fi
+    return 0
+}
 
 log "-- seed-chainstate.sh --" 
 log "  Starting at $(date "+%D %H:%m:%S")"
 log "  Using files/methods from https://docs.hiro.so/references/hiro-archive#what-is-the-hiro-archive"
-
-# # Function to ask for confirmation. Loop until valid input is received
-# confirm() {
-#     # y/n confirmation. loop until valid response is received
-#     while true; do
-#         read -r -n 1 -p "${1:-Continue?} [y/n]: " REPLY
-#         case ${REPLY} in
-#             [yY]) echo ; return 0 ;;
-#             [nN]) echo ; return 1 ;;
-#             *) printf "\\033[31m %s \\n\\033[0m" "invalid input"
-#         esac 
-#     done  
-# }
-log "checking for existence of ${SCRIPTPATH}/persistent-data/${NETWORK}"
+log "  checking for existence of ${SCRIPTPATH}/persistent-data/${NETWORK}"
 if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ];then
-    log "Deleting existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
-    # confirm "${NETWORK} directory exists.Delete?" || exit_error "${COLRED}Exiting${COLRESET}"
+    log "  Deleting existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
     rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"
 fi
-mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain"
-mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/postgres"
+mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain" > /dev/null  2>&1
+mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/postgres" > /dev/null  2>&1
 
-
-log ""
-log "Seeding chainstate data"
-# confirm "Seed blockchain data from hiro-archiver?" || exit_error "${COLRED}Exiting${COLRESET}"
 
 PGDUMP_URL="https://archive.hiro.so/${NETWORK}/stacks-blockchain-api-pg/stacks-blockchain-api-pg-${POSTGRES_VERSION}-${STACKS_BLOCKCHAIN_API_VERSION}-latest.dump"
 PGDUMP_URL_SHA256="https://archive.hiro.so/${NETWORK}/stacks-blockchain-api-pg/stacks-blockchain-api-pg-${POSTGRES_VERSION}-${STACKS_BLOCKCHAIN_API_VERSION}-latest.sha256"
@@ -105,83 +142,29 @@ CHAINDATA_URL_SHA256="https://archive.hiro.so/${NETWORK}/stacks-blockchain/${NET
 CHAINDATA_DEST="${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz"
 CHAINDATA_DEST_SHA256="${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-latest.tar.gz.sha256"
 
-log "  PGDUMP_URL:  ${PGDUMP_URL}"
-log "  PGDUMP_URL_SHA256: ${PGDUMP_URL_SHA256}"
-log "  PGDUMP_DEST:  ${PGDUMP_DEST}"
-log "  PGDUMP_DEST_SHA256: ${PGDUMP_DEST_SHA256}"
-log "  CHAINDATA_URL: ${CHAINDATA_URL}"
-log "  CHAINDATA_URL_SHA256: ${CHAINDATA_URL_SHA256}"
-log "  CHAINDATA_DEST: ${CHAINDATA_DEST}"
-log "  CHAINDATA_DEST_SHA256: ${CHAINDATA_DEST_SHA256}"
-log
-log "**************************************"
-log 
+${VERBOSE} && log "  PGDUMP_URL:  ${PGDUMP_URL}"
+${VERBOSE} && log "  PGDUMP_URL_SHA256: ${PGDUMP_URL_SHA256}"
+${VERBOSE} && log "  PGDUMP_DEST:  ${PGDUMP_DEST}"
+${VERBOSE} && log "  PGDUMP_DEST_SHA256: ${PGDUMP_DEST_SHA256}"
+${VERBOSE} && log "  CHAINDATA_URL: ${CHAINDATA_URL}"
+${VERBOSE} && log "  CHAINDATA_URL_SHA256: ${CHAINDATA_URL_SHA256}"
+${VERBOSE} && log "  CHAINDATA_DEST: ${CHAINDATA_DEST}"
+${VERBOSE} && log "  CHAINDATA_DEST_SHA256: ${CHAINDATA_DEST_SHA256}"
+${VERBOSE} && log "**************************************"
 
+if check_network "${PROFILE}"; then
+    ${VERBOSE} && log "Stacks Blockchain services are not running"
+    ${VERBOSE} && log "  Continuing"
+fi
 
-## check if the URL's are valid and a file is actually there before doing anything. 
-## if not, print an error message and some possible solutions
+download_file ${PGDUMP_URL} ${PGDUMP_DEST}
+download_file ${PGDUMP_URL_SHA256} ${PGDUMP_DEST_SHA256}
+verify_checksum ${PGDUMP_DEST} ${PGDUMP_DEST_SHA256}
 
-log 
-log
-log "Downloading stacks-blockchain-api postgres ${POSTGRES_VERSION} data to: ${PGDUMP_DEST}"
-ARCHIVE_HTTP_CODE=$(curl --output /dev/null --silent --head -w "%{http_code}" ${PGDUMP_URL})
-if [[ "${ARCHIVE_HTTP_CODE}" && "${ARCHIVE_HTTP_CODE}" != "200" ]];then
-    exit_error "${COLRED}Error${COLRESET} - ${PGDUMP_URL} doesn't exist"
-fi
-SIZE=$( curl -s -L -I ${PGDUMP_URL} | awk -v IGNORECASE=1 '/^content-length/ { print $2 }' | sed 's/\r$//' )
-CONVERTED_SIZE=$(numfmt --to iec --format "%8.4f" ${SIZE})
-log "  File Download size: ${CONVERTED_SIZE}"
-log "  Retrieving URL: ${PGDUMP_URL}"
-curl -L ${PGDUMP_URL} -o "${PGDUMP_DEST}" || exit_error "${COLRED}Error${COLRESET} downloading stacks-blockchain-api pg data"
-curl -L ${PGDUMP_URL_SHA256} -o "${PGDUMP_DEST_SHA256}" || exit_error "${COLRED}Error${COLRESET} downloading stacks-blockchain-api pg sha256"
-## verify sha256 of downloaded file
-SHA256=$(cat ${PGDUMP_DEST_SHA256} | awk {'print $1'} )
-log "    Generating sha256 for ${PGDUMP_DEST} and comparing to: ${SHA256}"
-SHA256SUM=$(sha256sum ${PGDUMP_DEST} | awk {'print $1'})
-if [ "${SHA256}" != "${SHA256SUM}" ]; then
-    log "${COLRED}Error${COLRESET} sha256 mismatch for ${PGDUMP_DEST}"
-    log "  downloaded sha256: ${SHA256}"
-    log "  calulated sha256: ${SHA256SUM}"
-    exit 1
-else
-    log "  ${PGDUMP_DEST} sha256 matches. continuing"
-fi
-unset SIZE
-unset CONVERTED_SIZE
-unset SHA256
-unset SHA256SUM
-unset ARCHIVE_HTTP_CODE
+download_file ${CHAINDATA_URL} ${CHAINDATA_DEST}
+download_file ${CHAINDATA_URL_SHA256} ${CHAINDATA_DEST_SHA256}
+verify_checksum ${CHAINDATA_DEST} ${CHAINDATA_DEST_SHA256}
 
-log 
-log
-log "Downloading stacks-blockchain ${STACKS_BLOCKCHAIN_VERSION} data to: ${CHAINDATA_DEST}"
-ARCHIVE_HTTP_CODE=$(curl --output /dev/null --silent --head -w "%{http_code}" ${CHAINDATA_URL})
-if [[ "${ARCHIVE_HTTP_CODE}" && "${ARCHIVE_HTTP_CODE}" != "200" ]];then
-    exit_error "${COLRED}Error${COLRESET} - ${CHAINDATA_URL} doesn't exist"
-fi
-SIZE=$( curl -s -L -I ${CHAINDATA_URL} | awk -v IGNORECASE=1 '/^content-length/ { print $2 }' | sed 's/\r$//' )
-CONVERTED_SIZE=$(numfmt --to iec --format "%8.4f" ${SIZE})
-log "  File Download size: ${CONVERTED_SIZE}"
-log "  Retrieving URL: ${CHAINDATA_URL}"
-curl -L ${CHAINDATA_URL}  -o "${CHAINDATA_DEST}" || exit_error "${COLRED}Error${COLRESET} downloading stacks-blockchain chainstate data"
-curl -L ${CHAINDATA_URL_SHA256} -o "${CHAINDATA_DEST_SHA256}" || exit_error "${COLRED}Error${COLRESET} downloading stacks-blockchain chainstate sha256"
-## verify sha256 of downloaded file
-SHA256=$(cat ${CHAINDATA_DEST_SHA256} | awk {'print $1'})
-log "    Generating sha256 for ${CHAINDATA_DEST} and comparing to: ${SHA256}"
-SHA256SUM=$(sha256sum ${CHAINDATA_DEST} | awk {'print $1'})
-if [ "${SHA256}" != "${SHA256SUM}" ]; then
-    log "${COLRED}Error${COLRESET} sha256 mismatch for ${CHAINDATA_DEST}"
-    log "  downloaded sha256: ${SHA256}"
-    log "  calulated sha256: ${SHA256SUM}"
-    exit 1
-else
-    log "  ${CHAINDATA_DEST} sha256 matches. continuing"
-fi
-unset SIZE
-unset CONVERTED_SIZE
-unset SHA256
-unset SHA256SUM
-unset ARCHIVE_HTTP_CODE
 
 log
 log "Extracting stacks-blockchain chainstate data to: ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain"
@@ -195,7 +178,6 @@ log
 log "Importing postgres data"
 log "  Starting postgres container: ${CONTAINER}"
 
-# eval "docker run -d --rm --name ${CONTAINER} -e POSTGRES_PASSWORD=${PG_PASSWORD} -v ${SCRIPTPATH}/scripts/postgres-initdb.sh:/docker-entrypoint-initdb.d/postgres-initdb.sh:ro -v ${PGDUMP_DEST}:/tmp/stacks_node_postgres.dump -v ${SCRIPTPATH}/persistent-data/mainnet/postgres:/var/lib/postgresql/data postgres:${POSTGRES_VERSION}-alpine > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} starting postgres container"
 eval "docker run -d --rm --name ${CONTAINER} --shm-size=${PG_SHMSIZE:-256MB} -e POSTGRES_PASSWORD=${PG_PASSWORD} -v ${PGDUMP_DEST}:/tmp/stacks_node_postgres.dump -v ${SCRIPTPATH}/persistent-data/mainnet/postgres:/var/lib/postgresql/data postgres:${POSTGRES_VERSION}-alpine > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} starting postgres container"
 log "  Sleeping for 15s to give time for Postgres to start"
 sleep 15
@@ -205,14 +187,6 @@ log "Restoring postgres data from ${SCRIPTPATH}/stacks-blockchain-api-pg-${POSTG
 eval "docker exec ${CONTAINER} sh -c \"pg_restore --username ${PG_USER} --verbose --create --dbname postgres /tmp/stacks_node_postgres.dump\"" || exit_error "${COLRED}Error${COLRESET} restoring postgres data"
 log "Setting postgres user password from .env for ${PG_USER}"
 eval "docker exec -it ${CONTAINER} sh -c \"psql -U ${PG_USER} -c \\\"ALTER USER ${PG_USER} PASSWORD '${PG_PASSWORD}';\\\"\" " || exit_error "${COLRED}Error${COLRESET} setting postgres password for ${PG_USER}"
-
-
-
-# modify restored DB to match .env
-# psql -U postgres -d stacks_blockchain_api -c "drop SCHEMA public;" 
-# psql -U postgres -d stacks_blockchain_api -c "ALTER SCHEMA stacks_blockchain_api RENAME TO public;" 
-# psql -U postgres -d template1 -c "DROP database postgres;"
-# psql -U postgres -d template1 -c "ALTER DATABASE stacks_blockchain_api RENAME TO postgres;"
 
 if [[ ${PG_DATABASE} != "stacks_blockchain_api" && ${PG_SCHEMA} != "stacks_blockchain_api" ]];then
     log "dropping restored schema stacks_blockchain_api.public"

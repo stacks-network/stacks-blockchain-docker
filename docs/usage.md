@@ -1,15 +1,17 @@
 # Script Options
+
 ## Usage
+
 ```
-Usage:                    
-    ./manage.sh -n <network> -a <action> <optional args> 
-        -n|--network: [ mainnet | testnet | mocknet ] 
-        -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ] 
-    optional args:        
-        -f|--flags: [ proxy ] 
-        export: combined with 'logs' action, exports logs to a text file 
-    ex: ./manage.sh -n mainnet -a start -f proxy 
-    ex: ./manage.sh --network mainnet --action start --flags proxy 
+Usage:
+    ./manage.sh -n <network> -a <action> <optional args>
+        -n|--network: [ mainnet | testnet | mocknet ]
+        -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ]
+    optional args:
+        -f|--flags: [ proxy ]
+        export: combined with 'logs' action, exports logs to a text file
+    ex: ./manage.sh -n mainnet -a start -f proxy
+    ex: ./manage.sh --network mainnet --action start --flags proxy
     ex: ./manage.sh -n mainnet -a logs export
 ```
 
@@ -104,4 +106,3 @@ _This step is required if the env var `BNS_IMPORT_DIR` is uncommented_
 ```bash
 ./manage.sh bns
 ```
-
