@@ -13,7 +13,7 @@ if [ ! -f "${ENV_FILE}" ];then
 	cp -a "${SCRIPTPATH}/sample.env" "${ENV_FILE}"
 fi
 source "${ENV_FILE}"
-export CURRENT_USER=$(who am i | awk '{print $1}')
+export CURRENT_USER=$(whoami | awk '{print $1}')
 
 COLRED=$'\033[31m' # Red
 COLGREEN=$'\033[32m' # Green
