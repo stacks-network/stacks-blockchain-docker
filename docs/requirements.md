@@ -8,7 +8,7 @@
 - Host with a minimum of:
   - 4GB memory
   - 1 Vcpu (2 Vcpu is recommended)
-  - 100GB storage
+  - 150GB storage (250GB or more if downloading a chainstate archive)
 
 ## **MacOS with an M1 processor is _NOT_ recommended for this repo**
 
