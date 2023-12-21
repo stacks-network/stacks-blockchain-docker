@@ -119,7 +119,7 @@ verify_checksum(){
 
 log "-- seed-chainstate.sh --" 
 log "  Starting at $(date "+%D %H:%m:%S")"
-log "  Using files/methods from https://docs.hiro.so/references/hiro-archive#what-is-the-hiro-archive"
+log "  Using files/methods from https://docs.hiro.so/hiro-archive"
 log "  checking for existence of ${SCRIPTPATH}/persistent-data/${NETWORK}"
 if [ -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ];then
     log "  Deleting existing data: ${SCRIPTPATH}/persistent-data/${NETWORK}"
