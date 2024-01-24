@@ -1,22 +1,5 @@
 version: "3.5"
 services:
-  postgres:
-    image: postgres:${POSTGRES_VERSION:-15}-alpine
-    shm_size: ${PG_SHMSIZE:-256MB}
-    container_name: postgres
-    restart: on-failure
-    env_file:
-      - ${SCRIPTPATH}/.env
-    environment:
-      - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
-      - POSTGRES_DB=${PG_DATABASE:-postgres}
-    volumes:
-      - ${SCRIPTPATH}/scripts/postgres-initdb.sh:/docker-entrypoint-initdb.d/postgres-initdb.sh
-    networks:
-      - default
-    profiles:
-      - event-replay
-      - stacks-blockchain
   stacks-blockchain:
     image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}
     container_name: stacks-blockchain

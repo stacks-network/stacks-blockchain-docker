@@ -1,0 +1,16 @@
+version: "3.5"
+services:
+  nginx:
+    image: haproxy:alpine
+    container_name: haproxy
+    restart: on-failure
+    ports:
+      - ${PROXY_PORT:-80}:80
+    networks:
+      - default
+    profiles:
+      - stacks-blockchain
+    volumes:
+      - ${SCRIPTPATH}/conf/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+    depends_on:
+      - stacks-blockchain-api

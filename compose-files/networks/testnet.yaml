@@ -1,8 +1,5 @@
 version: "3.5"
 services:
-  postgres:
-    volumes:
-      - ${SCRIPTPATH}/persistent-data/${NETWORK}/postgres:/var/lib/postgresql/data
   stacks-blockchain:
     volumes:
       - ${SCRIPTPATH}/conf/${NETWORK}:/src/stacks-blockchain

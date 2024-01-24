@@ -5,10 +5,12 @@ services:
     container_name: nginx
     restart: on-failure
     ports:
-      - ${NGINX_PROXY_PORT:-80}:80
+      - ${PROXY_PORT:-80}:80
     networks:
       - default
     profiles:
       - stacks-blockchain
     volumes:
       - ${SCRIPTPATH}/conf/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - stacks-blockchain-api

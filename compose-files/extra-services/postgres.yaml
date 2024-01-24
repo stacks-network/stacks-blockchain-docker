@@ -1,5 +1,24 @@
 version: "3.5"
 services:
   postgres:
-    ports:
-      - ${PG_PORT:-5432}:5432
+    image: postgres:${POSTGRES_VERSION:-15}-alpine
+    shm_size: ${PG_SHMSIZE:-256MB}
+    container_name: postgres
+    restart: on-failure
+    env_file:
+      - ${SCRIPTPATH}/.env
+    environment:
+      - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
+      - POSTGRES_DB=${PG_DATABASE:-postgres}
+    volumes:
+      - ${SCRIPTPATH}/scripts/postgres-initdb.sh:/docker-entrypoint-initdb.d/postgres-initdb.sh
+    # ports:
+    #   - ${PG_PORT:-5432}:5432
+    networks:
+      - default
+    profiles:
+      - event-replay
+      - stacks-blockchain
+  stacks-blockchain-api:
+    depends_on:
+      - postgres
