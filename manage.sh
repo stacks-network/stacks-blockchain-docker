@@ -334,8 +334,6 @@ bns_import_env() {
 			log_exit "Unable to update BNS_IMPORT_DIR value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
 		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
-		${VERBOSE} && log "${COLYELLOW}Grepping for BNS_IMPORT_DIR"
-		cat ${ENV_FILE} | grep "BNS_IMPORT_DIR"
 		$(rm "${ENV_FILE}.tmp" 2>&1) || {
 			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
 		}
@@ -351,8 +349,6 @@ bns_import_env() {
 			log_exit "Unable to update BNS_IMPORT_DIR value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
 		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
-		${VERBOSE} && log "${COLYELLOW}Grepping for BNS_IMPORT_DIR"
-		cat ${ENV_FILE} | grep "BNS_IMPORT_DIR"
 		$(rm "${ENV_FILE}.tmp" 2>&1) || {
 			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
 		}
@@ -376,8 +372,6 @@ events_file_env(){
 		" "${ENV_FILE}" 2>&1) || {
 			log_exit "Unable to update STACKS_EXPORT_EVENTS_FILE value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}Grepping for STACKS_EXPORT_EVENTS_FILE"
-		cat ${ENV_FILE} | grep "STACKS_EXPORT_EVENTS_FILE"
 		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
 		$(rm "${ENV_FILE}.tmp" 2>&1) || {
 			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
@@ -393,8 +387,6 @@ events_file_env(){
 		" "${ENV_FILE}" 2>&1) || {
 			log_exit "Unable to update STACKS_EXPORT_EVENTS_FILE value in .env file: ${COLCYAN}${ENV_FILE}${COLRESET}"
 		}
-		${VERBOSE} && log "${COLYELLOW}Grepping for STACKS_EXPORT_EVENTS_FILE"
-		cat ${ENV_FILE} | grep "STACKS_EXPORT_EVENTS_FILE"
 		${VERBOSE} && log "${COLYELLOW}Deleting temp .env file: ${ENV_FILE}.tmp${COLRESET}"
 		$(rm "${ENV_FILE}.tmp" 2>&1) || {
 			log_exit "Unable to delete tmp .env file: ${COLCYAN}${ENV_FILE}.tmp${COLRESET}"
@@ -446,9 +438,6 @@ set_flags() {
 	local flags=""
 	local flag_path=""
 	${VERBOSE} && log "EXPOSE_POSTGRES: ${EXPOSE_POSTGRES}"
-	if [ "${EXPOSE_POSTGRES}" -a -f "${SCRIPTPATH}/compose-files/extra-services/expose-postgres.yaml" ]; then
-		${EXPOSE_POSTGRES} && flags="-f ${SCRIPTPATH}/compose-files/extra-services/expose-postgres.yaml"
-    fi
 	# Case to change the path of files based on profile
 	${VERBOSE} && log "Setting optional flags for cmd to eval"
 	case ${profile} in
@@ -483,6 +472,37 @@ set_flags() {
 	done
 	OPTIONAL_FLAGS=${flags}
 	${VERBOSE} && log "OPTIONAL_FLAGS: ${OPTIONAL_FLAGS}"
+	${VERBOSE} && log "ACTION: ${ACTION}"
+	if [[ "${OPTIONAL_FLAGS}" == *"nginx"* && "${OPTIONAL_FLAGS}" == *"haproxy"* && "${ACTION}" == *"start"* ]]; then
+  		${VERBOSE} && log_error "Found both haproxy and nginx as optional flags( ${OPTIONAL_FLAGS} )"
+		log_exit "Only one of [nginx, haproxy] may be used as an optional '-f' flag"
+	fi
+	postgres_compose_file="${SCRIPTPATH}/compose-files/extra-services/postgres.yaml"
+	if "${EXPOSE_POSTGRES}" && [[ "$OPTIONAL_FLAGS" == *"postgres"* ]]; then
+		${VERBOSE} && log "Uncommenting port in ${postgres_compose_file}"
+		$(sed -i.tmp "
+			s/^\s*    ports:/    # ports:/
+			s/^\s*      - \${PG_PORT:-5432}:5432/    #   - \${PG_PORT:-5432}:5432/
+		" "${postgres_compose_file}" 2>&1) || {
+			log_exit "Unable to uncomment ports in postgres compose file: ${COLCYAN}${postgres_compose_file}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Deleting temp compose file: ${postgres_compose_file}.tmp${COLRESET}"
+		$(rm "${postgres_compose_file}.tmp" 2>&1) || {
+			log_exit "Unable to delete tmp compose file: ${COLCYAN}${postgres_compose_file}.tmp${COLRESET}"
+		}
+	else
+		${VERBOSE} && log "Commenting port in ${postgres_compose_file}"
+		$(sed -i.tmp "
+			s/^\s*    # ports:/    ports:/
+			s/^\s*    #   - \${PG_PORT:-5432}:5432/      - \${PG_PORT:-5432}:5432/
+		" "${postgres_compose_file}" 2>&1) || {
+			log_exit "Unable to comment ports in postgres compose file: ${COLCYAN}${postgres_compose_file}${COLRESET}"
+		}
+		${VERBOSE} && log "${COLYELLOW}Deleting temp compose file: ${postgres_compose_file}.tmp${COLRESET}"
+		$(rm "${postgres_compose_file}.tmp" 2>&1) || {
+			log_exit "Unable to delete tmp compose file: ${COLCYAN}${postgres_compose_file}.tmp${COLRESET}"
+		}
+	fi
 	true
 }
 

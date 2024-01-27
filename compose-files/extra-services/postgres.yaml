@@ -8,8 +8,8 @@ services:
     env_file:
       - ${SCRIPTPATH}/.env
     environment:
-      - POSTGRES_PASSWORD=${PG_PASSWORD:-postgres}
-      - POSTGRES_DB=${PG_DATABASE:-postgres}
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
     volumes:
       - ${SCRIPTPATH}/scripts/postgres-initdb.sh:/docker-entrypoint-initdb.d/postgres-initdb.sh
     # ports:
@@ -20,5 +20,12 @@ services:
       - event-replay
       - stacks-blockchain
   stacks-blockchain-api:
+    environment:
+      - PG_HOST=postgres
+      - PG_PORT=5432
+      - PG_USER=postgres
+      - PG_PASSWORD=postgres
+      - PG_DATABASE=postgres
+      - PG_SCHEMA=public
     depends_on:
       - postgres
