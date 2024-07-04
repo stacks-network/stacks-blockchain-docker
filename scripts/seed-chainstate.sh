@@ -84,9 +84,14 @@ check_network() {
 download_file(){
     local url=${1}
     local dest=${2}
+    # Check if the destination file already exists
+    if [[ -f "${dest}" ]]; then
+        log "File ${dest} already exists, skipping download."
+        return 0
+    fi
     local http_code=$(curl --output /dev/null --silent --head -w "%{http_code}" ${url})
     log
-    log "Downloading ${url} data to: ${DEST}"
+    log "Downloading ${url} data to: ${dest}"
     if [[ "${http_code}" && "${http_code}" != "200" ]];then
         exit_error "${COLRED}Error${COLRESET} - ${url} doesn't exist"
     fi
