@@ -8,6 +8,7 @@ shopt -s expand_aliases
 export NETWORK="mainnet"
 export ACTION=""
 export PROFILE="stacks-blockchain"
+SIGNER=false
 STACKS_CHAIN_ID="2147483648"
 STACKS_SHUTDOWN_TIMEOUT=1200 # default to 20 minutes, during sync it can take a long time to stop the runloop
 LOG_TAIL="100"
@@ -154,9 +155,10 @@ usage() {
 	log "        -n|--network: [ mainnet | testnet | mocknet ]"
 	log "        -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ]"
 	log "    optional args:"
-	log "        -f|--flags: [ proxy ]"
+	log "        -f|--flags: [ signer,proxy ]"
 	log "        export: combined with 'logs' action, exports logs to a text file"
 	log "    ex: ${COLCYAN}${0} -n mainnet -a start -f proxy${COLRESET}"
+	log "    ex: ${COLCYAN}${0} -n mainnet -a start -f signer,proxy${COLRESET}"
 	log "    ex: ${COLCYAN}${0} --network mainnet --action start --flags proxy${COLRESET}"
 	log "    ex: ${COLCYAN}${0} -n mainnet -a logs export${COLRESET}"
 	echo
@@ -434,14 +436,62 @@ events_file_env(){
 
 # Function that updates Config.toml
 update_configs(){
-    if [ "${NETWORK}" == "testnet" ]; then
+	if [ "${NETWORK}" == "testnet" ]; then
 		BTC_HOST=${TBTC_HOST}
 		BTC_RPC_USER=${TBTC_RPC_USER}
 		BTC_RPC_PASS=${TBTC_RPC_PASS}
 		BTC_RPC_PORT=${TBTC_RPC_PORT}
 		BTC_P2P_PORT=${TBTC_P2P_PORT}
-    fi
+		SIGNER_PRIVATE_KEY=${TESTNET_SIGNER_PRIVATE_KEY}
+	fi
 	CONFIG_TOML="${SCRIPTPATH}/conf/${NETWORK}/Config.toml"
+	SIGNER_TOML="${SCRIPTPATH}/conf/${NETWORK}/Signer.toml"
+
+		## update Config.toml with signer options
+		if [ "${SIGNER}" != "true" ]; then
+			${VERBOSE} && log "${COLYELLOW}Disabling signer options in ${CONFIG_TOML}${COLRESET}"
+			sed -i.tmp "
+				/^\[\[events_observer\]\]/{
+					:a
+					N
+					/endpoint.*stacks-signer/!ba
+					s/^/#/mg
+				}
+				/^stacker = true/ s/^/#/
+			" "${CONFIG_TOML}" || {
+					log_exit "Unable to update values in Config.toml file: ${COLCYAN}${CONFIG_TOML}${COLRESET}"
+			}
+    else
+			[ ! ${SIGNER_PRIVATE_KEY} ] && log_exit "Signer private key not set!"
+			${VERBOSE} && log "${COLYELLOW}Enabling signer options in ${CONFIG_TOML}${COLRESET}"
+			sed -i.tmp "
+				/^#\[\[events_observer\]\]/{
+					:a
+					N
+					/endpoint.*stacks-signer/!ba
+					s/^#//mg
+				}
+				/^#stacker = true/ s/^#//
+			" "${CONFIG_TOML}" || {
+					log_exit "Unable to update values in Config.toml file: ${COLCYAN}${CONFIG_TOML}${COLRESET}"
+			}
+
+				## update Signer.toml with env vars
+			[[ ! -f "${SIGNER_TOML}" ]] && cp "${SIGNER_TOML}.sample" "${SIGNER_TOML}"
+			${VERBOSE} && log "${COLYELLOW}Updating values in ${SIGNER_TOML} from .env${COLRESET}"
+				$(sed -i.tmp "
+				/^node_host/s/.*/node_host = \"${STACKS_CORE_RPC_HOST}:${STACKS_CORE_RPC_PORT}\"/;
+				/^endpoint/s/.*/endpoint = \"0.0.0.0:${STACKS_SIGNER_PORT}\"/;
+				/^auth_password/s/.*/auth_password = \"${AUTH_TOKEN}\"/;
+				/^stacks_private_key/s/.*/stacks_private_key = \"${SIGNER_PRIVATE_KEY}\"/;
+			" "${SIGNER_TOML}" 2>&1) || {
+						log_exit "Unable to update values in Signer.toml file: ${COLCYAN}${SIGNER_TOML}${COLRESET}"
+				}
+				${VERBOSE} && log "${COLYELLOW}Deleting temp Signer.toml file: ${SIGNER_TOML}.tmp${COLRESET}"
+				$(rm "${SIGNER_TOML}.tmp" 2>&1) || {
+						log_exit "Unable to delete tmp Signer.toml file: ${COLCYAN}${SIGNER_TOML}.tmp${COLRESET}"
+				}
+    fi
 
     ## update Config.toml with btc vars
 	[[ ! -f "${CONFIG_TOML}" ]] && cp "${CONFIG_TOML}.sample" "${CONFIG_TOML}"
@@ -452,6 +502,8 @@ update_configs(){
 		/^password/s/.*/password = \"${BTC_RPC_PASS}\"/;
 		/^rpc_port/s/.*/rpc_port = ${BTC_RPC_PORT}/;
 		/^peer_port/s/.*/peer_port = ${BTC_P2P_PORT}/;
+		/^auth_token/s/.*/auth_token = \"${AUTH_TOKEN}\"/;
+		/^endpoint = \"stacks-signer/s/.*/endpoint = \"stacks-signer:${STACKS_SIGNER_PORT}\"/;
 	" "${CONFIG_TOML}" 2>&1) || {
         log_exit "Unable to update values in Config.toml file: ${COLCYAN}${CONFIG_TOML}${COLRESET}"
     }
@@ -547,6 +599,12 @@ docker_up() {
 	if ! check_event_replay; then
 		log_exit "Event-replay in progress. Refusing to start services"
 	fi
+
+	# Set signer env based on flag
+	if [[ "${FLAGS_ARRAY[*]}" == *"signer"* ]]; then
+		SIGNER=true
+	fi
+
 	# Sanity checks before starting services
 	local param="-d"
 	if [ "${PROFILE}" == "bns" ]; then
@@ -567,9 +625,10 @@ docker_up() {
 			${VERBOSE} && log "created (recursive) persistent-data dir ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
 		fi
 		${VERBOSE} && log "Using existing data dir: ${SCRIPTPATH}/persistent-data/${NETWORK}"
-		update_configs
 	fi
-	
+
+	update_configs
+
     # # See if we can detect a Hiro API major version change requiring an event-replay import
 	# if check_api; then
 	# 	log_warn "    Required to perform a stacks-blockchain-api event-replay:"
