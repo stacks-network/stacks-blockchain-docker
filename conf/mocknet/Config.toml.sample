@@ -3,15 +3,22 @@ rpc_bind = "0.0.0.0:20443"
 p2p_bind = "0.0.0.0:20444"
 wait_time_for_microblocks = 10000
 use_test_genesis_chainstate = true
-
-[[events_observer]]
-endpoint = "stacks-blockchain-api:3700"
-events_keys = ["*"]
+prometheus_bind = "0.0.0.0:9153"
+stacker = true
 
 [burnchain]
 chain = "bitcoin"
 mode = "mocknet"
 commit_anchor_block_within = 5000
+
+[[events_observer]]
+events_keys = ["stackerdb", "block_proposal", "burn_blocks"]
+endpoint = "stacks-signer:30000"
+
+[[events_observer]]
+endpoint = "stacks-blockchain-api:3700"
+events_keys = ["*"]
+timeout_ms = 60_000
 
 [[ustx_balance]]
 # "mnemonic": "point approve language letter cargo rough similar wrap focus edge polar task olympic tobacco cinnamon drop lawn boring sort trade senior screen tiger climb",
@@ -58,6 +65,8 @@ address = "STSTW15D618BSZQB85R058DS46THH86YQQY6XCB7"
 amount = 100000000000000
 
 [connection_options]
+auth_token = "1234"
+private_neighbors = false
 read_only_call_limit_write_length = 0
 read_only_call_limit_read_length = 100000
 read_only_call_limit_write_count = 0

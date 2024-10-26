@@ -24,6 +24,7 @@ services:
     ports:
       - ${STACKS_CORE_RPC_PORT:-20443}:${STACKS_CORE_RPC_PORT:-20443}
       - ${STACKS_CORE_P2P_PORT:-20444}:${STACKS_CORE_P2P_PORT:-20444}
+      - ${NODE_METRICS_PORT:-9153}:${NODE_METRICS_PORT:-9153}
     env_file:
       - ${SCRIPTPATH}/.env
     networks:

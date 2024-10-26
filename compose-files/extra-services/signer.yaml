@@ -1,0 +1,29 @@
+version: "3.5"
+services:
+  stacks-signer:
+    image: blockstack/stacks-signer:${STACKS_SIGNER_VERSION:-latest}
+    container_name: stacks-signer
+    restart: on-failure
+    volumes:
+      - ${SCRIPTPATH}/conf/${NETWORK}:/src/stacks-signer
+      - ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-signer:/root/stacks-signer/data
+    ports:
+      - ${SIGNER_METRICS_PORT:-9154}:${SIGNER_METRICS_PORT:-9154}
+    env_file:
+      - ${SCRIPTPATH}/.env
+    networks:
+      - default
+    profiles:
+      - stacks-blockchain
+    command:
+      [
+        "/bin/stacks-signer",
+        "run",
+        "--config",
+        "/src/stacks-signer/Signer.toml",
+      ]
+networks:
+  default:
+    name: ${DOCKER_NETWORK}
+    ipam:
+      driver: default
