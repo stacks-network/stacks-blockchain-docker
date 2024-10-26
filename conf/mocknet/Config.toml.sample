@@ -3,6 +3,7 @@ rpc_bind = "0.0.0.0:20443"
 p2p_bind = "0.0.0.0:20444"
 wait_time_for_microblocks = 10000
 use_test_genesis_chainstate = true
+prometheus_bind = "0.0.0.0:9153"
 stacker = true
 
 [burnchain]

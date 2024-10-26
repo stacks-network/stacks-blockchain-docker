@@ -1,5 +1,6 @@
 node_host = "stacks-blockchain:20443"
 endpoint = "0.0.0.0:30000"
+metrics_endpoint = "0.0.0.0:9154"
 network = "testnet"
 db_path = "/root/stacks-signer/data/signer.sqlite"
 auth_password = ""

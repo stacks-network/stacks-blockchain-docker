@@ -36,6 +36,7 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 | `SIGNER_PRIVATE_KEY`         | The private key of the signer, on mainnet.                                                       |               |
 | `TESTNET_SIGNER_PRIVATE_KEY` | The private key of the signer, on testnet.                                                       |               |
 | `STACKS_SIGNER_PORT`         | The port where the signer will expose an RPC endpoint for receiving events from your Stacks node | `30000`       |
+| `SIGNER_METRICS_PORT`        | The port where the signer will expose an endpoint for reading metrics                            | `9154`        |
 
 ### API Settings
 
@@ -78,6 +79,7 @@ Most variables in `.env` shouldn't be modified, but there are a few you may wish
 | `STACKS_LOG_DEBUG`        | Verbose output logs                                                                                    | `0`    |
 | `STACKS_LOG_JSON`         | Output logs in json format                                                                             | `0`    |
 | `STACKS_SHUTDOWN_TIMEOUT` | Time to wait for Stacks Blockchain to shutdown properly.<br>_recommended to leave this at the default_ | `1200` |
+| `NODE_METRICS_PORT`       | The port where the node will expose an endpoint for reading metrics                                    | `9153` |
 
 ### Burnchain Settings
 

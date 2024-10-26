@@ -16,10 +16,16 @@ git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stack
 cp sample.env .env
 ```
 
-### Sync from genesis
+### Sync from genesis (no signer)
 
 ```bash
 ./manage.sh -n mainnet -a start
+```
+
+### Sync from genesis (with signer)
+
+```bash
+./manage.sh -n mainnet -a start -f signer
 ```
 
 ### Seed chainstate from Hiro Archiver

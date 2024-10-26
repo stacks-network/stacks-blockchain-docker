@@ -7,6 +7,8 @@ services:
     volumes:
       - ${SCRIPTPATH}/conf/${NETWORK}:/src/stacks-signer
       - ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-signer:/root/stacks-signer/data
+    ports:
+      - ${SIGNER_METRICS_PORT:-9154}:${SIGNER_METRICS_PORT:-9154}
     env_file:
       - ${SCRIPTPATH}/.env
     networks:

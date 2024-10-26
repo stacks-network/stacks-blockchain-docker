@@ -482,6 +482,7 @@ update_configs(){
 				$(sed -i.tmp "
 				/^node_host/s/.*/node_host = \"${STACKS_CORE_RPC_HOST}:${STACKS_CORE_RPC_PORT}\"/;
 				/^endpoint/s/.*/endpoint = \"0.0.0.0:${STACKS_SIGNER_PORT}\"/;
+				/^metrics_endpoint/s/.*/metrics_endpoint = \"0.0.0.0:${SIGNER_METRICS_PORT}\"/;
 				/^auth_password/s/.*/auth_password = \"${AUTH_TOKEN}\"/;
 				/^stacks_private_key/s/.*/stacks_private_key = \"${SIGNER_PRIVATE_KEY}\"/;
 			" "${SIGNER_TOML}" 2>&1) || {
@@ -504,6 +505,7 @@ update_configs(){
 		/^peer_port/s/.*/peer_port = ${BTC_P2P_PORT}/;
 		/^auth_token/s/.*/auth_token = \"${AUTH_TOKEN}\"/;
 		/^endpoint = \"stacks-signer/s/.*/endpoint = \"stacks-signer:${STACKS_SIGNER_PORT}\"/;
+		/^prometheus_bind/s/.*/prometheus_bind = \"0.0.0.0:${NODE_METRICS_PORT}\"/;
 	" "${CONFIG_TOML}" 2>&1) || {
         log_exit "Unable to update values in Config.toml file: ${COLCYAN}${CONFIG_TOML}${COLRESET}"
     }
