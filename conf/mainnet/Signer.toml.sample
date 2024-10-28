@@ -1,0 +1,8 @@
+node_host = "stacks-blockchain:20443"
+endpoint = "0.0.0.0:30000"
+metrics_endpoint = "0.0.0.0:9154"
+network = "mainnet"
+db_path = "/root/stacks-signer/data/signer.sqlite"
+auth_password = ""
+stacks_private_key = ""
+block_proposal_timeout_ms = 180000

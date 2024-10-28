@@ -3,10 +3,8 @@ working_dir = "/root/stacks-blockchain/data"
 rpc_bind = "0.0.0.0:20443"
 p2p_bind = "0.0.0.0:20444"
 bootstrap_node = "02196f005965cebe6ddc3901b7b1cc1aa7a88f305bb8c5893456b8f9a605923893@seed.mainnet.hiro.so:20444"
-
-[[events_observer]]
-endpoint = "stacks-blockchain-api:3700"
-events_keys = ["*"]
+prometheus_bind = "0.0.0.0:9153"
+stacker = true
 
 [burnchain]
 chain = "bitcoin"
@@ -16,3 +14,16 @@ username = "stacks"
 password = "foundation"
 rpc_port = 8332
 peer_port = 8333
+
+[connection_options]
+auth_token = "1234"
+private_neighbors = false
+
+[[events_observer]]
+events_keys = ["stackerdb", "block_proposal", "burn_blocks"]
+endpoint = "stacks-signer:30000"
+
+[[events_observer]]
+endpoint = "stacks-blockchain-api:3700"
+events_keys = ["*"]
+timeout_ms = 300_000

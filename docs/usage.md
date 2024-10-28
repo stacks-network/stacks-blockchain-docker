@@ -8,9 +8,10 @@ Usage:
         -n|--network: [ mainnet | testnet | mocknet ]
         -a|--action: [ start | stop | logs | reset | upgrade | import | export | bns ]
     optional args:
-        -f|--flags: [ proxy ]
+        -f|--flags: [ signer,proxy ]
         export: combined with 'logs' action, exports logs to a text file
     ex: ./manage.sh -n mainnet -a start -f proxy
+	ex: ./manage.sh -n mainnet -a start -f signer,proxy
     ex: ./manage.sh --network mainnet --action start --flags proxy
     ex: ./manage.sh -n mainnet -a logs export
 ```
@@ -23,6 +24,16 @@ Usage:
 
 ```bash
 ./manage.sh -n <network> -a restart
+```
+
+#### With optional signer
+
+```bash
+./manage.sh -n <network> -a start -f signer
+```
+
+```bash
+./manage.sh -n <network> -a restart -f signer
 ```
 
 #### With optional proxy

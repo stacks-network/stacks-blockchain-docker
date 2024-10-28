@@ -16,16 +16,22 @@ git clone https://github.com/stacks-network/stacks-blockchain-docker && cd stack
 cp sample.env .env
 ```
 
-### Sync from genesis
+### Sync from genesis (no signer)
 
 ```bash
 ./manage.sh -n mainnet -a start
 ```
 
+### Sync from genesis (with signer)
+
+```bash
+./manage.sh -n mainnet -a start -f signer
+```
+
 ### Seed chainstate from Hiro Archiver
 
 Using data from the [Hiro Archiver](https://docs.hiro.so/hiro-archive) service, this script will download the latest files, extract them and restore the postgres data. \
-_**Note**: it can take a long time to process the data, and you'll need at a minimum roughly 150GB of free space_
+_**Note**: it can take a long time to process the data, and you'll need at a minimum roughly 350GB of free space_
 
 ```bash
 sudo ./scripts/seed-chainstate.sh
