@@ -35,11 +35,11 @@ alias log_warn='logger "${WARN}"'
 alias log_info='logger "${INFO}"'
 alias log_exit='exit_error "${EXIT_MSG}"'
 if ${VERBOSE}; then
-	alias log='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}"' 
-	alias log_info='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${INFO}"' 
-	alias log_warn='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${WARN}"' 
+	alias log='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}"'
+	alias log_info='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${INFO}"'
+	alias log_warn='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${WARN}"'
 	alias log_error='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${ERROR}"'
-	alias log_exit='exit_error  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${EXIT_MSG}"' 
+	alias log_exit='exit_error  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${EXIT_MSG}"'
 fi
 
 logger() {
@@ -84,9 +84,45 @@ check_network() {
 download_file(){
     local url=${1}
     local dest=${2}
-    local http_code=$(curl --output /dev/null --silent --head -w "%{http_code}" ${url})
+    local checksum_url=${3:-""}
+    local checksum_file=${4:-""}
+
     log
-    log "Downloading ${url} data to: ${DEST}"
+    log "Checking for ${dest}"
+
+    # Check if file exists locally and if we should verify checksum
+    if [[ -f "${dest}" && -n "${checksum_url}" && -n "${checksum_file}" ]]; then
+        log "  File exists locally. Checking remote checksum..."
+
+        # Download checksum file if it doesn't exist
+        if [[ ! -f "${checksum_file}" ]]; then
+            log "  Downloading checksum file: ${checksum_url}"
+            curl -s -L ${checksum_url} -o "${checksum_file}" || exit_error "${COLRED}Error${COLRESET} downloading checksum file ${checksum_url}"
+        fi
+
+        # Get the remote checksum
+        local remote_sha256=$(cat ${checksum_file} | awk {'print $1'})
+
+        # Calculate local file checksum
+        local local_sha256=$(sha256sum ${dest} | awk {'print $1'})
+
+        log "  Local SHA256: ${local_sha256}"
+        log "  Remote SHA256: ${remote_sha256}"
+
+        # If checksums match, skip download
+        if [[ "${local_sha256}" == "${remote_sha256}" ]]; then
+            log "  ${COLGREEN}Checksum matches. Skipping download.${COLRESET}"
+            return 0
+        else
+            log "  ${COLYELLOW}Checksum mismatch. Will download fresh copy.${COLRESET}"
+        fi
+    elif [[ -f "${dest}" ]]; then
+        log "  ${COLYELLOW}File exists but cannot verify checksum. Will download fresh copy.${COLRESET}"
+    fi
+
+    # Download the file
+    local http_code=$(curl --output /dev/null --silent --head -w "%{http_code}" ${url})
+    log "Downloading ${url} data to: ${dest}"
     if [[ "${http_code}" && "${http_code}" != "200" ]];then
         exit_error "${COLRED}Error${COLRESET} - ${url} doesn't exist"
     fi
@@ -95,6 +131,13 @@ download_file(){
     log "  File Download size: ${converted_size}"
     log "  Retrieving: ${url}"
     curl -L -# ${url} -o "${dest}" || exit_error "${COLRED}Error${COLRESET} downloading ${url} to ${dest}"
+
+    # If checksum URL was provided, download it (if not done already)
+    if [[ -n "${checksum_url}" && -n "${checksum_file}" && ! -f "${checksum_file}" ]]; then
+        log "  Downloading checksum file: ${checksum_url}"
+        curl -s -L ${checksum_url} -o "${checksum_file}" || exit_error "${COLRED}Error${COLRESET} downloading checksum file ${checksum_url}"
+    fi
+
     return 0
 }
 
@@ -117,7 +160,7 @@ verify_checksum(){
     return 0
 }
 
-log "-- seed-chainstate.sh --" 
+log "-- seed-chainstate.sh --"
 log "  Starting at $(date "+%D %H:%m:%S")"
 log "  Using files/methods from https://docs.hiro.so/hiro-archive"
 log "  checking for existence of ${SCRIPTPATH}/persistent-data/${NETWORK}"
@@ -154,12 +197,10 @@ if check_network "${PROFILE}"; then
     ${VERBOSE} && log "  Continuing"
 fi
 
-download_file ${PGDUMP_URL} ${PGDUMP_DEST}
-download_file ${PGDUMP_URL_SHA256} ${PGDUMP_DEST_SHA256}
+download_file ${PGDUMP_URL} ${PGDUMP_DEST} ${PGDUMP_URL_SHA256} ${PGDUMP_DEST_SHA256}
 verify_checksum ${PGDUMP_DEST} ${PGDUMP_DEST_SHA256}
 
-download_file ${CHAINDATA_URL} ${CHAINDATA_DEST}
-download_file ${CHAINDATA_URL_SHA256} ${CHAINDATA_DEST_SHA256}
+download_file ${CHAINDATA_URL} ${CHAINDATA_DEST} ${CHAINDATA_URL_SHA256} ${CHAINDATA_DEST_SHA256}
 verify_checksum ${CHAINDATA_DEST} ${CHAINDATA_DEST_SHA256}
 
 
@@ -171,7 +212,7 @@ log
 log "  Chowning data to ${CURRENT_USER}"
 chown -R ${CURRENT_USER} "${SCRIPTPATH}/persistent-data/${NETWORK}" || exit_error "${COLRED}Error${COLRESET} setting file permissions"
 
-log 
+log
 log "Importing postgres data"
 log "  Starting postgres container: ${CONTAINER}"
 
