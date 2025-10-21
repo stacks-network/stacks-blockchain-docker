@@ -55,7 +55,7 @@ EXIT_MSG="${COLRED}[ Exit Error ]${COLRESET} "
 DEBUG="[ DEBUG ] "
 
 # Use .env in the local dir
-#     - This var is also used in the docker-compose yaml files
+#     - This var is also used in the docker compose yaml files
 ABS_PATH="$( cd -- "$(dirname "${0}")" >/dev/null 2>&1 ; pwd -P )"
 export SCRIPTPATH=${ABS_PATH}
 ENV_FILE="${SCRIPTPATH}/.env"
@@ -74,11 +74,11 @@ alias log_warn='logger "${WARN}"'
 alias log_info='logger "${INFO}"'
 alias log_exit='exit_error "${EXIT_MSG}"'
 if ${VERBOSE}; then
-	alias log='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}"' 
-	alias log_info='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${INFO}"' 
-	alias log_warn='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${WARN}"' 
+	alias log='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}"'
+	alias log_info='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${INFO}"'
+	alias log_warn='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${WARN}"'
 	alias log_error='logger  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${ERROR}"'
-	alias log_exit='exit_error  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${EXIT_MSG}"' 
+	alias log_exit='exit_error  "$(date "+%D %H:%m:%S")" "Func:${FUNCNAME:-main}" "Line:${LINENO:-null}" "${EXIT_MSG}"'
 fi
 
 logger() {
@@ -174,8 +174,8 @@ confirm() {
 			[yY]) echo ; return 0 ;;
 			[nN]) echo ; return 1 ;;
 			*) printf "\\033[31m %s \\n\\033[0m" "invalid input"
-		esac 
-	done  
+		esac
+	done
 }
 
 # Function to check for a valid flag (exists in provided arg of array)
@@ -234,7 +234,7 @@ check_network() {
 	local profile="${1}"
 	${VERBOSE} && log "Checking if default services are running"
 	# Determine if the services are already running
-	if [[ $(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" --profile ${profile} ps -q) ]]; then
+	if [[ $(docker compose -f "${SCRIPTPATH}/compose-files/common.yaml" --profile ${profile} ps -q) ]]; then
 		${VERBOSE} && log "Docker services have a pid"
 		# Docker is running, return success
 		return 0
@@ -261,7 +261,7 @@ check_event_replay(){
 		log "${ACTION} Checking for a completed event-replay import"
 	fi
 	eval "docker logs stacks-blockchain-api --tail 20 2>&1 | grep -q 'Event import and playback successful'" || test ${?} -eq 141
-	check_import_finished="${?}"	
+	check_import_finished="${?}"
 	${VERBOSE} && log "check_import_finished: ${check_import_finished}"
 	##
 	## Check if export has started and save return code
@@ -498,7 +498,7 @@ update_configs(){
 	[[ ! -f "${CONFIG_TOML}" ]] && cp "${CONFIG_TOML}.sample" "${CONFIG_TOML}"
 	${VERBOSE} && log "${COLYELLOW}Updating values in ${CONFIG_TOML} from .env${COLRESET}"
     $(sed -i.tmp "
-		/^peer_host/s/.*/peer_host = \"${BTC_HOST}\"/; 
+		/^peer_host/s/.*/peer_host = \"${BTC_HOST}\"/;
 		/^username/s/.*/username = \"${BTC_RPC_USER}\"/;
 		/^password/s/.*/password = \"${BTC_RPC_PASS}\"/;
 		/^rpc_port/s/.*/rpc_port = ${BTC_RPC_PORT}/;
@@ -567,7 +567,7 @@ set_flags() {
 ordered_stop() {
 	${VERBOSE} && log "Starting the ordered stop of services"
 	if [[ -f "${SCRIPTPATH}/compose-files/common.yaml" && -f "${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml" ]]; then
-		if eval "docker-compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
+		if eval "docker compose -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ps -q stacks-blockchain > /dev/null  2>&1"; then
 			${VERBOSE} && log "Services are running. continuing to stop services"
 			for service in "${DEFAULT_SERVICES[@]}"; do
 				if check_container "${service}"; then
@@ -579,7 +579,7 @@ ordered_stop() {
                         log "    Timeout is set for ${STACKS_SHUTDOWN_TIMEOUT} seconds"
 					fi
                     # Compose a command to run using provided vars
-					cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop ${timeout} ${service}"
+					cmd="docker compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml --profile ${PROFILE} stop ${timeout} ${service}"
 					${VERBOSE} && log "Running: ${cmd}"
 					eval "${cmd}"
 				fi
@@ -621,7 +621,7 @@ docker_up() {
 	if [[ "${NETWORK}" == "mainnet" ||  "${NETWORK}" == "testnet" ]];then
 		if [[ ! -d "${SCRIPTPATH}/persistent-data/${NETWORK}" ]];then
 			log "Creating persistent-data for ${NETWORK}"
-			mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay" >/dev/null 2>&1 || { 
+			mkdir -p "${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay" >/dev/null 2>&1 || {
 				log_exit "Unable to create required dir: ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay${COLRESET}"
 			}
 			${VERBOSE} && log "created (recursive) persistent-data dir ${SCRIPTPATH}/persistent-data/${NETWORK}/event-replay"
@@ -649,7 +649,7 @@ docker_up() {
 	# 	log_exit "Event-replay is required"
 	# fi
 	${VERBOSE} && log "Copying ${COLCYAN}${ENV_FILE}${COLRESET} -> ${COLCYAN}${ENV_FILE}.save${COLRESET}"
-	$(cp -a "${ENV_FILE}" "${ENV_FILE}.save") >/dev/null 2>&1 || { 
+	$(cp -a "${ENV_FILE}" "${ENV_FILE}.save") >/dev/null 2>&1 || {
 		log_exit "Unable to copy ${COLCYAN}${ENV_FILE}${COLRESET} -> ${COLCYAN}${ENV_FILE}.save${COLRESET}"
 	}
 	log "Starting all services for ${COLYELLOW}${PROFILE}${COLRESET}"
@@ -707,7 +707,7 @@ logs_export(){
 	# create exported-logs if it doesn't exist
     if [[ ! -d "${SCRIPTPATH}/exported-logs" ]];then
         log "    - Creating log dir: ${COLCYAN}${SCRIPTPATH}/exported-logs${COLRESET}"
-        mkdir -p "${SCRIPTPATH}/exported-logs" >/dev/null 2>&1 || { 
+        mkdir -p "${SCRIPTPATH}/exported-logs" >/dev/null 2>&1 || {
 			log_exit "Unable to create required dir: ${COLCYAN}${SCRIPTPATH}/exported-logs${COLRESET}"
 		}
 		${VERBOSE} && log "created logs dir: ${SCRIPTPATH}/exported-logs"
@@ -739,7 +739,7 @@ status() {
 		echo
 		log "${COLBOLD}Stacks Blockchain services are running${COLRESET}"
 		echo
-		${VERBOSE} && echo -e "$(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" ps)"
+		${VERBOSE} && echo -e "$(docker compose -f "${SCRIPTPATH}/compose-files/common.yaml" ps)"
 		exit 0
 	else
 		echo
@@ -757,7 +757,7 @@ reset_data() {
 			# Exit if operation isn't confirmed
 			confirm "Delete Persistent data for ${COLYELLOW}${NETWORK}${COLRESET}?" || log_exit "Delete Cancelled"
 			${VERBOSE} && log "  Running: rm -rf ${SCRIPTPATH}/persistent-data/${NETWORK}"
-			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || { 
+			rm -rf "${SCRIPTPATH}/persistent-data/${NETWORK}"  >/dev/null 2>&1 || {
 				# Log error and exit if data wasn't deleted (permission denied etc)
 				log_error "Failed to remove ${COLCYAN}${SCRIPTPATH}/persistent-data/${NETWORK}${COLRESET}"
 				log_exit "  Re-run the command with sudo: ${COLCYAN}sudo ${0} -n ${NETWORK} -a reset${COLRESET}"
@@ -864,7 +864,7 @@ event_replay(){
 	exit 0
 }
 
-# Execute the docker-compose command using provided args
+# Execute the docker compose command using provided args
 run_docker() {
 	local action="${1}"
 	local flags="${2}"
@@ -872,7 +872,7 @@ run_docker() {
 	local param="${4}"
 	# # set any optional flags
 	set_flags "${flags}"
-	cmd="docker-compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${OPTIONAL_FLAGS} --profile ${profile} ${action} ${param}"
+	cmd="docker compose --env-file ${ENV_FILE} -f ${SCRIPTPATH}/compose-files/common.yaml -f ${SCRIPTPATH}/compose-files/networks/${NETWORK}.yaml ${OPTIONAL_FLAGS} --profile ${profile} ${action} ${param}"
 	# Log the command we'll be running for verbosity
 	${VERBOSE} && log "action: ${action}"
 	${VERBOSE} && log "profile: ${profile}"
@@ -915,9 +915,14 @@ run_docker() {
 }
 
 # Check for required binaries, exit if missing
-for cmd in docker-compose docker id; do
+for cmd in docker id; do
 	command -v "${cmd}" >/dev/null 2>&1 || log_exit "Missing command: ${cmd}"
 done
+
+# Check for docker compose specifically (as a subcommand)
+if ! docker compose version >/dev/null 2>&1; then
+	log_exit "Missing command: docker compose (Docker Compose v2 required)"
+fi
 
 # If no args are provided, print usage
 if [[ ${#} -eq 0 ]]; then
@@ -941,7 +946,7 @@ do
 	case ${1} in
 	-n|--network)
 		# Retrieve the network arg, converted to lowercase
-		if [ "${2}" == "" ]; then 
+		if [ "${2}" == "" ]; then
 			log_error "Missing required value for ${COLYELLOW}${1}${COLRESET}"
 			${VERBOSE} && log "calling usage function"
 			usage
@@ -957,9 +962,9 @@ do
 				${VERBOSE} && log "SUPPORTED_NETWORKS: ${SUPPORTED_NETWORKS[*]}"
 		shift
 		;;
-	-a|--action) 
+	-a|--action)
 		# Retrieve the action arg, converted to lowercase
-		if [ "${2}" == "" ]; then 
+		if [ "${2}" == "" ]; then
 			log_error "Missing required value for ${COLYELLOW}${1}${COLRESET}"
 			${VERBOSE} && log "calling usage function"
 			usage
@@ -981,8 +986,8 @@ do
 		;;
 	-f|--flags)
 		# Retrieve the flags arg as a comma separated list, converted to lowercase
-		# Check against the dynamic list 'FLAGS_ARRAY' which validates against folder contents 
-		if [ "${2}" == "" ]; then 
+		# Check against the dynamic list 'FLAGS_ARRAY' which validates against folder contents
+		if [ "${2}" == "" ]; then
 			log_error "Missing required value for ${COLYELLOW}${1}${COLRESET}"
 			${VERBOSE} && log "calling usage function"
 			usage
@@ -1037,7 +1042,7 @@ do
 		${VERBOSE} && log "calling download_bns_data function"
 		export STACKS_CHAIN_ID=${STACKS_CHAIN_ID}
 		download_bns_data
-		;;	
+		;;
 	-h|--help)
 		${VERBOSE} && log "calling usage function"
 		usage
