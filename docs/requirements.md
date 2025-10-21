@@ -1,7 +1,7 @@
 # Requirements
 
 - [Docker](./docker.md) >= `20.10.12`
-- [docker-compose](./docker.md) >= `2.2.2`
+- [docker compose](./docker.md) >= `2.2.2`
 - [git](https://git-scm.com/downloads)
 - [jq binary](https://stedolan.github.io/jq/download/)
 - [sed](https://www.gnu.org/software/sed/)

@@ -1,31 +1,30 @@
 # Docker
 
-_Note: `docker-compose` executable is required, even though recent versions of Docker contain `compose` natively_
-
-- [Install Docker-compose](https://docs.docker.com/compose/install/)
+- [Install Docker Compose](https://docs.docker.com/compose/install/)
 - [Docker Desktop for Mac](https://docs.docker.com/docker-for-mac/install/)
 - [Docker Desktop for Windows](https://docs.docker.com/docker-for-windows/install/)
 - [Docker Engine for Linux](https://docs.docker.com/desktop/install/linux-install/#generic-installation-steps)
 
-## Verify `docker-compose` is installed locally
+## Verify `docker compose` is installed locally
 
-`docker-compose` version `2.2.2` or greater is required:
+`docker compose` version `2.2.2` or greater is required:
 
 ```bash
-$ docker-compose -v
+$ docker compose version
 Docker Compose version v2.2.2
 ```
 
-## Install/Upgrade docker-compose
+## Install/Upgrade docker compose
 
-If the command is not found, or the version is less than `2.2.2`, run the following to install the latest to `/usr/local/bin/docker-compose`
+If the command is not found, or the version is less than `2.2.2`, follow the [official Docker Compose installation instructions](https://docs.docker.com/compose/install/) for your platform.
+
+For Docker Desktop users (Mac/Windows), Compose is included by default.
+
+For Linux users, install the docker-compose-plugin:
 
 ```bash
-#You will need to have jq installed, or this snippet won't run.
-VERSION=$(curl --silent https://api.github.com/repos/docker/compose/releases/latest | jq .name -r)
-DESTINATION=/usr/local/bin/docker-compose
-sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
-sudo chmod 755 $DESTINATION
+sudo apt-get update
+sudo apt-get install docker-compose-plugin
 ```
 
 ## Security note on docker
@@ -55,8 +54,4 @@ echo   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docke
 sudo apt-get update && sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 sudo groupadd docker
 sudo usermod -aG docker $USER
-VERSION=$(curl --silent https://api.github.com/repos/docker/compose/releases/latest | jq .name -r)
-DESTINATION=/usr/local/bin/docker-compose
-sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
-sudo chmod 755 $DESTINATION
 ```

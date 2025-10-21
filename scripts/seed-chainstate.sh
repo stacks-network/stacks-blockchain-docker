@@ -70,7 +70,7 @@ check_network() {
 	local profile="${1}"
 	${VERBOSE} && log "Checking if default services are running"
 	# Determine if the services are already running
-	if [[ $(docker-compose -f "${SCRIPTPATH}/compose-files/common.yaml" --profile ${profile} ps -q) ]]; then
+	if [[ $(docker compose -f "${SCRIPTPATH}/compose-files/common.yaml" --profile ${profile} ps -q) ]]; then
 		${VERBOSE} && log "Docker services have a pid"
         log "Stacks Blockchain services are currently running."
         log "  Stop services with: ./manage.sh -n ${NETWORK} -a stop"
