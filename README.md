@@ -31,7 +31,8 @@ cp sample.env .env
 ### Seed chainstate from Hiro Archiver
 
 Using data from the [Hiro Archiver](https://docs.hiro.so/hiro-archive) service, this script will download the latest files, extract them and restore the postgres data. \
-_**Note**: it can take a long time to process the data, and you'll need at a minimum roughly 350GB of free space_
+_**Note**: it can take a long time to process the data, and you'll need at a minimum roughly 350GB of free space_  \
+_**Note**: for faster downloads, install [aria2](https://aria2.github.io/) on your system_
 
 ```bash
 sudo ./scripts/seed-chainstate.sh
