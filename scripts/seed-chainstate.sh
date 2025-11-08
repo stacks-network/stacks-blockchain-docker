@@ -219,7 +219,6 @@ if check_network "${PROFILE}"; then
 fi
 
 download_file ${PGDUMP_URL} ${PGDUMP_DEST} ${PGDUMP_URL_SHA256} ${PGDUMP_DEST_SHA256}
-exit 1
 verify_checksum ${PGDUMP_DEST} ${PGDUMP_DEST_SHA256}
 
 download_file ${CHAINDATA_URL} ${CHAINDATA_DEST} ${CHAINDATA_URL_SHA256} ${CHAINDATA_DEST_SHA256}
