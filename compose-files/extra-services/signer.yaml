@@ -1,4 +1,3 @@
-version: "3.5"
 services:
   stacks-signer:
     image: blockstack/stacks-signer:${STACKS_SIGNER_VERSION:-latest}

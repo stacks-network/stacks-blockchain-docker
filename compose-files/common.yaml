@@ -1,4 +1,3 @@
-version: "3.5"
 services:
   postgres:
     image: postgres:${POSTGRES_VERSION:-15}-alpine
