@@ -141,9 +141,12 @@ download_file(){
         aria2c \
             -x 10 \
             -s 10 \
+            --summary-interval=0 \
             --max-tries=10 \
             --retry-wait=5 \
-            "${url}" -o "${dest}" || exit_error "${COLRED}Error${COLRESET} downloading ${url} to ${dest}"
+            --dir="$(dirname "${dest}")" \
+            --out="$(basename "${dest}")" \
+            "${url}" || exit_error "${COLRED}Error${COLRESET} downloading ${url} to ${dest}"
     else
         # Fallback to curl
         curl -L -# \
