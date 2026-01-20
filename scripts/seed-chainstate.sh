@@ -206,10 +206,10 @@ PGDUMP_URL_SHA256="https://archive.hiro.so/${NETWORK}/stacks-blockchain-api-pg/s
 PGDUMP_DEST="${SCRIPTPATH}/stacks-blockchain-api-pg-${POSTGRES_VERSION}-${STACKS_BLOCKCHAIN_API_VERSION}-${DUMP_VERSION}.dump"
 PGDUMP_DEST_SHA256="${SCRIPTPATH}/stacks-blockchain-api-pg-${POSTGRES_VERSION}-${STACKS_BLOCKCHAIN_API_VERSION}-${DUMP_VERSION}.dump.sha256"
 
-CHAINDATA_URL="https://archive.hiro.so/${NETWORK}/stacks-blockchain/${NETWORK}-stacks-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.tar.gz"
+CHAINDATA_URL="https://archive.hiro.so/${NETWORK}/stacks-blockchain/${NETWORK}-stacks-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.tar.zst"
 CHAINDATA_URL_SHA256="https://archive.hiro.so/${NETWORK}/stacks-blockchain/${NETWORK}-stacks-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.sha256"
-CHAINDATA_DEST="${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.tar.gz"
-CHAINDATA_DEST_SHA256="${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.tar.gz.sha256"
+CHAINDATA_DEST="${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.tar.zst"
+CHAINDATA_DEST_SHA256="${SCRIPTPATH}/${NETWORK}-blockchain-${STACKS_BLOCKCHAIN_VERSION}-${DUMP_VERSION}.tar.zst.sha256"
 
 
 ${VERBOSE} && log "  PGDUMP_URL:  ${PGDUMP_URL}"
@@ -236,7 +236,12 @@ verify_checksum ${CHAINDATA_DEST} ${CHAINDATA_DEST_SHA256}
 
 log
 log "Extracting stacks-blockchain chainstate data to: ${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain"
-tar -xvf "${CHAINDATA_DEST}" -C "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain/" || exit_error "${COLRED}Error${COLRESET} extracting stacks-blockchain chainstate data"
+# Check if zstd is available for extraction
+if command -v zstd &> /dev/null; then
+    zstd -d -c "${CHAINDATA_DEST}" | tar -xvf - -C "${SCRIPTPATH}/persistent-data/${NETWORK}/stacks-blockchain/" || exit_error "${COLRED}Error${COLRESET} extracting stacks-blockchain chainstate data"
+else
+    exit_error "${COLRED}Error${COLRESET} - zstd is required for extraction. Install with: brew install zstd (macOS) or apt install zstd (Ubuntu)"
+fi
 
 log
 log "  Chowning data to ${CURRENT_USER}"
