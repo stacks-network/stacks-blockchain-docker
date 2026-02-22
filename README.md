@@ -81,3 +81,4 @@ curl -sL localhost:3999/v2/info | jq
 curl -sL localhost/v2/info | jq
 curl -sL localhost/ | jq
 ```
+``
