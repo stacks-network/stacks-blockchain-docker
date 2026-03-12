@@ -17,7 +17,7 @@ services:
       - event-replay
       - stacks-blockchain
   stacks-blockchain:
-    image: blockstack/stacks-blockchain:${STACKS_BLOCKCHAIN_VERSION:-latest}
+    image: blockstack/stacks-core:${STACKS_BLOCKCHAIN_VERSION:-latest}
     container_name: stacks-blockchain
     restart: on-failure
     ports:
