@@ -37,10 +37,10 @@ _**Note**: for faster downloads, install [aria2](https://aria2.github.io/) on yo
 Example aria2c install on a debian based system:
 ```
 git clone https://github.com/aria2/aria2 aria2c && cd aria2c
-sudo apt-get install build-essential libssh2-1-dev libc-ares-dev libxml2-dev zlib1g-dev libsqlite3-dev sqlite3 pkg-config autopoint binutils autoconf automake autotools-dev libtool
+sudo apt-get install -y build-essential libssh2-1-dev libc-ares-dev libxml2-dev zlib1g-dev libsqlite3-dev sqlite3 pkg-config autopoint binutils autoconf automake autotools-dev libtool
 autoreconf -i
 ./configure
-make && make install
+make && sudo make install
 ```
 
 ```bash
