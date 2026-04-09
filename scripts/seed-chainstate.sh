@@ -90,40 +90,13 @@ check_network() {
 download_file(){
     local url=${1}
     local dest=${2}
-    local checksum_url=${3:-""}
-    local checksum_file=${4:-""}
 
     log
     log "Checking for ${dest}"
 
-    # Check if file exists locally and if we should verify checksum
-    if [[ -f "${dest}" && -n "${checksum_url}" && -n "${checksum_file}" ]]; then
-        log "  File exists locally. Checking remote checksum..."
-
-        # Download checksum file if it doesn't exist
-        if [[ ! -f "${checksum_file}" ]]; then
-            log "  Downloading checksum file: ${checksum_url}"
-            curl -s -L ${checksum_url} -o "${checksum_file}" || exit_error "${COLRED}Error${COLRESET} downloading checksum file ${checksum_url}"
-        fi
-
-        # Get the remote checksum
-        local remote_sha256=$(cat ${checksum_file} | awk {'print $1'})
-
-        # Calculate local file checksum
-        local local_sha256=$(sha256sum ${dest} | awk {'print $1'})
-
-        log "  Local SHA256: ${local_sha256}"
-        log "  Remote SHA256: ${remote_sha256}"
-
-        # If checksums match, skip download
-        if [[ "${local_sha256}" == "${remote_sha256}" ]]; then
-            log "  ${COLGREEN}Checksum matches. Skipping download.${COLRESET}"
-            return 0
-        else
-            log "  ${COLYELLOW}Checksum mismatch. Will download fresh copy.${COLRESET}"
-        fi
-    elif [[ -f "${dest}" ]]; then
-        log "  ${COLYELLOW}File exists but cannot verify checksum. Will download fresh copy.${COLRESET}"
+    if [[ -f "${dest}" ]]; then
+        log "  File exists locally. Skipping download."
+        return 0
     fi
 
     # Check if aria2c is available
@@ -162,20 +135,21 @@ download_file(){
             "${url}" -o "${dest}" || exit_error "${COLRED}Error${COLRESET} downloading ${url} to ${dest}"
     fi
 
-    # If checksum URL was provided, download it (if not done already)
-    if [[ -n "${checksum_url}" && -n "${checksum_file}" && ! -f "${checksum_file}" ]]; then
-        log "  Downloading checksum file: ${checksum_url}"
-        curl -s -L ${checksum_url} -o "${checksum_file}" || exit_error "${COLRED}Error${COLRESET} downloading checksum file ${checksum_url}"
-    fi
-
     return 0
 }
 
 verify_checksum(){
     local local_file=${1}
-    local local_sha256=${2}
-    local sha256=$(cat ${local_sha256} | awk {'print $1'} )
+    local checksum_url=${2}
+    local checksum_file=${3}
     local basename=$(basename ${local_file})
+
+    if [[ ! -f "${checksum_file}" ]]; then
+        log "  Downloading checksum file: ${checksum_url}"
+        curl -s -L ${checksum_url} -o "${checksum_file}" || exit_error "${COLRED}Error${COLRESET} downloading checksum file ${checksum_url}"
+    fi
+
+    local sha256=$(cat ${checksum_file} | awk {'print $1'} )
     log "  Generating sha256 for ${basename} and comparing to: ${sha256}"
     local sha256sum=$(sha256sum ${local_file} | awk {'print $1'})
     if [ "${sha256}" != "${sha256sum}" ]; then
@@ -230,11 +204,11 @@ if check_network "${PROFILE}"; then
     ${VERBOSE} && log "  Continuing"
 fi
 
-download_file ${PGDUMP_URL} ${PGDUMP_DEST} ${PGDUMP_URL_SHA256} ${PGDUMP_DEST_SHA256}
-verify_checksum ${PGDUMP_DEST} ${PGDUMP_DEST_SHA256}
+download_file ${PGDUMP_URL} ${PGDUMP_DEST}
+verify_checksum ${PGDUMP_DEST} ${PGDUMP_URL_SHA256} ${PGDUMP_DEST_SHA256}
 
-download_file ${CHAINDATA_URL} ${CHAINDATA_DEST} ${CHAINDATA_URL_SHA256} ${CHAINDATA_DEST_SHA256}
-verify_checksum ${CHAINDATA_DEST} ${CHAINDATA_DEST_SHA256}
+download_file ${CHAINDATA_URL} ${CHAINDATA_DEST}
+verify_checksum ${CHAINDATA_DEST} ${CHAINDATA_URL_SHA256} ${CHAINDATA_DEST_SHA256}
 
 
 log
@@ -258,27 +232,27 @@ log "Restoring postgres data from ${SCRIPTPATH}/stacks-blockchain-api-pg-${POSTG
 echo "docker exec ${CONTAINER} sh -c \"pg_restore --username ${PG_USER} --verbose --create --dbname postgres /tmp/stacks_node_postgres.dump\"" || exit_error "${COLRED}Error${COLRESET} restoring postgres data"
 eval "docker exec ${CONTAINER} sh -c \"pg_restore --username ${PG_USER} --verbose --create --dbname postgres /tmp/stacks_node_postgres.dump\"" || exit_error "${COLRED}Error${COLRESET} restoring postgres data"
 log "Setting postgres user password from .env for ${PG_USER}"
-echo "docker exec -it ${CONTAINER} sh -c \"psql -U ${PG_USER} -c \\\"ALTER USER ${PG_USER} PASSWORD '${PG_PASSWORD}';\\\"\" " || exit_error "${COLRED}Error${COLRESET} setting postgres password for ${PG_USER}"
-eval "docker exec -it ${CONTAINER} sh -c \"psql -U ${PG_USER} -c \\\"ALTER USER ${PG_USER} PASSWORD '${PG_PASSWORD}';\\\"\" " || exit_error "${COLRED}Error${COLRESET} setting postgres password for ${PG_USER}"
+echo "docker exec -i ${CONTAINER} sh -c \"psql -U ${PG_USER} -c \\\"ALTER USER ${PG_USER} PASSWORD '${PG_PASSWORD}';\\\"\" " || exit_error "${COLRED}Error${COLRESET} setting postgres password for ${PG_USER}"
+eval "docker exec -i ${CONTAINER} sh -c \"psql -U ${PG_USER} -c \\\"ALTER USER ${PG_USER} PASSWORD '${PG_PASSWORD}';\\\"\" " || exit_error "${COLRED}Error${COLRESET} setting postgres password for ${PG_USER}"
 
 if [[ ${PG_DATABASE} != "stacks_blockchain_api" && ${PG_SCHEMA} != "stacks_blockchain_api" ]];then
     log "dropping restored schema stacks_blockchain_api.public"
-    echo "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"drop SCHEMA if exists public;\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping schema public"
-    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"drop SCHEMA if exists public;\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping schema public"
+    echo "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"drop SCHEMA if exists public;\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping schema public"
+    eval "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"drop SCHEMA if exists public;\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping schema public"
 
     log "altering restored schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
-    echo "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"ALTER SCHEMA stacks_blockchain_api RENAME TO ${PG_SCHEMA:-public};\\\"\" " || exit_error "${COLRED}Error${COLRESET} altering schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
-    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"ALTER SCHEMA stacks_blockchain_api RENAME TO ${PG_SCHEMA:-public};\\\"\" " || exit_error "${COLRED}Error${COLRESET} altering schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
+    echo "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"ALTER SCHEMA stacks_blockchain_api RENAME TO ${PG_SCHEMA:-public};\\\"\" " || exit_error "${COLRED}Error${COLRESET} altering schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
+    eval "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d stacks_blockchain_api -c \\\"ALTER SCHEMA stacks_blockchain_api RENAME TO ${PG_SCHEMA:-public};\\\"\" " || exit_error "${COLRED}Error${COLRESET} altering schema stacks_blockchain_api -> ${PG_SCHEMA:-public}"
 fi
 if [[ ${PG_DATABASE} == "postgres" ]];then
     log "dropping db ${PG_DATABASE}"
-    echo "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"DROP database ${PG_DATABASE};\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping db ${PG_DATABASE}"
-    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"DROP database ${PG_DATABASE};\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping db ${PG_DATABASE}"
+    echo "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"DROP database ${PG_DATABASE};\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping db ${PG_DATABASE}"
+    eval "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"DROP database ${PG_DATABASE};\\\"\" " || exit_error "${COLRED}Error${COLRESET} dropping db ${PG_DATABASE}"
 fi
 if [[ ${PG_DATABASE} != "stacks_blockchain_api" ]]; then
     log "renaming db stacks_blockchain_api to ${PG_DATABASE}"
-    echo "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"ALTER DATABASE stacks_blockchain_api RENAME TO ${PG_DATABASE};\\\"\" "|| exit_error "${COLRED}Error${COLRESET} renaming db stacks_blockchain_api to ${PG_DATABASE}"
-    eval "docker exec -it ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"ALTER DATABASE stacks_blockchain_api RENAME TO ${PG_DATABASE};\\\"\" "|| exit_error "${COLRED}Error${COLRESET} renaming db stacks_blockchain_api to ${PG_DATABASE}"
+    echo "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"ALTER DATABASE stacks_blockchain_api RENAME TO ${PG_DATABASE};\\\"\" "|| exit_error "${COLRED}Error${COLRESET} renaming db stacks_blockchain_api to ${PG_DATABASE}"
+    eval "docker exec -i ${CONTAINER} sh -c \"psql -U postgres -d template1 -c \\\"ALTER DATABASE stacks_blockchain_api RENAME TO ${PG_DATABASE};\\\"\" "|| exit_error "${COLRED}Error${COLRESET} renaming db stacks_blockchain_api to ${PG_DATABASE}"
 fi
 log "Stopping postgres container"
 eval "docker stop ${CONTAINER} > /dev/null  2>&1" || exit_error "${COLRED}Error${COLRESET} stopping postgres container ${CONTAINER}"
